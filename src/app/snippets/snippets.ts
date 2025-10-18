@@ -1,0 +1,20 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { SnippetsService } from '../snippets.service';
+
+@Component({
+  selector: 'app-snippets',
+  imports: [],
+  templateUrl: './snippets.html',
+  styleUrl: './snippets.css',
+})
+export class Snippets implements OnInit {
+  private snippetsService = inject(SnippetsService);
+  snippets: any[] = [];
+
+  ngOnInit() {
+    this.snippetsService.getAllSnippets().subscribe({
+      next: (data) => (this.snippets = data),
+      error: (error) => console.error('Error fetching snippets:', error),
+    });
+  }
+}

@@ -1,0 +1,30 @@
+<h2>Create New Page</h2>
+<form (ngSubmit)="createPage()">
+  <div>
+    <label for="pageName">Page Name:</label>
+    <input
+      id="pageName"
+      type="text"
+      [(ngModel)]="newPage.name"
+      name="pageName"
+      required
+      placeholder="Enter page name"
+    />
+  </div>
+  <div>
+    <label for="projectId">Project ID (optional):</label>
+    <input
+      id="projectId"
+      type="text"
+      [(ngModel)]="newPage.projectId"
+      name="projectId"
+      placeholder="Enter project ID"
+    />
+  </div>
+  <button type="submit" [disabled]="!newPage.name.trim()">Create Page</button>
+</form>
+
+<h2>Pages</h2>
+<ul>
+  <li *ngFor="let page of pages">{{ page.title || page.name || page.id }}</li>
+</ul>
