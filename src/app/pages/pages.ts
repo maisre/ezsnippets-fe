@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PagesService } from '../pages.service';
 
 @Component({
@@ -11,6 +12,7 @@ import { PagesService } from '../pages.service';
 })
 export class Pages implements OnInit {
   private pagesService = inject(PagesService);
+  private router = inject(Router);
   pages: any[] = [];
 
   newPage = {
@@ -47,5 +49,9 @@ export class Pages implements OnInit {
       },
       error: (error) => console.error('Error creating page:', error),
     });
+  }
+
+  editPage(pageId: string) {
+    this.router.navigate(['/p/edit', pageId]);
   }
 }

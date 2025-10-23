@@ -12,4 +12,8 @@ export class SnippetsService {
   getAllSnippets(): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/snippets`);
   }
+
+  getSnippetsByPageId(pageId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/snippets?pageId=${pageId}`);
+  }
 }

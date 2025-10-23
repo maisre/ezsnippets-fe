@@ -1,1 +1,15 @@
-<router-outlet />
+<nav class="navbar">
+  <div class="nav-brand">
+    <a routerLink="/home" class="brand-link">EZ Snippet</a>
+  </div>
+  <div class="nav-links">
+    <a routerLink="/pages" class="nav-link">Pages</a>
+    <a routerLink="/snippets" class="nav-link">Snippets</a>
+    <a routerLink="/stripe" class="nav-link">Stripe-Test</a>
+    <a routerLink="/login" class="nav-link">Login</a>
+  </div>
+</nav>
+
+<main class="main-content">
+  <router-outlet />
+</main>

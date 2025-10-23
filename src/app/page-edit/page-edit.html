@@ -1,1 +1,79 @@
-<p>page-edit works!</p>
+<div *ngIf="page" class="page-edit-container">
+  <h2>Edit Page: {{ page.title || page.name || page.id }}</h2>
+
+  <div class="page-info">
+    <div *ngIf="page.name"><strong>Name:</strong> {{ page.name }}</div>
+    <div *ngIf="page.projectId"><strong>Project ID:</strong> {{ page.projectId }}</div>
+  </div>
+
+  <div class="drag-drop-container">
+    <!-- Left side: Page Snippets -->
+    <div class="snippet-list-container">
+      <h3>Page Snippets</h3>
+      <div
+        cdkDropList
+        id="page-snippets"
+        [cdkDropListData]="pageSnippets"
+        [cdkDropListConnectedTo]="['available-snippets']"
+        (cdkDropListDropped)="drop($event)"
+        class="snippet-list"
+      >
+        <div
+          *ngFor="let snippet of pageSnippets; trackBy: trackBySnippetId"
+          cdkDrag
+          [cdkDragStartDelay]="0"
+          [cdkDragBoundary]="'.page-edit-container'"
+          class="snippet-item"
+        >
+          <div class="snippet-content">
+            <span class="drag-handle">⋮⋮</span>
+            <span class="snippet-title">{{ snippet.title || snippet.name || snippet.id }}</span>
+          </div>
+        </div>
+        <div *ngIf="pageSnippets.length === 0" class="empty-state">
+          No snippets assigned to this page
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side: Available Snippets -->
+    <div class="snippet-list-container">
+      <h3>Available Snippets</h3>
+      <div
+        cdkDropList
+        id="available-snippets"
+        [cdkDropListData]="availableSnippets"
+        [cdkDropListConnectedTo]="['page-snippets']"
+        (cdkDropListDropped)="drop($event)"
+        class="snippet-list"
+      >
+        <div
+          *ngFor="let snippet of availableSnippets; trackBy: trackBySnippetId"
+          cdkDrag
+          [cdkDragStartDelay]="0"
+          [cdkDragBoundary]="'.page-edit-container'"
+          class="snippet-item"
+        >
+          <div class="snippet-content">
+            <span class="drag-handle">⋮⋮</span>
+            <span class="snippet-title">{{ snippet.title || snippet.name || snippet.id }}</span>
+          </div>
+        </div>
+        <div *ngIf="availableSnippets.length === 0" class="empty-state">No available snippets</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button (click)="router.navigate(['/pages'])">Back to Pages</button>
+  </div>
+</div>
+
+<div *ngIf="!page && pageId">
+  <p>Loading page...</p>
+</div>
+
+<div *ngIf="!pageId">
+  <p>No page ID provided</p>
+  <button (click)="router.navigate(['/pages'])">Back to Pages</button>
+</div>
