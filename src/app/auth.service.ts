@@ -25,26 +25,15 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  login(): void {
-    this.http
-      .post<{ access_token: string }>(`${environment.apiUrl}/auth/login`, {
-        username: 'john',
-        password: 'changeme',
-      })
-      .subscribe((res) => {
-        console.log(res);
-        this.setToken(res.access_token);
-      });
+  login(username: string, password: string) {
+    return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/login`, {
+      username,
+      password,
+    });
   }
 
   logout(): void {
     this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe((res) => {
-      console.log(res);
-    });
-  }
-
-  test(): void {
-    this.http.get(`${environment.apiUrl}/profile`).subscribe((res) => {
       console.log(res);
     });
   }
