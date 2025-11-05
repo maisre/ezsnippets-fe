@@ -32,6 +32,7 @@ export class Login {
       this.authService.login(this.credentials.username, this.credentials.password).subscribe({
         next: (response) => {
           this.isLoading = false;
+          this.authService.setToken(response.access_token);
           console.log('Login successful:', response);
           // You might want to redirect here or emit an event
         },
