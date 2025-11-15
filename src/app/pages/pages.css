@@ -139,6 +139,31 @@ li > text:first-child {
   font-weight: 500;
 }
 
+/* Button Group */
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* View Button */
+.view-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
 /* Edit Button */
 .edit-btn {
   background: #28a745;
@@ -150,7 +175,6 @@ li > text:first-child {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 1rem;
 }
 
 .edit-btn:hover {
@@ -190,8 +214,7 @@ ul:empty::after {
     gap: 0.75rem;
   }
 
-  .edit-btn {
-    margin-left: 0;
+  .button-group {
     align-self: flex-end;
   }
 }

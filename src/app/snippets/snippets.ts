@@ -12,7 +12,7 @@ export class Snippets implements OnInit {
   snippets: any[] = [];
 
   ngOnInit() {
-    this.snippetsService.getAllSnippets().subscribe({
+    this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => (this.snippets = data),
       error: (error) => console.error('Error fetching snippets:', error),
     });

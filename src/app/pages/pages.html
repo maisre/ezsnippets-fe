@@ -27,7 +27,10 @@
 <h2>Pages</h2>
 <ul>
   <li *ngFor="let page of pages">
-    {{ page.title || page.name || page.id }}
-    <button (click)="editPage(page._id)" class="edit-btn">Edit</button>
+    <span>{{ page.title || page.name || page.id }}</span>
+    <div class="button-group">
+      <button (click)="viewPage(page._id)" class="view-btn">View</button>
+      <button (click)="editPage(page._id)" class="edit-btn">Edit</button>
+    </div>
   </li>
 </ul>

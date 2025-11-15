@@ -9,8 +9,8 @@ import { environment } from '../environments/environment';
 export class SnippetsService {
   private http = inject(HttpClient);
 
-  getAllSnippets(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/snippets`);
+  getAllSnippetSummary(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/snippets/summary`);
   }
 
   getSnippetsByPageId(pageId: string): Observable<any[]> {

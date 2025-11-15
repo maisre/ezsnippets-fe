@@ -9,6 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-page-edit',
@@ -26,6 +27,7 @@ export class PageEdit implements OnInit {
   pageId: string | null = null;
   pageSnippets: any[] = [];
   availableSnippets: any[] = [];
+  viewUrl = environment.viewUrl;
 
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
@@ -55,7 +57,7 @@ export class PageEdit implements OnInit {
 
   loadAvailableSnippets() {
     console.log('Loading all available snippets');
-    this.snippetsService.getAllSnippets().subscribe({
+    this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         console.log('Available snippets loaded successfully:', data);
         this.availableSnippets = data;
@@ -84,7 +86,7 @@ export class PageEdit implements OnInit {
       const snippetId = typeof pageSnippet === 'string' ? pageSnippet : pageSnippet.id;
 
       // Find the corresponding snippet in availableSnippets
-      const foundSnippet = this.availableSnippets.find((snippet) => snippet.id === snippetId);
+      const foundSnippet = this.availableSnippets.find((snippet) => snippet._id === snippetId);
 
       if (foundSnippet) {
         // Copy the snippet into pageSnippets array
@@ -99,6 +101,11 @@ export class PageEdit implements OnInit {
     if (event.previousContainer === event.container) {
       // Reordering within the same list
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+
+      // If reordering within page snippets, save the new order
+      if (event.container.id === 'page-snippets') {
+        this.updatePageSnippets();
+      }
     } else {
       // Moving between lists
       transferArrayItem(
@@ -115,9 +122,11 @@ export class PageEdit implements OnInit {
 
   updatePageSnippets() {
     if (!this.pageId) return;
+    console.log('page snippets');
+    console.log(this.pageSnippets);
 
     const snippets = this.pageSnippets.map((snippet) => ({
-      id: snippet.id,
+      id: snippet._id,
       cssOverride: '',
       jsOverride: '',
       htmlOverride: '',

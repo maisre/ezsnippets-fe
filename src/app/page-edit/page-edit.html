@@ -26,8 +26,12 @@
           class="snippet-item"
         >
           <div class="snippet-content">
+            <img
+              [src]="viewUrl + '/public/images/screenshots/' + snippet._id + '.png'"
+              alt="Snippet screenshot"
+              class="snippet-screenshot"
+            />
             <span class="drag-handle">⋮⋮</span>
-            <span class="snippet-title">{{ snippet.title || snippet.name || snippet.id }}</span>
           </div>
         </div>
         <div *ngIf="pageSnippets.length === 0" class="empty-state">
@@ -55,8 +59,12 @@
           class="snippet-item"
         >
           <div class="snippet-content">
+            <img
+              [src]="viewUrl + '/public/images/screenshots/' + snippet._id + '.png'"
+              alt="Snippet screenshot"
+              class="snippet-screenshot"
+            />
             <span class="drag-handle">⋮⋮</span>
-            <span class="snippet-title">{{ snippet.title || snippet.name || snippet.id }}</span>
           </div>
         </div>
         <div *ngIf="availableSnippets.length === 0" class="empty-state">No available snippets</div>

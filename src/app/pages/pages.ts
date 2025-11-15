@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PagesService } from '../pages.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-pages',
@@ -53,5 +54,9 @@ export class Pages implements OnInit {
 
   editPage(pageId: string) {
     this.router.navigate(['/p/edit', pageId]);
+  }
+
+  viewPage(pageId: string) {
+    window.open(`${environment.viewUrl}/view/page/${pageId}`, '_blank');
   }
 }
