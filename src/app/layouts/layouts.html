@@ -1,0 +1,35 @@
+<h2>Create New Layout</h2>
+<form (ngSubmit)="createLayout()">
+  <div>
+    <label for="layoutName">Layout Name:</label>
+    <input
+      id="layoutName"
+      type="text"
+      [(ngModel)]="newLayout.name"
+      name="layoutName"
+      required
+      placeholder="Enter layout name"
+    />
+  </div>
+  <div>
+    <label for="projectId">Project ID (optional):</label>
+    <input
+      id="projectId"
+      type="text"
+      [(ngModel)]="newLayout.projectId"
+      name="projectId"
+      placeholder="Enter project ID"
+    />
+  </div>
+  <button type="submit" [disabled]="!newLayout.name.trim()">Create Layout</button>
+</form>
+
+<h2>Layouts</h2>
+<ul>
+  <li *ngFor="let layout of layouts">
+    <span>{{ layout.title || layout.name || layout.id }}</span>
+    <div class="button-group">
+      <button (click)="editLayout(layout._id)" class="edit-btn">Edit</button>
+    </div>
+  </li>
+</ul>
