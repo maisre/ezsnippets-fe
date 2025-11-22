@@ -99,13 +99,28 @@ export class LayoutEdit implements OnInit {
         this.footerSnippets.push({ ...footerSnippet });
       }
     }
+    console.log('----------------before', this.layout);
 
     // Initialize subPages if they don't exist
     if (!this.layout.subPages || this.layout.subPages.length === 0) {
       this.layout.subPages = [{ name: 'Default', snippets: [] }];
     }
 
-    console.log('Layout snippets loaded');
+    console.log('----------------before');
+    // Load subPage snippets
+    this.layout.subPages = this.layout.subPages.map((subPage) => ({
+      ...subPage,
+      snippets: subPage.snippets
+        .map((snippetRef) => {
+          const fullSnippet = this.availableSnippets.find((s) => s.id === snippetRef.id);
+          console.log('----------------found full snippet', fullSnippet);
+          return fullSnippet ? { ...fullSnippet, ...snippetRef } : null;
+        })
+        .filter((s) => s !== null) as SnippetOverride[],
+    }));
+    console.log('----------------fater');
+
+    console.log('Layout snippets loaded', this.layout.subPages);
   }
 
   getActiveSubPageSnippets(): SnippetOverride[] {
