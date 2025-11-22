@@ -10,6 +10,6 @@ export interface Snippet {
 export interface SnippetOverride {
   id: string;
   cssOverride: string;
-  htmlOverride: string;
+  htmlOverride: {};
   jsOverride: string;
 }

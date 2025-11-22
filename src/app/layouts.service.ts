@@ -26,4 +26,8 @@ export class LayoutsService {
   updateLayoutSnippets(layoutId: string, snippets: SnippetOverride[]): Observable<Layout> {
     return this.http.put<Layout>(`${environment.apiUrl}/layouts/${layoutId}`, { snippets });
   }
+
+  updateLayout(layoutId: string, layoutData: Partial<Layout>): Observable<Layout> {
+    return this.http.put<Layout>(`${environment.apiUrl}/layouts/${layoutId}`, layoutData);
+  }
 }

@@ -8,7 +8,7 @@ export interface SubPage {
 export interface Layout {
   id: string;
   name: string;
-  navbar: string;
+  nav: string;
   footer: string;
   subPages: SubPage[];
   projectId?: string;
@@ -18,7 +18,7 @@ export interface Layout {
 
 export interface CreateLayoutDto {
   name: string;
-  navbar?: string;
+  nav?: string;
   footer?: string;
   subPages?: SubPage[];
   projectId?: string;

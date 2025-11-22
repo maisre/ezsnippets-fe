@@ -1,9 +1,157 @@
 <div *ngIf="layout" class="layout-edit-container">
   <h2>Edit Layout: {{ layout.name || layout.id }}</h2>
-  
+
   <div class="layout-info">
     <div *ngIf="layout.name"><strong>Name:</strong> {{ layout.name }}</div>
     <div *ngIf="layout.projectId"><strong>Project ID:</strong> {{ layout.projectId }}</div>
+  </div>
+
+  <div class="drag-drop-wrapper">
+    <!-- Left side: Layout Areas -->
+    <div class="layout-areas">
+      <!-- Navbar Area -->
+      <div class="layout-area">
+        <h3>Navbar</h3>
+        <div
+          cdkDropList
+          id="navbar-snippets"
+          [cdkDropListData]="navbarSnippets"
+          [cdkDropListConnectedTo]="getConnectedDropLists()"
+          (cdkDropListDropped)="drop($event, 'navbar')"
+          class="snippet-drop-zone single-snippet"
+        >
+          <div
+            *ngFor="let snippet of navbarSnippets; trackBy: trackBySnippetId"
+            cdkDrag
+            [cdkDragStartDelay]="0"
+            class="snippet-item"
+          >
+            <div class="snippet-content">
+              <img
+                [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+                alt="Navbar snippet"
+                class="snippet-screenshot"
+              />
+              <span class="drag-handle">⋮⋮</span>
+            </div>
+          </div>
+          <div *ngIf="navbarSnippets.length === 0" class="empty-state">
+            Drop navbar snippet here
+          </div>
+        </div>
+      </div>
+
+      <!-- SubPages Tabbed Area -->
+      <div class="layout-area subpages-area">
+        <div class="subpages-header">
+          <h3>SubPages</h3>
+          <div class="tabs">
+            <button
+              *ngFor="let subPage of layout.subPages; let i = index; trackBy: trackBySubPageIndex"
+              [class.active]="activeSubPageIndex === i"
+              (click)="setActiveSubPage(i)"
+              class="tab-button"
+            >
+              {{ subPage.name }}
+            </button>
+          </div>
+        </div>
+        <div
+          *ngFor="let subPage of layout.subPages; let i = index; trackBy: trackBySubPageIndex"
+          [class.hidden]="activeSubPageIndex !== i"
+        >
+          <div
+            cdkDropList
+            [id]="'subpage-' + i"
+            [cdkDropListData]="subPage.snippets"
+            [cdkDropListConnectedTo]="getConnectedDropLists()"
+            (cdkDropListDropped)="drop($event, 'subpage')"
+            class="snippet-drop-zone"
+          >
+            <div
+              *ngFor="let snippet of subPage.snippets; trackBy: trackBySnippetId"
+              cdkDrag
+              [cdkDragStartDelay]="0"
+              class="snippet-item"
+            >
+              <div class="snippet-content">
+                <img
+                  [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+                  alt="Snippet screenshot"
+                  class="snippet-screenshot"
+                />
+                <span class="drag-handle">⋮⋮</span>
+              </div>
+            </div>
+            <div *ngIf="subPage.snippets.length === 0" class="empty-state">
+              Drop snippets here for {{ subPage.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Area -->
+      <div class="layout-area">
+        <h3>Footer</h3>
+        <div
+          cdkDropList
+          id="footer-snippets"
+          [cdkDropListData]="footerSnippets"
+          [cdkDropListConnectedTo]="getConnectedDropLists()"
+          (cdkDropListDropped)="drop($event, 'footer')"
+          class="snippet-drop-zone single-snippet"
+        >
+          <div
+            *ngFor="let snippet of footerSnippets; trackBy: trackBySnippetId"
+            cdkDrag
+            [cdkDragStartDelay]="0"
+            class="snippet-item"
+          >
+            <div class="snippet-content">
+              <img
+                [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+                alt="Footer snippet"
+                class="snippet-screenshot"
+              />
+              <span class="drag-handle">⋮⋮</span>
+            </div>
+          </div>
+          <div *ngIf="footerSnippets.length === 0" class="empty-state">
+            Drop footer snippet here
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side: Available Snippets -->
+    <div class="available-snippets-container">
+      <h3>Available Snippets</h3>
+      <div
+        cdkDropList
+        id="available-snippets"
+        [cdkDropListData]="availableSnippets"
+        [cdkDropListConnectedTo]="getConnectedDropLists()"
+        (cdkDropListDropped)="drop($event, 'subpage')"
+        class="snippet-list"
+      >
+        <div
+          *ngFor="let snippet of availableSnippets; trackBy: trackBySnippetId"
+          cdkDrag
+          [cdkDragStartDelay]="0"
+          class="snippet-item"
+        >
+          <div class="snippet-content">
+            <img
+              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+              alt="Snippet screenshot"
+              class="snippet-screenshot"
+            />
+            <span class="drag-handle">⋮⋮</span>
+          </div>
+        </div>
+        <div *ngIf="availableSnippets.length === 0" class="empty-state">No available snippets</div>
+      </div>
+    </div>
   </div>
 
   <div class="actions">
