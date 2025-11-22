@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PagesService } from '../pages.service';
 import { environment } from '../../environments/environment';
+import { Page } from '../models';
 
 @Component({
   selector: 'app-pages',
@@ -14,7 +15,7 @@ import { environment } from '../../environments/environment';
 export class Pages implements OnInit {
   private pagesService = inject(PagesService);
   private router = inject(Router);
-  pages: any[] = [];
+  pages: Page[] = [];
 
   newPage = {
     name: '',

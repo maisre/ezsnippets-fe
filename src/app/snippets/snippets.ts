@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { SnippetsService } from '../snippets.service';
+import { SnippetOverride } from '../models';
 
 @Component({
   selector: 'app-snippets',
@@ -9,7 +10,7 @@ import { SnippetsService } from '../snippets.service';
 })
 export class Snippets implements OnInit {
   private snippetsService = inject(SnippetsService);
-  snippets: any[] = [];
+  snippets: SnippetOverride[] = [];
 
   ngOnInit() {
     this.snippetsService.getAllSnippetSummary().subscribe({

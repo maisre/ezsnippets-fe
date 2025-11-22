@@ -10,6 +10,7 @@ import {
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { environment } from '../../environments/environment';
+import { Page, SnippetOverride } from '../models';
 
 @Component({
   selector: 'app-page-edit',
@@ -23,10 +24,10 @@ export class PageEdit implements OnInit {
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
 
-  page: any = null;
+  page: Page | null = null;
   pageId: string | null = null;
-  pageSnippets: any[] = [];
-  availableSnippets: any[] = [];
+  pageSnippets: SnippetOverride[] = [];
+  availableSnippets: SnippetOverride[] = [];
   viewUrl = environment.viewUrl;
 
   ngOnInit() {
@@ -81,12 +82,9 @@ export class PageEdit implements OnInit {
     this.pageSnippets = [];
 
     // Go through the snippets list on this.page and find corresponding snippets
-    this.page.snippets.forEach((pageSnippet: any) => {
-      // Handle both snippet objects and snippet IDs
-      const snippetId = typeof pageSnippet === 'string' ? pageSnippet : pageSnippet.id;
-
+    this.page.snippets.forEach((pageSnippet) => {
       // Find the corresponding snippet in availableSnippets
-      const foundSnippet = this.availableSnippets.find((snippet) => snippet._id === snippetId);
+      const foundSnippet = this.availableSnippets.find((snippet) => snippet.id === pageSnippet.id);
 
       if (foundSnippet) {
         // Copy the snippet into pageSnippets array
@@ -97,7 +95,7 @@ export class PageEdit implements OnInit {
     console.log('Page snippets loaded:', this.pageSnippets);
   }
 
-  drop(event: CdkDragDrop<any[]>) {
+  drop(event: CdkDragDrop<SnippetOverride[]>) {
     if (event.previousContainer === event.container) {
       // Reordering within the same list
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -126,7 +124,7 @@ export class PageEdit implements OnInit {
     console.log(this.pageSnippets);
 
     const snippets = this.pageSnippets.map((snippet) => ({
-      id: snippet._id,
+      id: snippet.id,
       cssOverride: '',
       jsOverride: '',
       htmlOverride: '',
@@ -142,7 +140,7 @@ export class PageEdit implements OnInit {
     });
   }
 
-  trackBySnippetId(index: number, snippet: any): string {
-    return snippet.id || index;
+  trackBySnippetId(index: number, snippet: SnippetOverride): string {
+    return snippet.id || index.toString();
   }
 }

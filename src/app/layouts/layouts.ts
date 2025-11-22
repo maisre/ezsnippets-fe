@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LayoutsService } from '../layouts.service';
+import { Layout } from '../models';
 
 @Component({
   selector: 'app-layouts',
@@ -13,7 +14,7 @@ import { LayoutsService } from '../layouts.service';
 export class Layouts implements OnInit {
   private layoutsService = inject(LayoutsService);
   private router = inject(Router);
-  layouts: any[] = [];
+  layouts: Layout[] = [];
 
   newLayout = {
     name: '',

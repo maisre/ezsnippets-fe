@@ -27,9 +27,9 @@
 <h2>Layouts</h2>
 <ul>
   <li *ngFor="let layout of layouts">
-    <span>{{ layout.title || layout.name || layout.id }}</span>
+    <span>{{ layout.name || layout.id }}</span>
     <div class="button-group">
-      <button (click)="editLayout(layout._id)" class="edit-btn">Edit</button>
+      <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
     </div>
   </li>
 </ul>

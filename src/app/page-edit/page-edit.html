@@ -1,5 +1,5 @@
 <div *ngIf="page" class="page-edit-container">
-  <h2>Edit Page: {{ page.title || page.name || page.id }}</h2>
+  <h2>Edit Page: {{ page.name || page.name || page.id }}</h2>
 
   <div class="page-info">
     <div *ngIf="page.name"><strong>Name:</strong> {{ page.name }}</div>
@@ -27,7 +27,7 @@
         >
           <div class="snippet-content">
             <img
-              [src]="viewUrl + '/public/images/screenshots/' + snippet._id + '.png'"
+              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
               alt="Snippet screenshot"
               class="snippet-screenshot"
             />
@@ -60,7 +60,7 @@
         >
           <div class="snippet-content">
             <img
-              [src]="viewUrl + '/public/images/screenshots/' + snippet._id + '.png'"
+              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
               alt="Snippet screenshot"
               class="snippet-screenshot"
             />

@@ -1,1 +1,21 @@
-<p>layout-edit works!</p>
+<div *ngIf="layout" class="layout-edit-container">
+  <h2>Edit Layout: {{ layout.name || layout.id }}</h2>
+  
+  <div class="layout-info">
+    <div *ngIf="layout.name"><strong>Name:</strong> {{ layout.name }}</div>
+    <div *ngIf="layout.projectId"><strong>Project ID:</strong> {{ layout.projectId }}</div>
+  </div>
+
+  <div class="actions">
+    <button (click)="router.navigate(['/layouts'])">Back to Layouts</button>
+  </div>
+</div>
+
+<div *ngIf="!layout && !errorMessage && layoutId">
+  <p>Loading layout...</p>
+</div>
+
+<div *ngIf="errorMessage" class="error-container">
+  <p class="error-message">{{ errorMessage }}</p>
+  <button (click)="router.navigate(['/layouts'])">Back to Layouts</button>
+</div>
