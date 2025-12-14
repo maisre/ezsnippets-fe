@@ -40,10 +40,8 @@ export class PageEdit implements OnInit {
   loadPage() {
     if (!this.pageId) return;
 
-    console.log('Loading page with ID:', this.pageId);
     this.pagesService.getPageById(this.pageId).subscribe({
       next: (data) => {
-        console.log('Page loaded successfully:', data);
         this.page = data;
         this.loadAvailableSnippets();
       },
@@ -57,10 +55,8 @@ export class PageEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
-    console.log('Loading all available snippets');
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
-        console.log('Available snippets loaded successfully:', data);
         this.availableSnippets = data;
 
         // Copy snippets from this.page.snippets into pageSnippets array
@@ -91,8 +87,6 @@ export class PageEdit implements OnInit {
         this.pageSnippets.push({ ...foundSnippet });
       }
     });
-
-    console.log('Page snippets loaded:', this.pageSnippets);
   }
 
   drop(event: CdkDragDrop<SnippetOverride[]>) {
@@ -120,8 +114,6 @@ export class PageEdit implements OnInit {
 
   updatePageSnippets() {
     if (!this.pageId) return;
-    console.log('page snippets');
-    console.log(this.pageSnippets);
 
     const snippets = this.pageSnippets.map((snippet) => ({
       id: snippet.id,

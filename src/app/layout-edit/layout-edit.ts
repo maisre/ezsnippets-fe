@@ -46,10 +46,8 @@ export class LayoutEdit implements OnInit {
   loadLayout() {
     if (!this.layoutId) return;
 
-    console.log('Loading layout with ID:', this.layoutId);
     this.layoutsService.getLayoutById(this.layoutId).subscribe({
       next: (data) => {
-        console.log('Layout loaded successfully:', data);
         this.layout = data;
         this.errorMessage = null;
         this.loadAvailableSnippets();
@@ -63,10 +61,8 @@ export class LayoutEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
-    console.log('Loading all available snippets');
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
-        console.log('Available snippets loaded successfully:', data);
         this.availableSnippets = data;
         this.loadLayoutSnippets();
       },
@@ -99,28 +95,22 @@ export class LayoutEdit implements OnInit {
         this.footerSnippets.push({ ...footerSnippet });
       }
     }
-    console.log('----------------before', this.layout);
 
     // Initialize subPages if they don't exist
     if (!this.layout.subPages || this.layout.subPages.length === 0) {
       this.layout.subPages = [{ name: 'Default', snippets: [] }];
     }
 
-    console.log('----------------before');
     // Load subPage snippets
     this.layout.subPages = this.layout.subPages.map((subPage) => ({
       ...subPage,
       snippets: subPage.snippets
         .map((snippetRef) => {
           const fullSnippet = this.availableSnippets.find((s) => s.id === snippetRef.id);
-          console.log('----------------found full snippet', fullSnippet);
           return fullSnippet ? { ...fullSnippet, ...snippetRef } : null;
         })
         .filter((s) => s !== null) as SnippetOverride[],
     }));
-    console.log('----------------fater');
-
-    console.log('Layout snippets loaded', this.layout.subPages);
   }
 
   getActiveSubPageSnippets(): SnippetOverride[] {
@@ -212,14 +202,8 @@ export class LayoutEdit implements OnInit {
         })) || [],
     };
 
-    console.log('Updating layout with data:', updateData);
-    console.log('Current navbarSnippets:', this.navbarSnippets);
-    console.log('Current footerSnippets:', this.footerSnippets);
-    console.log('Current layout.subPages:', this.layout.subPages);
-
     this.layoutsService.updateLayout(this.layoutId, updateData).subscribe({
       next: (data) => {
-        console.log('Layout updated successfully:', data);
         // Update local layout object with server response
         this.layout = data;
       },

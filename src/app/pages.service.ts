@@ -15,7 +15,6 @@ export class PagesService {
   }
 
   getPageById(id: string): Observable<Page> {
-    console.log('in get page by id', `${environment.apiUrl}/pages/${id}`);
     return this.http.get<Page>(`${environment.apiUrl}/pages/${id}`);
   }
 

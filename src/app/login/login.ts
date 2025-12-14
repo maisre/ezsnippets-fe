@@ -33,7 +33,6 @@ export class Login {
         next: (response) => {
           this.isLoading = false;
           this.authService.setToken(response.access_token);
-          console.log('Login successful:', response);
           // You might want to redirect here or emit an event
         },
         error: (error) => {

@@ -15,7 +15,6 @@ export class LayoutsService {
   }
 
   getLayoutById(id: string): Observable<Layout> {
-    console.log('in get layout by id', `${environment.apiUrl}/layouts/${id}`);
     return this.http.get<Layout>(`${environment.apiUrl}/layouts/${id}`);
   }
 
