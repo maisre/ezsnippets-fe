@@ -18,6 +18,8 @@ export class Layouts implements OnInit {
 
   newLayout = {
     name: '',
+    siteName: '',
+    description: '',
     projectId: '',
   };
 
@@ -39,6 +41,8 @@ export class Layouts implements OnInit {
 
     const layoutData = {
       name: this.newLayout.name.trim(),
+      siteName: this.newLayout.siteName.trim() || undefined,
+      description: this.newLayout.description.trim() || undefined,
       projectId: this.newLayout.projectId.trim() || undefined,
       snippets: [],
     };
@@ -46,7 +50,7 @@ export class Layouts implements OnInit {
     this.layoutsService.createLayout(layoutData).subscribe({
       next: (createdLayout) => {
         this.layouts.push(createdLayout);
-        this.newLayout = { name: '', projectId: '' };
+        this.newLayout = { name: '', siteName: '', description: '', projectId: '' };
       },
       error: (error) => console.error('Error creating layout:', error),
     });

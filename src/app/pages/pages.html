@@ -12,6 +12,26 @@
     />
   </div>
   <div>
+    <label for="siteName">Site Name (optional):</label>
+    <input
+      id="siteName"
+      type="text"
+      [(ngModel)]="newPage.siteName"
+      name="siteName"
+      placeholder="Enter site name"
+    />
+  </div>
+  <div>
+    <label for="description">Description (optional):</label>
+    <input
+      id="description"
+      type="text"
+      [(ngModel)]="newPage.description"
+      name="description"
+      placeholder="Enter description"
+    />
+  </div>
+  <div>
     <label for="projectId">Project ID (optional):</label>
     <input
       id="projectId"

@@ -3,6 +3,9 @@
 
   <div class="layout-info">
     <div *ngIf="layout.name"><strong>Name:</strong> {{ layout.name }}</div>
+    <div *ngIf="layout.siteName"><strong>Site Name:</strong> {{ layout.siteName }}</div>
+    <div *ngIf="layout.description"><strong>Description:</strong> {{ layout.description }}</div>
+    <div><strong>AI Customized:</strong> {{ layout.aiCustomized ? 'Yes' : 'No' }}</div>
     <div *ngIf="layout.projectId"><strong>Project ID:</strong> {{ layout.projectId }}</div>
   </div>
 

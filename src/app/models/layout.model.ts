@@ -8,16 +8,23 @@ export interface SubPage {
 export interface Layout {
   id: string;
   name: string;
+  siteName?: string;
+  description?: string;
+  aiCustomized?: boolean;
   nav: string;
   footer: string;
   subPages: SubPage[];
   projectId?: string;
+  org?: string;
+  createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateLayoutDto {
   name: string;
+  siteName?: string;
+  description?: string;
   nav?: string;
   footer?: string;
   subPages?: SubPage[];

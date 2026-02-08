@@ -32,6 +32,13 @@ export class AuthService {
     });
   }
 
+  signup(username: string, password: string) {
+    return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/signup`, {
+      username,
+      password,
+    });
+  }
+
   logout(): void {
     this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe((res) => {
       console.log(res);

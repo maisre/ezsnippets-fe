@@ -19,6 +19,8 @@ export class Pages implements OnInit {
 
   newPage = {
     name: '',
+    siteName: '',
+    description: '',
     projectId: '',
   };
 
@@ -40,6 +42,8 @@ export class Pages implements OnInit {
 
     const pageData = {
       name: this.newPage.name.trim(),
+      siteName: this.newPage.siteName.trim() || undefined,
+      description: this.newPage.description.trim() || undefined,
       projectId: this.newPage.projectId.trim() || undefined,
       snippets: [],
     };
@@ -47,7 +51,7 @@ export class Pages implements OnInit {
     this.pagesService.createPage(pageData).subscribe({
       next: (createdPage) => {
         this.pages.push(createdPage);
-        this.newPage = { name: '', projectId: '' };
+        this.newPage = { name: '', siteName: '', description: '', projectId: '' };
       },
       error: (error) => console.error('Error creating page:', error),
     });

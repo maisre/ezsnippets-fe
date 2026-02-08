@@ -3,6 +3,9 @@
 
   <div class="page-info">
     <div *ngIf="page.name"><strong>Name:</strong> {{ page.name }}</div>
+    <div *ngIf="page.siteName"><strong>Site Name:</strong> {{ page.siteName }}</div>
+    <div *ngIf="page.description"><strong>Description:</strong> {{ page.description }}</div>
+    <div><strong>AI Customized:</strong> {{ page.aiCustomized ? 'Yes' : 'No' }}</div>
     <div *ngIf="page.projectId"><strong>Project ID:</strong> {{ page.projectId }}</div>
   </div>
 
