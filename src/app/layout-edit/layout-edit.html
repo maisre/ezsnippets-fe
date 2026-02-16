@@ -5,8 +5,15 @@
     <div *ngIf="layout.name"><strong>Name:</strong> {{ layout.name }}</div>
     <div *ngIf="layout.siteName"><strong>Site Name:</strong> {{ layout.siteName }}</div>
     <div *ngIf="layout.description"><strong>Description:</strong> {{ layout.description }}</div>
-    <div><strong>AI Customized:</strong> {{ layout.aiCustomized ? 'Yes' : 'No' }}</div>
+    <div><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</div>
     <div *ngIf="layout.projectId"><strong>Project ID:</strong> {{ layout.projectId }}</div>
+    <button
+      class="customize-button"
+      [disabled]="customizing || isAiCustomized()"
+      (click)="customize()"
+    >
+      {{ customizing ? 'Customizing...' : isAiCustomized() ? 'AI Customized' : 'Customize with AI' }}
+    </button>
   </div>
 
   <div class="drag-drop-wrapper">

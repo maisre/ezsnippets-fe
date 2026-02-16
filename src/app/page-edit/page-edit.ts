@@ -29,6 +29,7 @@ export class PageEdit implements OnInit {
   pageSnippets: SnippetOverride[] = [];
   availableSnippets: SnippetOverride[] = [];
   viewUrl = environment.viewUrl;
+  customizing = false;
 
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
@@ -128,6 +129,26 @@ export class PageEdit implements OnInit {
       error: (error) => {
         console.error('Error updating page snippets:', error);
         // Optionally revert the UI changes if the server update fails
+      },
+    });
+  }
+
+  isAiCustomized(): boolean {
+    if (!this.page || this.page.snippets.length === 0) return false;
+    return this.page.snippets.every((s) => s.aiCustomized === true);
+  }
+
+  customize() {
+    if (!this.pageId || this.customizing) return;
+    this.customizing = true;
+    this.pagesService.customizePage(this.pageId).subscribe({
+      next: (data) => {
+        this.page = data;
+        this.customizing = false;
+      },
+      error: (error) => {
+        console.error('Error customizing page:', error);
+        this.customizing = false;
       },
     });
   }

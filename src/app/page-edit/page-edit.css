@@ -83,6 +83,26 @@
   padding: 40px 20px;
 }
 
+.customize-button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: #7c4dff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.customize-button:hover:not(:disabled) {
+  background-color: #651fff;
+}
+
+.customize-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .actions {
   text-align: center;
   padding-top: 20px;

@@ -29,4 +29,8 @@ export class LayoutsService {
   updateLayout(layoutId: string, layoutData: Partial<Layout>): Observable<Layout> {
     return this.http.put<Layout>(`${environment.apiUrl}/layouts/${layoutId}`, layoutData);
   }
+
+  customizeLayout(layoutId: string): Observable<Layout> {
+    return this.http.post<Layout>(`${environment.apiUrl}/layouts/${layoutId}/customize`, {});
+  }
 }

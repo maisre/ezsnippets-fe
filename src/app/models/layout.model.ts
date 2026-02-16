@@ -10,7 +10,6 @@ export interface Layout {
   name: string;
   siteName?: string;
   description?: string;
-  aiCustomized?: boolean;
   nav: string;
   footer: string;
   subPages: SubPage[];

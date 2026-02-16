@@ -25,4 +25,8 @@ export class PagesService {
   updatePageSnippets(pageId: string, snippets: SnippetOverride[]): Observable<Page> {
     return this.http.put<Page>(`${environment.apiUrl}/pages/${pageId}`, { snippets });
   }
+
+  customizePage(pageId: string): Observable<Page> {
+    return this.http.post<Page>(`${environment.apiUrl}/pages/${pageId}/customize`, {});
+  }
 }

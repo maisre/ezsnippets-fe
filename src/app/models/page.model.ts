@@ -5,7 +5,6 @@ export interface Page {
   name: string;
   siteName?: string;
   description?: string;
-  aiCustomized?: boolean;
   projectId?: string;
   snippets: SnippetOverride[];
   org?: string;

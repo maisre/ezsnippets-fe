@@ -5,8 +5,15 @@
     <div *ngIf="page.name"><strong>Name:</strong> {{ page.name }}</div>
     <div *ngIf="page.siteName"><strong>Site Name:</strong> {{ page.siteName }}</div>
     <div *ngIf="page.description"><strong>Description:</strong> {{ page.description }}</div>
-    <div><strong>AI Customized:</strong> {{ page.aiCustomized ? 'Yes' : 'No' }}</div>
+    <div><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</div>
     <div *ngIf="page.projectId"><strong>Project ID:</strong> {{ page.projectId }}</div>
+    <button
+      class="customize-button"
+      [disabled]="customizing || isAiCustomized()"
+      (click)="customize()"
+    >
+      {{ customizing ? 'Customizing...' : isAiCustomized() ? 'AI Customized' : 'Customize with AI' }}
+    </button>
   </div>
 
   <div class="drag-drop-container">

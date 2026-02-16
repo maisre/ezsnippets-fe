@@ -33,6 +33,7 @@ export class LayoutEdit implements OnInit {
   availableSnippets: SnippetOverride[] = [];
   activeSubPageIndex = 0;
   viewUrl = environment.viewUrl;
+  customizing = false;
 
   ngOnInit() {
     this.layoutId = this.route.snapshot.paramMap.get('id');
@@ -210,6 +211,35 @@ export class LayoutEdit implements OnInit {
       error: (error) => {
         console.error('Error updating layout:', error);
         console.error('Error details:', error.error);
+      },
+    });
+  }
+
+  isAiCustomized(): boolean {
+    if (!this.layout) return false;
+    const allSnippets: SnippetOverride[] = [];
+    if (this.layout.nav) allSnippets.push(this.layout.nav as any);
+    if (this.layout.footer) allSnippets.push(this.layout.footer as any);
+    if (this.layout.subPages) {
+      for (const sp of this.layout.subPages) {
+        allSnippets.push(...(sp.snippets || []));
+      }
+    }
+    if (allSnippets.length === 0) return false;
+    return allSnippets.every((s) => s.aiCustomized === true);
+  }
+
+  customize() {
+    if (!this.layoutId || this.customizing) return;
+    this.customizing = true;
+    this.layoutsService.customizeLayout(this.layoutId).subscribe({
+      next: (data) => {
+        this.layout = data;
+        this.customizing = false;
+      },
+      error: (error) => {
+        console.error('Error customizing layout:', error);
+        this.customizing = false;
       },
     });
   }
