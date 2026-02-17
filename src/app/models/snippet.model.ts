@@ -14,4 +14,11 @@ export interface SnippetOverride {
   jsOverride: string;
   textReplacementOverride?: Array<{ token: string; replacement: string }>;
   aiCustomized?: boolean;
+  type?: string;
+  tags?: string[];
+}
+
+export interface SnippetFilters {
+  types: string[];
+  tags: string[];
 }

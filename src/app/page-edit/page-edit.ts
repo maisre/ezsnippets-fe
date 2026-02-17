@@ -10,7 +10,7 @@ import {
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { environment } from '../../environments/environment';
-import { Page, SnippetOverride } from '../models';
+import { Page, SnippetOverride, SnippetFilters } from '../models';
 
 @Component({
   selector: 'app-page-edit',
@@ -28,8 +28,13 @@ export class PageEdit implements OnInit {
   pageId: string | null = null;
   pageSnippets: SnippetOverride[] = [];
   availableSnippets: SnippetOverride[] = [];
+  filteredSnippets: SnippetOverride[] = [];
   viewUrl = environment.viewUrl;
   customizing = false;
+
+  filters: SnippetFilters = { types: [], tags: [] };
+  activeTypeFilter = '';
+  activeTagFilter = '';
 
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
@@ -59,13 +64,17 @@ export class PageEdit implements OnInit {
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
-
-        // Copy snippets from this.page.snippets into pageSnippets array
+        this.applyFilters();
         this.loadPageSnippets();
       },
       error: (error) => {
         console.error('Error loading available snippets:', error);
         console.error('Error details:', error.status, error.message);
+      },
+    });
+    this.snippetsService.getFilters().subscribe({
+      next: (data) => {
+        this.filters = data;
       },
     });
   }
@@ -131,6 +140,30 @@ export class PageEdit implements OnInit {
         // Optionally revert the UI changes if the server update fails
       },
     });
+  }
+
+  applyFilters() {
+    this.filteredSnippets = this.availableSnippets.filter((s) => {
+      if (this.activeTypeFilter && s.type !== this.activeTypeFilter) return false;
+      if (this.activeTagFilter && !(s.tags || []).includes(this.activeTagFilter)) return false;
+      return true;
+    });
+  }
+
+  setTypeFilter(type: string) {
+    this.activeTypeFilter = this.activeTypeFilter === type ? '' : type;
+    this.applyFilters();
+  }
+
+  setTagFilter(tag: string) {
+    this.activeTagFilter = this.activeTagFilter === tag ? '' : tag;
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.activeTypeFilter = '';
+    this.activeTagFilter = '';
+    this.applyFilters();
   }
 
   isAiCustomized(): boolean {
