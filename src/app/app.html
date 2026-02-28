@@ -1,17 +1,34 @@
 <nav class="navbar">
   <div class="nav-brand">
-    <a routerLink="/home" class="brand-link">EZ Snippet</a>
+    <a routerLink="/" class="brand-link">EZ Snippet</a>
   </div>
   <div class="nav-links">
-    <a routerLink="/pages" class="nav-link">Pages</a>
-    <a routerLink="/layouts" class="nav-link">Layouts</a>
-    <a routerLink="/snippets" class="nav-link">Snippets</a>
-    <a routerLink="/stripe" class="nav-link">Stripe-Test</a>
-    <a routerLink="/login" class="nav-link">Login</a>
-    <a routerLink="/signup" class="nav-link">Sign Up</a>
+    @if (isAuthenticated$ | async) {
+      <a routerLink="/pages" class="nav-link">Pages</a>
+      <a routerLink="/layouts" class="nav-link">Layouts</a>
+      <button class="nav-link nav-button" (click)="logout()">Logout</button>
+    } @else {
+      <a routerLink="/pricing" class="nav-link">Pricing</a>
+      <a routerLink="/login" class="nav-link">Login</a>
+      <a routerLink="/signup" class="nav-link nav-cta">Sign Up</a>
+    }
   </div>
 </nav>
 
 <main class="main-content">
   <router-outlet />
 </main>
+
+@if (!(isAuthenticated$ | async)) {
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">EZ Snippet</div>
+      <div class="footer-links">
+        <a routerLink="/pricing">Pricing</a>
+        <a routerLink="/login">Login</a>
+        <a routerLink="/signup">Sign Up</a>
+      </div>
+      <div class="footer-copy">&copy; 2025 EZ Snippet. All rights reserved.</div>
+    </div>
+  </footer>
+}

@@ -1,0 +1,32 @@
+.not-found {
+  text-align: center;
+  padding: 6rem 2rem;
+}
+
+.not-found h1 {
+  font-size: 6rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin: 0 0 0.5rem;
+}
+
+.not-found p {
+  font-size: 1.2rem;
+  color: #666;
+  margin: 0 0 2rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background-color: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background-color: #2980b9;
+}

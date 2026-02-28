@@ -1,12 +1,22 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, Router } from '@angular/router';
+import { AsyncPipe } from '@angular/common';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('ez-frontend');
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  isAuthenticated$ = this.authService.isAuthenticated$;
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/']);
+  }
 }

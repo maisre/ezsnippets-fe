@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 interface LoginCredentials {
@@ -9,12 +10,13 @@ interface LoginCredentials {
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   credentials: LoginCredentials = {
     username: '',
@@ -33,7 +35,7 @@ export class Login {
         next: (response) => {
           this.isLoading = false;
           this.authService.setToken(response.access_token);
-          // You might want to redirect here or emit an event
+          this.router.navigate(['/pages']);
         },
         error: (error) => {
           this.isLoading = false;
