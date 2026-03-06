@@ -9,6 +9,7 @@ import { PageEdit } from './page-edit/page-edit';
 import { Layouts } from './layouts/layouts';
 import { LayoutEdit } from './layout-edit/layout-edit';
 import { StripeTest } from './stripe-test/stripe-test';
+import { CheckoutSuccess } from './checkout-success/checkout-success';
 import { NotFound } from './not-found/not-found';
 import { authGuard } from './auth.guard';
 
@@ -16,6 +17,7 @@ export const routes: Routes = [
   { path: '', component: Home },
   { path: 'home', component: Home },
   { path: 'pricing', component: Pricing },
+  { path: 'checkout/success', component: CheckoutSuccess },
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
   { path: 'snippets', component: Snippets, canActivate: [authGuard] },

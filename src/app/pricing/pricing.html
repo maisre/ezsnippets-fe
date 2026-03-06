@@ -2,64 +2,42 @@
   <div class="pricing-header">
     <h1>Simple, transparent pricing</h1>
     <p>Start for free, upgrade when you're ready.</p>
+
+    <div class="billing-toggle">
+      <span [class.active]="billingPeriod === 'monthly'">Monthly</span>
+      <button class="toggle-switch" (click)="toggleBilling()" [class.yearly]="billingPeriod === 'yearly'">
+        <span class="toggle-knob"></span>
+      </button>
+      <span [class.active]="billingPeriod === 'yearly'">
+        Yearly
+        <span class="save-badge">Save 17%</span>
+      </span>
+    </div>
   </div>
 
   <div class="pricing-grid">
-    <!-- Free Tier -->
-    <div class="pricing-card">
-      <div class="plan-name">Free</div>
-      <div class="plan-price">
-        <span class="price">$0</span>
-        <span class="period">/month</span>
+    @for (plan of plans; track plan.name) {
+      <div class="pricing-card" [class.featured]="plan.featured">
+        @if (plan.featured) {
+          <div class="featured-badge">Most Popular</div>
+        }
+        <div class="plan-name">{{ plan.name }}</div>
+        <div class="plan-price">
+          <span class="price">{{ '$' + getPrice(plan) }}</span>
+          <span class="period">/{{ billingPeriod === 'monthly' ? 'mo' : 'yr' }}</span>
+        </div>
+        @if (billingPeriod === 'yearly') {
+          <p class="plan-savings">{{ '$' + (plan.monthly * 12 - plan.yearly) }} saved per year</p>
+        }
+        <p class="plan-description">{{ plan.description }}</p>
+        <ul class="plan-features">
+          @for (feature of plan.features; track feature) {
+            <li>{{ feature }}</li>
+          }
+        </ul>
+        <button (click)="selectPlan(plan)" class="{{ plan.ctaStyle }}">{{ plan.cta }}</button>
       </div>
-      <p class="plan-description">Perfect for trying things out.</p>
-      <ul class="plan-features">
-        <li>Up to 3 pages</li>
-        <li>1 layout</li>
-        <li>Community snippets</li>
-        <li>Basic AI customization</li>
-      </ul>
-      <a routerLink="/signup" class="btn btn-outline">Get Started</a>
-    </div>
-
-    <!-- Pro Tier -->
-    <div class="pricing-card featured">
-      <div class="featured-badge">Most Popular</div>
-      <div class="plan-name">Pro</div>
-      <div class="plan-price">
-        <span class="price">$19</span>
-        <span class="period">/month</span>
-      </div>
-      <p class="plan-description">For freelancers and small teams.</p>
-      <ul class="plan-features">
-        <li>Unlimited pages</li>
-        <li>Unlimited layouts</li>
-        <li>All snippets</li>
-        <li>AI customization</li>
-        <li>Custom CSS/JS overrides</li>
-        <li>Priority support</li>
-      </ul>
-      <a routerLink="/signup" class="btn btn-primary">Start Free Trial</a>
-    </div>
-
-    <!-- Business Tier -->
-    <div class="pricing-card">
-      <div class="plan-name">Business</div>
-      <div class="plan-price">
-        <span class="price">$49</span>
-        <span class="period">/month</span>
-      </div>
-      <p class="plan-description">For agencies and larger teams.</p>
-      <ul class="plan-features">
-        <li>Everything in Pro</li>
-        <li>Team workspaces</li>
-        <li>Custom snippet uploads</li>
-        <li>White-label publishing</li>
-        <li>API access</li>
-        <li>Dedicated support</li>
-      </ul>
-      <a routerLink="/signup" class="btn btn-outline">Contact Sales</a>
-    </div>
+    }
   </div>
 
   <div class="pricing-faq">
@@ -71,11 +49,11 @@
       </div>
       <div class="faq-item">
         <h3>Is there a free trial?</h3>
-        <p>Pro and Business plans include a 14-day free trial. No credit card required to start.</p>
+        <p>Pro and Enterprise plans include a 14-day free trial. No credit card required to start.</p>
       </div>
       <div class="faq-item">
         <h3>What payment methods do you accept?</h3>
-        <p>We accept all major credit cards through Stripe. Invoicing is available for Business plans.</p>
+        <p>We accept all major credit cards through Stripe. Invoicing is available for Enterprise plans.</p>
       </div>
       <div class="faq-item">
         <h3>Can I cancel anytime?</h3>

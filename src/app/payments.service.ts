@@ -13,10 +13,14 @@ export class PaymentsService {
     return this.http.get<any[]>(`${environment.apiUrl}/payments/products`);
   }
 
-  getPaymentIntent(): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/payments/create-payment-intent`, {
-      amount: 2000,
-      currency: 'usd',
-    });
+  createCheckoutSession(priceId: string): Observable<{ url: string }> {
+    return this.http.post<{ url: string }>(
+      `${environment.apiUrl}/payments/checkout`,
+      {
+        priceId,
+        successUrl: `${window.location.origin}/checkout/success`,
+        cancelUrl: `${window.location.origin}/pricing`,
+      },
+    );
   }
 }

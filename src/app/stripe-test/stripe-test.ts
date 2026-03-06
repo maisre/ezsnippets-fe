@@ -19,10 +19,7 @@ export class StripeTest implements OnInit {
   }
 
   preparePayment() {
-    this.paymentsService.getPaymentIntent().subscribe((res: { client_secret: string }) => {
-      this.clientSecret = res.client_secret;
-      this.initialize();
-    });
+    // Payment intent flow replaced by checkout session flow — see pricing component
   }
 
   async initialize() {
