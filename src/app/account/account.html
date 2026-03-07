@@ -1,0 +1,65 @@
+<div class="account-page">
+  <h1>Account</h1>
+
+  @if (org) {
+    <div class="account-section">
+      <h2>Organization</h2>
+      <div class="info-card">
+        <div class="info-row">
+          <span class="info-label">Name</span>
+          <span class="info-value">{{ org.name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Type</span>
+          <span class="info-value">{{ org.personal ? 'Personal' : 'Team' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Members</span>
+          <span class="info-value">{{ org.members.length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="account-section">
+      <h2>Subscription</h2>
+      <div class="info-card">
+        <div class="info-row">
+          <span class="info-label">Plan</span>
+          <span class="info-value">{{ getPlanName() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value">
+            <span class="status-badge {{ getStatusClass() }}">{{ getStatusLabel() }}</span>
+          </span>
+        </div>
+
+        @if (org.subscriptionStatus === 'active') {
+          <div class="subscription-actions">
+            @if (!showConfirm) {
+              <button class="btn btn-danger-outline" (click)="confirmCancel()">Cancel Subscription</button>
+            } @else {
+              <div class="confirm-cancel">
+                <p>Are you sure? Your subscription will remain active until the end of the current billing period.</p>
+                <div class="confirm-buttons">
+                  <button class="btn btn-danger" (click)="cancelSubscription()" [disabled]="cancelling">
+                    {{ cancelling ? 'Cancelling...' : 'Yes, Cancel' }}
+                  </button>
+                  <button class="btn btn-outline" (click)="dismissCancel()" [disabled]="cancelling">Keep Subscription</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (!org.subscriptionStatus || org.subscriptionStatus === 'canceled') {
+          <div class="subscription-actions">
+            <a routerLink="/pricing" class="btn btn-primary">View Plans</a>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="loading">Loading...</p>
+  }
+</div>

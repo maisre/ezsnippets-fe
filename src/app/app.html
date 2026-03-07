@@ -6,6 +6,7 @@
     @if (isAuthenticated$ | async) {
       <a routerLink="/pages" class="nav-link">Pages</a>
       <a routerLink="/layouts" class="nav-link">Layouts</a>
+      <a routerLink="/account" class="nav-link">Account</a>
       <button class="nav-link nav-button" (click)="logout()">Logout</button>
     } @else {
       <a routerLink="/pricing" class="nav-link">Pricing</a>

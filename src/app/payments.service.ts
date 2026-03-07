@@ -23,4 +23,11 @@ export class PaymentsService {
       },
     );
   }
+
+  cancelSubscription(): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(
+      `${environment.apiUrl}/payments/cancel-subscription`,
+      {},
+    );
+  }
 }
