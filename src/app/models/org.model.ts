@@ -12,4 +12,9 @@ export interface Org {
   subscriptionId?: string;
   plan?: string;
   subscriptionStatus?: string;
+  cardBrand?: string;
+  cardLast4?: string;
+  cardExpMonth?: number;
+  cardExpYear?: number;
+  currentPeriodEnd?: number;
 }

@@ -13,7 +13,6 @@ export interface Layout {
   nav: string;
   footer: string;
   subPages: SubPage[];
-  projectId?: string;
   org?: string;
   createdBy?: string;
   createdAt?: string;
@@ -27,5 +26,4 @@ export interface CreateLayoutDto {
   nav?: string;
   footer?: string;
   subPages?: SubPage[];
-  projectId?: string;
 }

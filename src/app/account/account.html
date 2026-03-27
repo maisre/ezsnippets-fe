@@ -34,6 +34,20 @@
           </span>
         </div>
 
+        @if (org.cardLast4) {
+          <div class="info-row">
+            <span class="info-label">Payment Method</span>
+            <span class="info-value">{{ getCardDisplay() }}</span>
+          </div>
+        }
+
+        @if (org.currentPeriodEnd) {
+          <div class="info-row">
+            <span class="info-label">Next Charge</span>
+            <span class="info-value">{{ getNextChargeDate() }}</span>
+          </div>
+        }
+
         @if (org.subscriptionStatus === 'active') {
           <div class="subscription-actions">
             @if (!showConfirm) {

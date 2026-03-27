@@ -5,7 +5,6 @@ export interface Page {
   name: string;
   siteName?: string;
   description?: string;
-  projectId?: string;
   snippets: SnippetOverride[];
   org?: string;
   createdBy?: string;
@@ -17,6 +16,5 @@ export interface CreatePageDto {
   name: string;
   siteName?: string;
   description?: string;
-  projectId?: string;
   snippets?: SnippetOverride[];
 }

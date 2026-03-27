@@ -6,7 +6,6 @@
     <div *ngIf="page.siteName"><strong>Site Name:</strong> {{ page.siteName }}</div>
     <div *ngIf="page.description"><strong>Description:</strong> {{ page.description }}</div>
     <div><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</div>
-    <div *ngIf="page.projectId"><strong>Project ID:</strong> {{ page.projectId }}</div>
     <button
       class="customize-button"
       [disabled]="customizing || isAiCustomized()"

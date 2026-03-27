@@ -57,6 +57,18 @@ export class Account implements OnInit {
     }
   }
 
+  getCardDisplay(): string {
+    if (!this.org?.cardLast4) return '';
+    const brand = (this.org.cardBrand || 'Card').replace(/^./, c => c.toUpperCase());
+    return `${brand} ending in ${this.org.cardLast4} (${this.org.cardExpMonth}/${this.org.cardExpYear})`;
+  }
+
+  getNextChargeDate(): string {
+    if (!this.org?.currentPeriodEnd) return '';
+    const date = new Date(this.org.currentPeriodEnd * 1000);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
   confirmCancel() {
     this.showConfirm = true;
   }

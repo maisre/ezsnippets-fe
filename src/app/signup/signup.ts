@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 interface SignupCredentials {
-  username: string;
+  email: string;
   password: string;
   confirmPassword: string;
 }
@@ -20,7 +20,7 @@ export class Signup {
   private router = inject(Router);
 
   credentials: SignupCredentials = {
-    username: '',
+    email: '',
     password: '',
     confirmPassword: '',
   };
@@ -38,11 +38,11 @@ export class Signup {
       return;
     }
 
-    if (this.credentials.username && this.credentials.password) {
+    if (this.credentials.email && this.credentials.password) {
       this.isLoading = true;
       this.errorMessage = '';
 
-      this.authService.signup(this.credentials.username, this.credentials.password).subscribe({
+      this.authService.signup(this.credentials.email, this.credentials.password).subscribe({
         next: (response) => {
           this.isLoading = false;
           this.authService.setToken(response.access_token);

@@ -31,16 +31,16 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  login(username: string, password: string) {
+  login(email: string, password: string) {
     return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/login`, {
-      username,
+      email,
       password,
     });
   }
 
-  signup(username: string, password: string) {
+  signup(email: string, password: string) {
     return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/signup`, {
-      username,
+      email,
       password,
     });
   }

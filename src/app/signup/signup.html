@@ -2,19 +2,20 @@
   <h2>Sign Up</h2>
   <form (ngSubmit)="onSubmit()" #signupForm="ngForm">
     <div class="form-group">
-      <label for="username">Username:</label>
+      <label for="email">Email:</label>
       <input
-        type="text"
-        id="username"
-        name="username"
-        [(ngModel)]="credentials.username"
+        type="email"
+        id="email"
+        name="email"
+        [(ngModel)]="credentials.email"
         required
-        #username="ngModel"
+        email
+        #emailField="ngModel"
         class="form-control"
-        [class.error]="username.invalid && username.touched"
+        [class.error]="emailField.invalid && emailField.touched"
       />
-      @if (username.invalid && username.touched) {
-      <div class="error-message">Username is required</div>
+      @if (emailField.invalid && emailField.touched) {
+      <div class="error-message">A valid email address is required</div>
       }
     </div>
 

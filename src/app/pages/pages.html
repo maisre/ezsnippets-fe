@@ -1,56 +1,59 @@
-<h2>Create New Page</h2>
-<form (ngSubmit)="createPage()">
-  <div>
-    <label for="pageName">Page Name:</label>
-    <input
-      id="pageName"
-      type="text"
-      [(ngModel)]="newPage.name"
-      name="pageName"
-      required
-      placeholder="Enter page name"
-    />
-  </div>
-  <div>
-    <label for="siteName">Site Name (optional):</label>
-    <input
-      id="siteName"
-      type="text"
-      [(ngModel)]="newPage.siteName"
-      name="siteName"
-      placeholder="Enter site name"
-    />
-  </div>
-  <div>
-    <label for="description">Description (optional):</label>
-    <input
-      id="description"
-      type="text"
-      [(ngModel)]="newPage.description"
-      name="description"
-      placeholder="Enter description"
-    />
-  </div>
-  <div>
-    <label for="projectId">Project ID (optional):</label>
-    <input
-      id="projectId"
-      type="text"
-      [(ngModel)]="newPage.projectId"
-      name="projectId"
-      placeholder="Enter project ID"
-    />
-  </div>
-  <button type="submit" [disabled]="!newPage.name.trim()">Create Page</button>
-</form>
+<div *ngIf="usage && !usage.hasPlan" class="no-plan-banner">
+  <h2>Subscribe to get started</h2>
+  <p>You need an active plan to create and manage pages.</p>
+  <a routerLink="/pricing" class="btn btn-primary">View Plans</a>
+</div>
 
-<h2>Pages</h2>
-<ul>
-  <li *ngFor="let page of pages">
-    <span>{{ page.name || page.id }}</span>
-    <div class="button-group">
-      <button (click)="viewPage(page.id)" class="view-btn">View</button>
-      <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
+<ng-container *ngIf="usage?.hasPlan">
+  <div class="usage-banner">
+    <span class="usage-text">{{ limitMessage }}</span>
+    <a *ngIf="!canCreate" routerLink="/pricing" class="upgrade-link">Upgrade</a>
+  </div>
+
+  <h2>Create New Page</h2>
+  <form (ngSubmit)="createPage()" *ngIf="canCreate">
+    <div>
+      <label for="pageName">Page Name:</label>
+      <input
+        id="pageName"
+        type="text"
+        [(ngModel)]="newPage.name"
+        name="pageName"
+        required
+        placeholder="Enter page name"
+      />
     </div>
-  </li>
-</ul>
+    <div>
+      <label for="siteName">Site Name (optional):</label>
+      <input
+        id="siteName"
+        type="text"
+        [(ngModel)]="newPage.siteName"
+        name="siteName"
+        placeholder="Enter site name"
+      />
+    </div>
+    <div>
+      <label for="description">Description (optional):</label>
+      <input
+        id="description"
+        type="text"
+        [(ngModel)]="newPage.description"
+        name="description"
+        placeholder="Enter description"
+      />
+    </div>
+    <button type="submit" [disabled]="!newPage.name.trim()">Create Page</button>
+  </form>
+
+  <h2>Pages</h2>
+  <ul>
+    <li *ngFor="let page of pages">
+      <span>{{ page.name || page.id }}</span>
+      <div class="button-group">
+        <button (click)="viewPage(page.id)" class="view-btn">View</button>
+        <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
+      </div>
+    </li>
+  </ul>
+</ng-container>
