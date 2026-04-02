@@ -17,4 +17,5 @@ export interface Org {
   cardExpMonth?: number;
   cardExpYear?: number;
   currentPeriodEnd?: number;
+  cancelAtPeriodEnd?: boolean;
 }

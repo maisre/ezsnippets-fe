@@ -43,12 +43,12 @@
 
         @if (org.currentPeriodEnd) {
           <div class="info-row">
-            <span class="info-label">Next Charge</span>
+            <span class="info-label">{{ org.cancelAtPeriodEnd ? 'Access Ends' : 'Next Charge' }}</span>
             <span class="info-value">{{ getNextChargeDate() }}</span>
           </div>
         }
 
-        @if (org.subscriptionStatus === 'active') {
+        @if (org.subscriptionStatus === 'active' && !org.cancelAtPeriodEnd) {
           <div class="subscription-actions">
             @if (!showConfirm) {
               <button class="btn btn-danger-outline" (click)="confirmCancel()">Cancel Subscription</button>

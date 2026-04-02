@@ -82,7 +82,7 @@ export class Account implements OnInit {
     this.paymentsService.cancelSubscription().subscribe({
       next: () => {
         if (this.org) {
-          this.org = { ...this.org, subscriptionStatus: 'active' };
+          this.org = { ...this.org, cancelAtPeriodEnd: true };
         }
         this.showConfirm = false;
         this.cancelling = false;
