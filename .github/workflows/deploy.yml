@@ -1,13 +1,12 @@
 name: Build & Deploy ez-frontend
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ez-frontend
-  INFRA_REPO: # TODO: owner/ez-infra
+  INFRA_REPO: maisre/ez-infra
 
 jobs:
   # Staging: build Docker image, push to ECR, update infra repo → Argo CD syncs
