@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../environments/environment';
+import { runtimeConfig } from './runtime-config';
 
 export interface PlanUsage {
   hasPlan: boolean;
@@ -17,6 +17,6 @@ export class PlansService {
   private http = inject(HttpClient);
 
   getUsage(): Observable<PlanUsage> {
-    return this.http.get<PlanUsage>(`${environment.apiUrl}/plans/usage`);
+    return this.http.get<PlanUsage>(`${runtimeConfig.apiUrl}/plans/usage`);
   }
 }

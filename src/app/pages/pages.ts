@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PagesService } from '../pages.service';
 import { PlansService, PlanUsage } from '../plans.service';
-import { environment } from '../../environments/environment';
+import { runtimeConfig } from '../runtime-config';
 import { Page } from '../models';
 
 @Component({
@@ -87,6 +87,6 @@ export class Pages implements OnInit {
   }
 
   viewPage(pageId: string) {
-    window.open(`${environment.viewUrl}/view/page/${pageId}`, '_blank');
+    window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
   }
 }

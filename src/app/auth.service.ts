@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { environment } from './../environments/environment';
+import { runtimeConfig } from './runtime-config';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 
@@ -32,14 +32,14 @@ export class AuthService {
   }
 
   login(email: string, password: string) {
-    return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/login`, {
+    return this.http.post<{ access_token: string }>(`${runtimeConfig.apiUrl}/auth/login`, {
       email,
       password,
     });
   }
 
   signup(email: string, password: string) {
-    return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/signup`, {
+    return this.http.post<{ access_token: string }>(`${runtimeConfig.apiUrl}/auth/signup`, {
       email,
       password,
     });
@@ -47,6 +47,6 @@ export class AuthService {
 
   logout(): void {
     this.removeToken();
-    this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe();
+    this.http.post(`${runtimeConfig.apiUrl}/auth/logout`, {}).subscribe();
   }
 }

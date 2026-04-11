@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../environments/environment';
+import { runtimeConfig } from './runtime-config';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -10,12 +10,12 @@ export class PaymentsService {
   private http = inject(HttpClient);
 
   getProducts(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/payments/products`);
+    return this.http.get<any[]>(`${runtimeConfig.apiUrl}/payments/products`);
   }
 
   createCheckoutSession(priceId: string): Observable<{ url: string }> {
     return this.http.post<{ url: string }>(
-      `${environment.apiUrl}/payments/checkout`,
+      `${runtimeConfig.apiUrl}/payments/checkout`,
       {
         priceId,
         successUrl: `${window.location.origin}/checkout/success`,
@@ -26,7 +26,7 @@ export class PaymentsService {
 
   cancelSubscription(): Observable<{ status: string }> {
     return this.http.post<{ status: string }>(
-      `${environment.apiUrl}/payments/cancel-subscription`,
+      `${runtimeConfig.apiUrl}/payments/cancel-subscription`,
       {},
     );
   }

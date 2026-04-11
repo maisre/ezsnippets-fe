@@ -9,7 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
-import { environment } from '../../environments/environment';
+import { runtimeConfig } from '../runtime-config';
 import { Page, SnippetOverride, SnippetFilters } from '../models';
 
 @Component({
@@ -29,7 +29,7 @@ export class PageEdit implements OnInit {
   pageSnippets: SnippetOverride[] = [];
   availableSnippets: SnippetOverride[] = [];
   filteredSnippets: SnippetOverride[] = [];
-  viewUrl = environment.viewUrl;
+  viewUrl = runtimeConfig.viewUrl;
   customizing = false;
 
   filters: SnippetFilters = { types: [], tags: [] };

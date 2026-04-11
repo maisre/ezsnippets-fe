@@ -9,7 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { LayoutsService } from '../layouts.service';
 import { SnippetsService } from '../snippets.service';
-import { environment } from '../../environments/environment';
+import { runtimeConfig } from '../runtime-config';
 import { Layout, SnippetOverride, SnippetFilters } from '../models';
 
 @Component({
@@ -33,7 +33,7 @@ export class LayoutEdit implements OnInit {
   availableSnippets: SnippetOverride[] = [];
   filteredSnippets: SnippetOverride[] = [];
   activeSubPageIndex = 0;
-  viewUrl = environment.viewUrl;
+  viewUrl = runtimeConfig.viewUrl;
   customizing = false;
 
   filters: SnippetFilters = { types: [], tags: [] };

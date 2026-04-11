@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { PaymentsService } from '../payments.service';
 import { AuthService } from '../auth.service';
-import { environment } from '../../environments/environment';
+import { runtimeConfig } from '../runtime-config';
 
 interface PlanConfig {
   id: string;
@@ -75,7 +75,7 @@ export class Pricing implements OnInit {
   plans: DisplayPlan[] = [];
 
   ngOnInit() {
-    this.http.get<PlanConfig[]>(`${environment.apiUrl}/plans`).subscribe({
+    this.http.get<PlanConfig[]>(`${runtimeConfig.apiUrl}/plans`).subscribe({
       next: (configs) => this.buildPlans(configs),
       error: () => this.buildFallbackPlans(),
     });

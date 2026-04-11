@@ -1,6 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { PaymentsService } from '../payments.service';
-import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-stripe-test',

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { environment } from './../environments/environment';
+import { runtimeConfig } from './runtime-config';
 import { HttpClient } from '@angular/common/http';
 import { Org } from './models';
 
@@ -10,6 +10,6 @@ export class OrgsService {
   private http = inject(HttpClient);
 
   getMyOrgs() {
-    return this.http.get<Org[]>(`${environment.apiUrl}/orgs`);
+    return this.http.get<Org[]>(`${runtimeConfig.apiUrl}/orgs`);
   }
 }
