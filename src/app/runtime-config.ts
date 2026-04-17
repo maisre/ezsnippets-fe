@@ -1,11 +1,13 @@
 export interface RuntimeConfig {
   apiUrl: string;
   viewUrl: string;
+  stripePublishableKey: string;
 }
 
 export const runtimeConfig: RuntimeConfig = {
   apiUrl: '',
   viewUrl: '',
+  stripePublishableKey: '',
 };
 
 export async function loadRuntimeConfig(): Promise<void> {

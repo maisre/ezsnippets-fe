@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { PaymentsService } from '../payments.service';
+import { runtimeConfig } from '../runtime-config';
 
 @Component({
   selector: 'app-stripe-test',
@@ -60,9 +61,7 @@ export class StripeTest implements OnInit {
       script.src = 'https://js.stripe.com/clover/stripe.js';
       script.onload = () => {
         // Note: You'll need to add STRIPE_KEY to your environment files
-        this.stripe = (<any>window).Stripe(
-          'pk_test_51SLUNPB5t3dxixMOPl4Clqojq0cQyPBkaSWGDIhBlVtHJPUqMf2qI7OEG2sOz5DflLfaX1ImRmNKUnelWDsezWVk00k5bzfXXu'
-        );
+        this.stripe = (<any>window).Stripe(runtimeConfig.stripePublishableKey);
       };
       window.document.body.appendChild(script);
     }
