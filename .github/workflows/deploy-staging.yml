@@ -1,4 +1,4 @@
-name: Build & Deploy ez-frontend
+name: Deploy ez-frontend to staging
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ env:
   INFRA_REPO: maisre/ez-infra
 
 jobs:
-  # Staging: build Docker image, push to ECR, update infra repo → Argo CD syncs
+  # Build Docker image, push to ECR, update infra repo → Argo CD syncs
   deploy-staging:
     runs-on: ubuntu-latest
     permissions:
@@ -52,36 +52,3 @@ jobs:
           git add .
           git commit -m "deploy ez-frontend $IMAGE_TAG to staging"
           git push
-
-  # Prod: build Angular, sync to S3, invalidate CloudFront
-  deploy-prod:
-    runs-on: ubuntu-latest
-    if: false  # TODO: enable when ready — or trigger via workflow_dispatch
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build for production
-        run: npx ng build --configuration=production
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy to S3
-        run: aws s3 sync dist/ez-frontend/browser/ s3://ez-snippet-frontend-prod --delete
-
-      - name: Invalidate CloudFront cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.PROD_CLOUDFRONT_ID }} --paths "/*"
