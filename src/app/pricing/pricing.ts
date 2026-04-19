@@ -159,7 +159,7 @@ export class Pricing implements OnInit {
 
   selectPlan(plan: DisplayPlan) {
     if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/signup']);
+      this.router.navigate(['/']);
       return;
     }
 
