@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { Home } from './home/home';
 import { Login } from './login/login';
 import { Signup } from './signup/signup';
+import { ForgotPassword } from './forgot-password/forgot-password';
+import { ResetPassword } from './reset-password/reset-password';
 import { Pricing } from './pricing/pricing';
 import { Snippets } from './snippets/snippets';
 import { Pages } from './pages/pages';
@@ -21,6 +23,8 @@ export const routes: Routes = [
   { path: 'checkout/success', component: CheckoutSuccess },
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
+  { path: 'forgot-password', component: ForgotPassword },
+  { path: 'reset-password', component: ResetPassword },
   { path: 'snippets', component: Snippets, canActivate: [authGuard] },
   { path: 'p/edit/:id', component: PageEdit, canActivate: [authGuard] },
   { path: 'pages', component: Pages, canActivate: [authGuard] },

@@ -45,6 +45,17 @@ export class AuthService {
     });
   }
 
+  forgotPassword(email: string) {
+    return this.http.post(`${runtimeConfig.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string) {
+    return this.http.post(`${runtimeConfig.apiUrl}/auth/reset-password`, {
+      token,
+      password,
+    });
+  }
+
   logout(): void {
     this.removeToken();
     this.http.post(`${runtimeConfig.apiUrl}/auth/logout`, {}).subscribe();

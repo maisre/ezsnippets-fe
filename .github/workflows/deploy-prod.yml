@@ -5,6 +5,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  SENTRY_ORG: ez-snippet
+  SENTRY_PROJECT: ez-frontend
 
 jobs:
   # Build Angular, sync to S3, invalidate CloudFront
@@ -27,6 +29,36 @@ jobs:
 
       - name: Build for production
         run: npx ng build --configuration=production
+
+      - name: Write prod config.json
+        env:
+          API_URL: https://api.ez-snippets.com
+          VIEW_URL: https://view.ez-snippets.com
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_RELEASE: ${{ github.sha }}
+        run: |
+          cat > dist/ez-frontend/browser/config.json <<EOF
+          {
+            "apiUrl": "${API_URL}",
+            "viewUrl": "${VIEW_URL}",
+            "stripePublishableKey": "${STRIPE_PUBLISHABLE_KEY}",
+            "sentryDsn": "${SENTRY_DSN}",
+            "sentryEnvironment": "production",
+            "sentryRelease": "${SENTRY_RELEASE}"
+          }
+          EOF
+
+      - name: Upload source maps to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          npx sentry-cli releases new "${{ github.sha }}"
+          npx sentry-cli sourcemaps upload --release="${{ github.sha }}" dist/ez-frontend/browser
+          npx sentry-cli releases finalize "${{ github.sha }}"
+
+      - name: Strip source maps from build output
+        run: find dist/ez-frontend/browser -name "*.map" -delete
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

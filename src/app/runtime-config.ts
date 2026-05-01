@@ -2,12 +2,18 @@ export interface RuntimeConfig {
   apiUrl: string;
   viewUrl: string;
   stripePublishableKey: string;
+  sentryDsn: string;
+  sentryEnvironment: string;
+  sentryRelease: string;
 }
 
 export const runtimeConfig: RuntimeConfig = {
   apiUrl: '',
   viewUrl: '',
   stripePublishableKey: '',
+  sentryDsn: '',
+  sentryEnvironment: '',
+  sentryRelease: '',
 };
 
 export async function loadRuntimeConfig(): Promise<void> {
