@@ -8,7 +8,7 @@ export interface Org {
   name: string;
   personal: boolean;
   members: OrgMember[];
-  stripeCustomerId?: string;
+  paddleCustomerId?: string;
   subscriptionId?: string;
   plan?: string;
   subscriptionStatus?: string;

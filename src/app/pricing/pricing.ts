@@ -30,7 +30,7 @@ const PLAN_DISPLAY: Record<
   string,
   { description: string; monthly: number; yearly: number; featured: boolean; cta: string; ctaStyle: string; extraFeatures: string[] }
 > = {
-  price_1T7oWwBCIaRH2MSXeaIC22S7: {
+  pri_01kr05y9cq25yt75ey1ddkpger: {
     description: 'Perfect for trying things out.',
     monthly: 10,
     yearly: 100,
@@ -39,7 +39,7 @@ const PLAN_DISPLAY: Record<
     ctaStyle: 'btn btn-outline',
     extraFeatures: ['Community snippets', 'Basic AI customization'],
   },
-  price_1T7oX0BCIaRH2MSX8fA87eOt: {
+  pri_01kr07vbve5a770reznmza9hdq: {
     description: 'For freelancers and small teams.',
     monthly: 25,
     yearly: 250,
@@ -48,7 +48,7 @@ const PLAN_DISPLAY: Record<
     ctaStyle: 'btn btn-primary',
     extraFeatures: ['AI customization', 'Custom CSS/JS overrides', 'Priority support'],
   },
-  price_1T7oX3BCIaRH2MSXeILwubbY: {
+  pri_01kr07xbjrdw0jztyfta1xfqre: {
     description: 'For agencies and larger teams.',
     monthly: 50,
     yearly: 500,
@@ -119,8 +119,8 @@ export class Pricing implements OnInit {
         name: 'Basic',
         description: 'Perfect for trying things out.',
         monthly: 10, yearly: 100,
-        monthlyPriceId: 'price_1T7oWwBCIaRH2MSXeaIC22S7',
-        yearlyPriceId: 'price_1T7oWyBCIaRH2MSXa7dFawYC',
+        monthlyPriceId: 'pri_01kr05y9cq25yt75ey1ddkpger',
+        yearlyPriceId: 'pri_01kr07scygf6jf4a2xbvra76y6',
         features: ['Up to 3 pages', '1 layout', 'Up to 50 snippets', 'Community snippets', 'Basic AI customization'],
         featured: false, cta: 'Get Started', ctaStyle: 'btn btn-outline',
       },
@@ -128,8 +128,8 @@ export class Pricing implements OnInit {
         name: 'Pro',
         description: 'For freelancers and small teams.',
         monthly: 25, yearly: 250,
-        monthlyPriceId: 'price_1T7oX0BCIaRH2MSX8fA87eOt',
-        yearlyPriceId: 'price_1T7oX1BCIaRH2MSX9EqkbIi9',
+        monthlyPriceId: 'pri_01kr07vbve5a770reznmza9hdq',
+        yearlyPriceId: 'pri_01kr07vyv692rrj6gn8m57e683',
         features: ['Up to 25 pages', '10 layouts', 'Up to 500 snippets', 'AI customization', 'Custom CSS/JS overrides', 'Priority support'],
         featured: true, cta: 'Start Free Trial', ctaStyle: 'btn btn-primary',
       },
@@ -137,8 +137,8 @@ export class Pricing implements OnInit {
         name: 'Enterprise',
         description: 'For agencies and larger teams.',
         monthly: 50, yearly: 500,
-        monthlyPriceId: 'price_1T7oX3BCIaRH2MSXeILwubbY',
-        yearlyPriceId: 'price_1T7oX5BCIaRH2MSX4MpR0WmU',
+        monthlyPriceId: 'pri_01kr07xbjrdw0jztyfta1xfqre',
+        yearlyPriceId: 'pri_01kr07xy7sty2xhwcqjgzny8x4',
         features: ['Unlimited pages', 'Unlimited layouts', 'All snippets', 'Everything in Pro', 'Team workspaces', 'Custom snippet uploads', 'White-label publishing', 'API access', 'Dedicated support'],
         featured: false, cta: 'Contact Sales', ctaStyle: 'btn btn-outline',
       },
@@ -166,9 +166,9 @@ export class Pricing implements OnInit {
     const priceId = this.getPriceId(plan);
     this.paymentsService.createCheckoutSession(priceId).subscribe({
       next: (res) => {
-        if (res.url) {
-          window.location.href = res.url;
-        }
+        this.paymentsService.openCheckout(res.transactionId).catch((err) => {
+          console.error('Failed to open checkout:', err);
+        });
       },
       error: (err) => {
         console.error('Checkout error:', err);

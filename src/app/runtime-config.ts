@@ -1,7 +1,7 @@
 export interface RuntimeConfig {
   apiUrl: string;
   viewUrl: string;
-  stripePublishableKey: string;
+  paddleClientToken: string;
   sentryDsn: string;
   sentryEnvironment: string;
   sentryRelease: string;
@@ -10,7 +10,7 @@ export interface RuntimeConfig {
 export const runtimeConfig: RuntimeConfig = {
   apiUrl: '',
   viewUrl: '',
-  stripePublishableKey: '',
+  paddleClientToken: '',
   sentryDsn: '',
   sentryEnvironment: '',
   sentryRelease: '',

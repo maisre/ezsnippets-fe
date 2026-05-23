@@ -1,7 +1,7 @@
 {
   "apiUrl": "http://localhost:3000",
   "viewUrl": "http://localhost:3100",
-  "stripePublishableKey": "pk_test_51SLUNPB5t3dxixMOPl4Clqojq0cQyPBkaSWGDIhBlVtHJPUqMf2qI7OEG2sOz5DflLfaX1ImRmNKUnelWDsezWVk00k5bzfXXu",
+  "paddleClientToken": "test_1068ee991f1d93353a03b4f7d66",
   "sentryDsn": "",
   "sentryEnvironment": "development",
   "sentryRelease": ""

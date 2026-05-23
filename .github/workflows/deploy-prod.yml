@@ -34,7 +34,7 @@ jobs:
         env:
           API_URL: https://api.ez-snippets.com
           VIEW_URL: https://view.ez-snippets.com
-          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          PADDLE_CLIENT_TOKEN: ${{ secrets.PADDLE_CLIENT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_RELEASE: ${{ github.sha }}
         run: |
@@ -42,7 +42,7 @@ jobs:
           {
             "apiUrl": "${API_URL}",
             "viewUrl": "${VIEW_URL}",
-            "stripePublishableKey": "${STRIPE_PUBLISHABLE_KEY}",
+            "paddleClientToken": "${PADDLE_CLIENT_TOKEN}",
             "sentryDsn": "${SENTRY_DSN}",
             "sentryEnvironment": "production",
             "sentryRelease": "${SENTRY_RELEASE}"

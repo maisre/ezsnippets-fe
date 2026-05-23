@@ -19,12 +19,12 @@ export class Account implements OnInit {
   showConfirm = false;
 
   private planNames: Record<string, string> = {
-    price_1T7oWwBCIaRH2MSXeaIC22S7: 'Basic Monthly',
-    price_1T7oWyBCIaRH2MSXa7dFawYC: 'Basic Yearly',
-    price_1T7oX0BCIaRH2MSX8fA87eOt: 'Pro Monthly',
-    price_1T7oX1BCIaRH2MSX9EqkbIi9: 'Pro Yearly',
-    price_1T7oX3BCIaRH2MSXeILwubbY: 'Enterprise Monthly',
-    price_1T7oX5BCIaRH2MSX4MpR0WmU: 'Enterprise Yearly',
+    pri_01kr05y9cq25yt75ey1ddkpger: 'Basic Monthly',
+    pri_01kr07scygf6jf4a2xbvra76y6: 'Basic Yearly',
+    pri_01kr07vbve5a770reznmza9hdq: 'Pro Monthly',
+    pri_01kr07vyv692rrj6gn8m57e683: 'Pro Yearly',
+    pri_01kr07xbjrdw0jztyfta1xfqre: 'Enterprise Monthly',
+    pri_01kr07xy7sty2xhwcqjgzny8x4: 'Enterprise Yearly',
   };
 
   ngOnInit() {

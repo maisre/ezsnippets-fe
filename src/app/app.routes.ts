@@ -10,7 +10,6 @@ import { Pages } from './pages/pages';
 import { PageEdit } from './page-edit/page-edit';
 import { Layouts } from './layouts/layouts';
 import { LayoutEdit } from './layout-edit/layout-edit';
-import { StripeTest } from './stripe-test/stripe-test';
 import { Account } from './account/account';
 import { CheckoutSuccess } from './checkout-success/checkout-success';
 import { NotFound } from './not-found/not-found';
@@ -31,6 +30,5 @@ export const routes: Routes = [
   { path: 'l/edit/:id', component: LayoutEdit, canActivate: [authGuard] },
   { path: 'layouts', component: Layouts, canActivate: [authGuard] },
   { path: 'account', component: Account, canActivate: [authGuard] },
-  { path: 'stripe', component: StripeTest, canActivate: [authGuard] },
   { path: '**', component: NotFound },
 ];
