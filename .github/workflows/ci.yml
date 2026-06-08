@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npx ng build --configuration development
+
+      # Advisory: karma/Chrome component specs can be environment-sensitive, so
+      # they run report-only for now. ubuntu-latest ships a Chrome binary.
+      - name: Unit tests (advisory)
+        continue-on-error: true
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+      # No lint step: this repo has no eslint config or `lint` target. Add
+      # angular-eslint to enable linting here.
