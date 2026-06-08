@@ -89,4 +89,10 @@ export class Pages implements OnInit {
   viewPage(pageId: string) {
     window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
   }
+
+  // Opens the ez-view content editor. The ez_session cookie (set at login,
+  // scoped to the shared domain) rides along on the navigation to authenticate.
+  editContent(pageId: string) {
+    window.open(`${runtimeConfig.viewUrl}/edit/page/${pageId}`, '_blank');
+  }
 }

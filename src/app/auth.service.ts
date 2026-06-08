@@ -31,18 +31,23 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  // withCredentials so the browser stores the ez_session cookie ez-api sets
+  // (used by the cross-subdomain ez-view editor). The SPA still uses the
+  // localStorage Bearer token for its own API calls.
   login(email: string, password: string) {
-    return this.http.post<{ access_token: string }>(`${runtimeConfig.apiUrl}/auth/login`, {
-      email,
-      password,
-    });
+    return this.http.post<{ access_token: string }>(
+      `${runtimeConfig.apiUrl}/auth/login`,
+      { email, password },
+      { withCredentials: true },
+    );
   }
 
   signup(email: string, password: string) {
-    return this.http.post<{ access_token: string }>(`${runtimeConfig.apiUrl}/auth/signup`, {
-      email,
-      password,
-    });
+    return this.http.post<{ access_token: string }>(
+      `${runtimeConfig.apiUrl}/auth/signup`,
+      { email, password },
+      { withCredentials: true },
+    );
   }
 
   forgotPassword(email: string) {
@@ -58,6 +63,8 @@ export class AuthService {
 
   logout(): void {
     this.removeToken();
-    this.http.post(`${runtimeConfig.apiUrl}/auth/logout`, {}).subscribe();
+    this.http
+      .post(`${runtimeConfig.apiUrl}/auth/logout`, {}, { withCredentials: true })
+      .subscribe();
   }
 }
