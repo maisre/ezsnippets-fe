@@ -5,7 +5,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  SENTRY_ORG: ez-snippet
+  SENTRY_ORG: ez-snippets
   SENTRY_PROJECT: ez-frontend
 
 jobs:

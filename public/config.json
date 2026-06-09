@@ -4,5 +4,6 @@
   "paddleClientToken": "test_1068ee991f1d93353a03b4f7d66",
   "sentryDsn": "",
   "sentryEnvironment": "development",
-  "sentryRelease": ""
+  "sentryRelease": "",
+  "sentryEnableDev": false
 }

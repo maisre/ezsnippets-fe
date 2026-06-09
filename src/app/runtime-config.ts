@@ -5,6 +5,7 @@ export interface RuntimeConfig {
   sentryDsn: string;
   sentryEnvironment: string;
   sentryRelease: string;
+  sentryEnableDev: boolean;
 }
 
 export const runtimeConfig: RuntimeConfig = {
@@ -14,6 +15,7 @@ export const runtimeConfig: RuntimeConfig = {
   sentryDsn: '',
   sentryEnvironment: '',
   sentryRelease: '',
+  sentryEnableDev: false,
 };
 
 export async function loadRuntimeConfig(): Promise<void> {

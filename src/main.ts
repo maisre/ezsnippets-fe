@@ -6,10 +6,17 @@ import { loadRuntimeConfig, runtimeConfig } from './app/runtime-config';
 
 loadRuntimeConfig()
   .then(() => {
-    if (runtimeConfig.sentryDsn) {
+    // In development, reporting is off unless sentryEnableDev is true in
+    // config.json — staging/prod set sentryEnvironment at deploy time and stay
+    // always on (the flag only applies to the development environment).
+    const environment = runtimeConfig.sentryEnvironment || 'development';
+    const sentryEnabled =
+      !!runtimeConfig.sentryDsn &&
+      (environment !== 'development' || runtimeConfig.sentryEnableDev);
+    if (sentryEnabled) {
       Sentry.init({
         dsn: runtimeConfig.sentryDsn,
-        environment: runtimeConfig.sentryEnvironment,
+        environment,
         release: runtimeConfig.sentryRelease,
         tracesSampleRate: 0.1,
         sendDefaultPii: false,
