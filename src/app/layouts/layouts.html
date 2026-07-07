@@ -52,7 +52,19 @@
       <span>{{ layout.name || layout.id }}</span>
       <div class="button-group">
         <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
+        <button (click)="duplicateLayout(layout.id)" class="dup-btn">Duplicate</button>
       </div>
     </li>
   </ul>
 </ng-container>
+
+<div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ usage?.hasPlan ? "You've reached your layout limit" : 'A plan is required' }}</h3>
+    <p>{{ limitMessage }}. Upgrade your plan to duplicate more layouts.</p>
+    <div class="modal-actions">
+      <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
+      <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
+    </div>
+  </div>
+</div>

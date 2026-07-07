@@ -1,23 +1,34 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PagesService } from '../pages.service';
 import { LayoutsService } from '../layouts.service';
+import { PlansService, PlanUsage } from '../plans.service';
 import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
 import { Page, Layout } from '../models';
 
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
+type ResourceKind = 'page' | 'layout';
+
+interface LimitModal {
+  kind: ResourceKind;
+  used: number;
+  max: number;
+}
+
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit {
   private pagesService = inject(PagesService);
   private layoutsService = inject(LayoutsService);
+  private plansService = inject(PlansService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -25,10 +36,25 @@ export class Dashboard implements OnInit {
 
   pages: Page[] = [];
   layouts: Layout[] = [];
+  usage: PlanUsage | null = null;
+
+  // Set when the user tries to duplicate/create while at their plan limit;
+  // drives the "upgrade" modal. Null when hidden.
+  limitModal: LimitModal | null = null;
+
+  // Set when the create modal is open; null when hidden. Backing fields for its
+  // form live below.
+  createModal: { kind: ResourceKind } | null = null;
+  newName = '';
+  newSiteName = '';
+  newDescription = '';
+  creating = false;
+  createError = '';
 
   ngOnInit() {
     this.loadPages();
     this.loadLayouts();
+    this.loadUsage();
   }
 
   loadPages() {
@@ -43,6 +69,114 @@ export class Dashboard implements OnInit {
       next: (data) => (this.layouts = data),
       error: (error) => console.error('Error fetching layouts:', error),
     });
+  }
+
+  loadUsage() {
+    this.plansService.getUsage().subscribe({
+      next: (data) => (this.usage = data),
+      error: (error) => console.error('Error fetching usage:', error),
+    });
+  }
+
+  // -1 (or a missing limit) means unlimited. Returns null when there's no plan
+  // or the limit is unlimited, so the template can hide the "used / max" badge.
+  get pageLimit(): number | null {
+    const max = this.usage?.limits?.maxPages;
+    return max == null || max === -1 ? null : max;
+  }
+
+  get layoutLimit(): number | null {
+    const max = this.usage?.limits?.maxLayouts;
+    return max == null || max === -1 ? null : max;
+  }
+
+  private atLimit(kind: ResourceKind): boolean {
+    // No plan blocks creation entirely; server echoes this via 403.
+    if (!this.usage?.hasPlan) return true;
+    const max = kind === 'page' ? this.pageLimit : this.layoutLimit;
+    if (max == null) return false; // unlimited
+    const used = kind === 'page' ? this.pages.length : this.layouts.length;
+    return used >= max;
+  }
+
+  private showLimitModal(kind: ResourceKind) {
+    const max = (kind === 'page' ? this.pageLimit : this.layoutLimit) ?? 0;
+    const used = kind === 'page' ? this.pages.length : this.layouts.length;
+    this.limitModal = { kind, used, max };
+  }
+
+  closeLimitModal() {
+    this.limitModal = null;
+  }
+
+  // Both the header "+ New" button and the create tile call this. If the user
+  // is at their limit we divert to the upgrade modal instead of opening the
+  // create form (consistent with duplicate).
+  openCreate(kind: ResourceKind) {
+    if (this.atLimit(kind)) {
+      this.showLimitModal(kind);
+      return;
+    }
+    this.newName = '';
+    this.newSiteName = '';
+    this.newDescription = '';
+    this.createError = '';
+    this.createModal = { kind };
+  }
+
+  closeCreateModal() {
+    this.createModal = null;
+  }
+
+  submitCreate() {
+    if (!this.createModal || !this.newName.trim() || this.creating) return;
+    const kind = this.createModal.kind;
+    this.creating = true;
+    this.createError = '';
+
+    const base = {
+      name: this.newName.trim(),
+      siteName: this.newSiteName.trim() || undefined,
+      description: this.newDescription.trim() || undefined,
+    };
+
+    if (kind === 'page') {
+      this.pagesService.createPage({ ...base, snippets: [] }).subscribe({
+        next: (created) => {
+          this.pages.push(created);
+          this.afterCreate();
+        },
+        error: (error) => this.onCreateError(error, 'page'),
+      });
+    } else {
+      this.layoutsService.createLayout(base).subscribe({
+        next: (created) => {
+          this.layouts.push(created);
+          this.afterCreate();
+        },
+        error: (error) => this.onCreateError(error, 'layout'),
+      });
+    }
+  }
+
+  private afterCreate() {
+    this.creating = false;
+    this.createModal = null;
+    this.loadUsage();
+  }
+
+  // A 403 means the server rejected on the plan limit (client usage was stale);
+  // swap the create modal for the upgrade modal. Anything else is a transient
+  // error shown inline so the user can retry.
+  private onCreateError(error: any, kind: ResourceKind) {
+    this.creating = false;
+    if (error?.status === 403) {
+      this.createModal = null;
+      this.showLimitModal(kind);
+    } else {
+      this.createError = 'Something went wrong. Please try again.';
+      console.error('Error creating:', error);
+    }
   }
 
   // Falls back to the placeholder if a thumbnail URL is set but fails to load
@@ -60,6 +194,44 @@ export class Dashboard implements OnInit {
 
   viewPage(pageId: string) {
     window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
+  }
+
+  // The duplicate button is always enabled. If the user is already at their
+  // plan limit we short-circuit to the upgrade modal instead of firing a
+  // doomed request; the server still enforces the limit (403), which we treat
+  // as the same "at limit" case in the error handler as a backstop.
+  duplicatePage(pageId: string) {
+    if (this.atLimit('page')) {
+      this.showLimitModal('page');
+      return;
+    }
+    this.pagesService.duplicatePage(pageId).subscribe({
+      next: (created) => {
+        this.pages.push(created);
+        this.loadUsage();
+      },
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal('page');
+        else console.error('Error duplicating page:', error);
+      },
+    });
+  }
+
+  duplicateLayout(layoutId: string) {
+    if (this.atLimit('layout')) {
+      this.showLimitModal('layout');
+      return;
+    }
+    this.layoutsService.duplicateLayout(layoutId).subscribe({
+      next: (created) => {
+        this.layouts.push(created);
+        this.loadUsage();
+      },
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal('layout');
+        else console.error('Error duplicating layout:', error);
+      },
+    });
   }
 
   // Mirrors the pages list: refresh the short-lived ez_session cookie, then

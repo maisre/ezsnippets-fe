@@ -54,7 +54,19 @@
         <button (click)="viewPage(page.id)" class="view-btn">View</button>
         <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
         <button (click)="editContent(page.id)" class="edit-btn">Edit Content</button>
+        <button (click)="duplicatePage(page.id)" class="dup-btn">Duplicate</button>
       </div>
     </li>
   </ul>
 </ng-container>
+
+<div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ usage?.hasPlan ? "You've reached your page limit" : 'A plan is required' }}</h3>
+    <p>{{ limitMessage }}. Upgrade your plan to duplicate more pages.</p>
+    <div class="modal-actions">
+      <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
+      <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
+    </div>
+  </div>
+</div>

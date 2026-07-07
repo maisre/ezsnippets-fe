@@ -56,6 +56,32 @@
   border-radius: 999px;
 }
 
+/* At-limit badge turns amber so users notice they're capped. */
+.count.at-limit {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* "+ New" header button, pushed to the far right of the section head. */
+.new-btn {
+  margin-left: auto;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
 /* Card Grid */
 .card-grid {
   display: grid;
@@ -78,6 +104,39 @@
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Create tile — a dashed "add" card that stretches to match sibling card
+   height (grid rows default to align stretch). Serves as the empty state too. */
+.create-card {
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 200px;
+  border: 2px dashed #ced4da;
+  box-shadow: none;
+  background: #fbfcfd;
+  color: #6c757d;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.create-card:hover {
+  border-color: #007bff;
+  color: #007bff;
+  background: #f5faff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.create-plus {
+  font-size: 2.75rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.create-label {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* Thumbnail — approximates a normal browser-window view (16:10) */
@@ -166,6 +225,25 @@
   box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
 }
 
+.dup-btn {
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dup-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Empty State */
 .empty {
   color: #6c757d;
@@ -209,4 +287,119 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Limit / upgrade modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  max-width: 420px;
+  width: 100%;
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.modal h3 {
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.modal p {
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+/* Create form inside the modal */
+.modal .field {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.modal label {
+  display: block;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.modal input[type='text'] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.modal input[type='text']:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-primary,
+.modal-secondary {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.modal-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #ffffff;
+  border: none;
+}
+
+.modal-primary:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.modal-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-secondary {
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.modal-secondary:hover {
+  background: #f8f9fa;
 }

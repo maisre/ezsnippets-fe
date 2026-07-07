@@ -80,6 +80,33 @@ export class Layouts implements OnInit {
     });
   }
 
+  // Shown when the user tries to duplicate while at their plan limit.
+  showLimitModal = false;
+
+  // Duplicate is always clickable; if the user is at their limit we surface the
+  // upgrade modal instead of firing a doomed request. canCreate already encodes
+  // the no-plan and at-limit cases. The server's 403 is handled as a backstop.
+  duplicateLayout(layoutId: string) {
+    if (!this.canCreate) {
+      this.showLimitModal = true;
+      return;
+    }
+    this.layoutsService.duplicateLayout(layoutId).subscribe({
+      next: (created) => {
+        this.layouts.push(created);
+        this.loadUsage();
+      },
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal = true;
+        else console.error('Error duplicating layout:', error);
+      },
+    });
+  }
+
+  closeLimitModal() {
+    this.showLimitModal = false;
+  }
+
   editLayout(layoutId: string) {
     this.router.navigate(['/l/edit', layoutId]);
   }

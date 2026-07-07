@@ -29,4 +29,8 @@ export class PagesService {
   customizePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/customize`, {});
   }
+
+  duplicatePage(pageId: string): Observable<Page> {
+    return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/duplicate`, {});
+  }
 }

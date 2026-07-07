@@ -33,4 +33,8 @@ export class LayoutsService {
   customizeLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/customize`, {});
   }
+
+  duplicateLayout(layoutId: string): Observable<Layout> {
+    return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/duplicate`, {});
+  }
 }

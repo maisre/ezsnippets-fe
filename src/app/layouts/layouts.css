@@ -248,5 +248,100 @@ li {
   animation: fadeInUp 0.3s ease-out;
 }
 
+/* Duplicate Button */
+.dup-btn {
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dup-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Limit / upgrade modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  max-width: 420px;
+  width: 100%;
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.modal h3 {
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  border: none;
+  padding: 0;
+}
+
+.modal p {
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-primary,
+.modal-secondary {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.modal-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #ffffff;
+  border: none;
+}
+
+.modal-primary:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.modal-secondary {
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.modal-secondary:hover {
+  background: #f8f9fa;
+}
+
 
 
