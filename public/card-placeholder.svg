@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-label="No preview available yet">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8f9fa"/>
+      <stop offset="1" stop-color="#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <!-- mock browser chrome -->
+  <rect x="280" y="250" width="1040" height="600" rx="20" fill="#ffffff" stroke="#dee2e6" stroke-width="3"/>
+  <rect x="280" y="250" width="1040" height="70" rx="20" fill="#f1f3f5"/>
+  <rect x="280" y="300" width="1040" height="20" fill="#f1f3f5"/>
+  <circle cx="320" cy="285" r="9" fill="#ced4da"/>
+  <circle cx="352" cy="285" r="9" fill="#ced4da"/>
+  <circle cx="384" cy="285" r="9" fill="#ced4da"/>
+  <!-- mock content lines -->
+  <rect x="340" y="380" width="520" height="34" rx="8" fill="#dee2e6"/>
+  <rect x="340" y="450" width="920" height="18" rx="6" fill="#e9ecef"/>
+  <rect x="340" y="490" width="880" height="18" rx="6" fill="#e9ecef"/>
+  <rect x="340" y="530" width="700" height="18" rx="6" fill="#e9ecef"/>
+  <rect x="340" y="610" width="300" height="60" rx="10" fill="#dee2e6"/>
+  <text x="800" y="790" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="500" fill="#adb5bd">Preview not generated yet</text>
+</svg>

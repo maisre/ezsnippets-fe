@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PagesService } from '../pages.service';
 import { PlansService, PlanUsage } from '../plans.service';
+import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
 import { Page } from '../models';
 
@@ -16,6 +17,7 @@ import { Page } from '../models';
 export class Pages implements OnInit {
   private pagesService = inject(PagesService);
   private plansService = inject(PlansService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   pages: Page[] = [];
   usage: PlanUsage | null = null;
@@ -90,9 +92,22 @@ export class Pages implements OnInit {
     window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
   }
 
-  // Opens the ez-view content editor. The ez_session cookie (set at login,
-  // scoped to the shared domain) rides along on the navigation to authenticate.
+  // Opens the ez-view content editor. The ez_session cookie (scoped to the
+  // shared domain) authenticates the editor, but it's short-lived — so we
+  // refresh it first, then point the tab at the editor. The tab is opened
+  // synchronously (preserving the click gesture so it isn't popup-blocked)
+  // and navigated once the refresh resolves; on failure we still open the
+  // editor, which falls back to its own sign-in flow.
   editContent(pageId: string) {
-    window.open(`${runtimeConfig.viewUrl}/edit/page/${pageId}`, '_blank');
+    const editorUrl = `${runtimeConfig.viewUrl}/edit/page/${pageId}`;
+    const tab = window.open('', '_blank');
+    const go = () => {
+      if (tab) tab.location.href = editorUrl;
+      else window.open(editorUrl, '_blank');
+    };
+    this.authService.refreshSessionCookie().subscribe({
+      next: go,
+      error: go,
+    });
   }
 }

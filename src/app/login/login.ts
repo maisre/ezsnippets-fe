@@ -35,7 +35,7 @@ export class Login {
         next: (response) => {
           this.isLoading = false;
           this.authService.setToken(response.access_token);
-          this.router.navigate(['/pages']);
+          this.router.navigate(['/dashboard']);
         },
         error: (error) => {
           this.isLoading = false;

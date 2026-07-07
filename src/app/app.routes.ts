@@ -11,6 +11,7 @@ import { PageEdit } from './page-edit/page-edit';
 import { Layouts } from './layouts/layouts';
 import { LayoutEdit } from './layout-edit/layout-edit';
 import { Account } from './account/account';
+import { Dashboard } from './dashboard/dashboard';
 import { CheckoutSuccess } from './checkout-success/checkout-success';
 import { NotFound } from './not-found/not-found';
 import { authGuard } from './auth.guard';
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'signup', component: Signup },
   { path: 'forgot-password', component: ForgotPassword },
   { path: 'reset-password', component: ResetPassword },
+  { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
   { path: 'snippets', component: Snippets, canActivate: [authGuard] },
   { path: 'p/edit/:id', component: PageEdit, canActivate: [authGuard] },
   { path: 'pages', component: Pages, canActivate: [authGuard] },

@@ -1,0 +1,66 @@
+<header class="dashboard-header">
+  <h1>Dashboard</h1>
+  <p class="subtitle">Your pages and layouts at a glance.</p>
+</header>
+
+<section class="dashboard-section">
+  <div class="section-head">
+    <h2>Pages</h2>
+    <span class="count">{{ pages.length }}</span>
+  </div>
+
+  <div class="card-grid" *ngIf="pages.length; else noPages">
+    <article class="card" *ngFor="let page of pages">
+      <div class="thumb">
+        <img
+          [src]="page.thumbnailUrl || placeholder"
+          (error)="onThumbnailError($event)"
+          [alt]="(page.name || 'Page') + ' preview'"
+          loading="lazy"
+        />
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">{{ page.name || page.id }}</h3>
+        <p class="card-sub" *ngIf="page.siteName">{{ page.siteName }}</p>
+        <div class="button-group">
+          <button (click)="viewPage(page.id)" class="view-btn">View</button>
+          <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
+          <button (click)="editContent(page.id)" class="edit-btn">Edit Content</button>
+        </div>
+      </div>
+    </article>
+  </div>
+  <ng-template #noPages>
+    <p class="empty">No pages yet. Head to <a routerLink="/pages">Pages</a> to create one.</p>
+  </ng-template>
+</section>
+
+<section class="dashboard-section">
+  <div class="section-head">
+    <h2>Layouts</h2>
+    <span class="count">{{ layouts.length }}</span>
+  </div>
+
+  <div class="card-grid" *ngIf="layouts.length; else noLayouts">
+    <article class="card" *ngFor="let layout of layouts">
+      <div class="thumb">
+        <img
+          [src]="layout.thumbnailUrl || placeholder"
+          (error)="onThumbnailError($event)"
+          [alt]="(layout.name || 'Layout') + ' preview'"
+          loading="lazy"
+        />
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">{{ layout.name || layout.id }}</h3>
+        <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
+        <div class="button-group">
+          <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
+        </div>
+      </div>
+    </article>
+  </div>
+  <ng-template #noLayouts>
+    <p class="empty">No layouts yet. Head to <a routerLink="/layouts">Layouts</a> to create one.</p>
+  </ng-template>
+</section>

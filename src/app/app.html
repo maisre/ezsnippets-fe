@@ -4,6 +4,7 @@
   </div>
   <div class="nav-links">
     @if (isAuthenticated$ | async) {
+      <a routerLink="/dashboard" class="nav-link">Dashboard</a>
       <a routerLink="/pages" class="nav-link">Pages</a>
       <a routerLink="/layouts" class="nav-link">Layouts</a>
       <a routerLink="/account" class="nav-link">Account</a>

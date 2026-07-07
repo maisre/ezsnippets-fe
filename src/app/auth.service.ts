@@ -50,6 +50,18 @@ export class AuthService {
     );
   }
 
+  // Slides the cross-domain ez_session cookie forward (re-minted from the
+  // Bearer token the interceptor attaches). Called right before opening the
+  // ez-view editor so its cookie is fresh on arrival, even if the prior one
+  // had lapsed. withCredentials so the browser stores the new Set-Cookie.
+  refreshSessionCookie() {
+    return this.http.post(
+      `${runtimeConfig.apiUrl}/auth/session-cookie`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
   forgotPassword(email: string) {
     return this.http.post(`${runtimeConfig.apiUrl}/auth/forgot-password`, { email });
   }

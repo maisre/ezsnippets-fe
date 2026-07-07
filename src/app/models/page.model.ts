@@ -10,6 +10,8 @@ export interface Page {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** URL of the ez-view preview screenshot, populated by the ez-background job. */
+  thumbnailUrl?: string;
 }
 
 export interface CreatePageDto {
