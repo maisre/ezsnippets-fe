@@ -8,10 +8,10 @@
     <div><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</div>
     <button
       class="customize-button"
-      [disabled]="customizing || isAiCustomized()"
+      [disabled]="customizing"
       (click)="customize()"
     >
-      {{ customizing ? 'Customizing...' : isAiCustomized() ? 'AI Customized' : 'Customize with AI' }}
+      {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize with AI' : 'Customize with AI' }}
     </button>
   </div>
 

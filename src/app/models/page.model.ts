@@ -10,6 +10,8 @@ export interface Page {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Which text variant the page renders (defaults to 'generic' server-side). */
+  textVariant?: 'lorem' | 'generic' | 'customized';
   /** URL of the ez-view preview screenshot, populated by the ez-background job. */
   thumbnailUrl?: string;
 }
