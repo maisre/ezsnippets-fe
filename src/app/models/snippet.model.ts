@@ -13,6 +13,7 @@ export interface SnippetOverride {
   htmlOverride: {};
   jsOverride: string;
   textReplacementOverride?: Array<{ token: string; replacement: string }>;
+  imageReplacementOverride?: Array<{ token: string; replacement: string }>;
   aiCustomized?: boolean;
   type?: string;
   tags?: string[];
