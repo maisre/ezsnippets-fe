@@ -340,3 +340,62 @@
   font-size: 0.875rem;
   margin: 0 0 0.75rem;
 }
+
+/* The two AI actions sit together; text and images are separate operations
+   with separate server calls, so they read as a pair rather than one button. */
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.customize-button.images {
+  background: #6f42c1;
+}
+
+.customize-button.images:hover:not(:disabled) {
+  background: #5a32a3;
+}
+
+.image-direction {
+  margin-top: 0.75rem;
+}
+
+.direction-toggle {
+  background: none;
+  border: none;
+  padding: 0.15rem 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: #868e96;
+  cursor: pointer;
+}
+
+.direction-toggle:hover {
+  color: #495057;
+}
+
+.direction-field {
+  margin-top: 0.4rem;
+}
+
+.direction-field input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d5d8dd;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.direction-field input:focus {
+  outline: 2px solid #2f6feb;
+  outline-offset: -1px;
+  border-color: #2f6feb;
+}
+
+.direction-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: #868e96;
+}

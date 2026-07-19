@@ -42,6 +42,20 @@ export class PagesService {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/customize`, {});
   }
 
+  /**
+   * Fill the page's image slots with AI-chosen stock photos. Separate from
+   * customizePage so re-running text never re-runs images.
+   */
+  customizePageImages(
+    pageId: string,
+    options: { direction?: string; replaceExisting?: boolean } = {},
+  ): Observable<Page> {
+    return this.http.post<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/customize-images`,
+      options,
+    );
+  }
+
   duplicatePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/duplicate`, {});
   }

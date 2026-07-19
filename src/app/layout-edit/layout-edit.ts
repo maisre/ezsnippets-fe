@@ -48,6 +48,14 @@ export class LayoutEdit implements OnInit {
   savingDetails = false;
   detailsError = '';
 
+  // Stock-image population. Kept separate from `customizing` so the two AI
+  // actions can't be mistaken for one, and so re-running text never re-runs
+  // images (each is its own OpenAI call server-side).
+  findingImages = false;
+  imagesError = '';
+  imageDirection = '';
+  showImageDirection = false;
+
   ngOnInit() {
     this.layoutId = this.route.snapshot.paramMap.get('id');
     if (this.layoutId) {
@@ -294,6 +302,51 @@ export class LayoutEdit implements OnInit {
 
   trackBySubPageIndex(index: number): number {
     return index;
+  }
+
+  /** True once any snippet in the layout has had its images auto-populated. */
+  hasAiImages(): boolean {
+    const refs: any[] = [];
+    if ((this.layout as any)?.nav) refs.push((this.layout as any).nav);
+    if ((this.layout as any)?.footer) refs.push((this.layout as any).footer);
+    (this.layout?.subPages || []).forEach((sp: any) => {
+      (sp.snippets || []).forEach((s: any) => refs.push(s));
+    });
+    return refs.some((r) => r?.aiImagesPopulated === true);
+  }
+
+  /**
+   * Ask the server to fill this layout's image slots with stock photos. By
+   * default only empty slots are filled, so images picked by hand survive;
+   * once images exist the button offers to replace them instead.
+   */
+  findImages(replaceExisting = false) {
+    if (!this.layoutId || this.findingImages) return;
+
+    this.findingImages = true;
+    this.imagesError = '';
+
+    this.layoutsService
+      .customizeLayoutImages(this.layoutId, {
+        direction: this.imageDirection.trim() || undefined,
+        replaceExisting,
+      })
+      .subscribe({
+        next: (data) => {
+          this.layout = data;
+          this.findingImages = false;
+        },
+        error: (error) => {
+          this.findingImages = false;
+          // 401 here means the Shutterstock token is missing server-side, which
+          // is a config problem rather than anything the user can fix.
+          this.imagesError =
+            error?.status === 401
+              ? 'Image search is not configured. Check the server settings.'
+              : 'Could not find images. Please try again.';
+          console.error('Error finding images:', error);
+        },
+      });
   }
 
   private seedDetails() {

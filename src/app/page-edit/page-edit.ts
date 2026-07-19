@@ -44,6 +44,14 @@ export class PageEdit implements OnInit {
   savingDetails = false;
   detailsError = '';
 
+  // Stock-image population. Kept separate from `customizing` so the two AI
+  // actions can't be mistaken for one, and so re-running text never re-runs
+  // images (each is its own OpenAI call server-side).
+  findingImages = false;
+  imagesError = '';
+  imageDirection = '';
+  showImageDirection = false;
+
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
@@ -197,6 +205,45 @@ export class PageEdit implements OnInit {
 
   trackBySnippetId(index: number, snippet: SnippetOverride): string {
     return snippet.id || index.toString();
+  }
+
+  /** True once any snippet on the page has had its images auto-populated. */
+  hasAiImages(): boolean {
+    return (this.page?.snippets || []).some((s) => s.aiImagesPopulated === true);
+  }
+
+  /**
+   * Ask the server to fill this page's image slots with stock photos. By
+   * default only empty slots are filled, so images picked by hand survive;
+   * once images exist the button offers to replace them instead.
+   */
+  findImages(replaceExisting = false) {
+    if (!this.pageId || this.findingImages) return;
+
+    this.findingImages = true;
+    this.imagesError = '';
+
+    this.pagesService
+      .customizePageImages(this.pageId, {
+        direction: this.imageDirection.trim() || undefined,
+        replaceExisting,
+      })
+      .subscribe({
+        next: (data) => {
+          this.page = data;
+          this.findingImages = false;
+        },
+        error: (error) => {
+          this.findingImages = false;
+          // 401 here means the Shutterstock token is missing server-side, which
+          // is a config problem rather than anything the user can fix.
+          this.imagesError =
+            error?.status === 401
+              ? 'Image search is not configured. Check the server settings.'
+              : 'Could not find images. Please try again.';
+          console.error('Error finding images:', error);
+        },
+      });
   }
 
   private seedDetails() {

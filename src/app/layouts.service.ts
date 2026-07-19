@@ -46,6 +46,20 @@ export class LayoutsService {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/customize`, {});
   }
 
+  /**
+   * Fill the layout's image slots with AI-chosen stock photos. Separate from
+   * customizeLayout so re-running text never re-runs images.
+   */
+  customizeLayoutImages(
+    layoutId: string,
+    options: { direction?: string; replaceExisting?: boolean } = {},
+  ): Observable<Layout> {
+    return this.http.post<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/customize-images`,
+      options,
+    );
+  }
+
   duplicateLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/duplicate`, {});
   }

@@ -47,15 +47,51 @@
 
     <div class="detail-meta">
       <span><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</span>
+      <div class="ai-actions">
+        <button
+          type="button"
+          class="customize-button"
+          [disabled]="customizing || findingImages"
+          (click)="customize()"
+        >
+          {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize text' : 'Customize text with AI' }}
+        </button>
+        <button
+          type="button"
+          class="customize-button images"
+          [disabled]="customizing || findingImages"
+          (click)="findImages(hasAiImages())"
+        >
+          {{ findingImages ? 'Finding images...' : hasAiImages() ? 'Replace images with AI' : 'Find images with AI' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="image-direction">
       <button
         type="button"
-        class="customize-button"
-        [disabled]="customizing"
-        (click)="customize()"
+        class="direction-toggle"
+        [attr.aria-expanded]="showImageDirection"
+        (click)="showImageDirection = !showImageDirection"
       >
-        {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize with AI' : 'Customize with AI' }}
+        {{ showImageDirection ? '▾' : '▸' }} Art direction (optional)
       </button>
+      <div class="direction-field" *ngIf="showImageDirection">
+        <input
+          id="imageDirection"
+          name="imageDirection"
+          type="text"
+          [(ngModel)]="imageDirection"
+          placeholder="e.g. warm natural light, no people"
+        />
+        <p class="direction-hint">
+          Guides the style of the images we search for. Queries are written from your
+          description, so leave this blank unless you want a specific look.
+        </p>
+      </div>
     </div>
+
+    <p class="form-error" *ngIf="imagesError">{{ imagesError }}</p>
   </form>
 
   <div class="drag-drop-container">
