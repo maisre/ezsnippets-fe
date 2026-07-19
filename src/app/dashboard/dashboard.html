@@ -9,6 +9,14 @@
     <span class="count" [class.at-limit]="pageLimit !== null && activePages.length >= pageLimit">
       {{ activePages.length }}<ng-container *ngIf="pageLimit !== null"> / {{ pageLimit }}</ng-container>
     </span>
+    <button
+      class="archived-link"
+      *ngIf="archivedPages.length"
+      [attr.aria-expanded]="showArchivedPages"
+      (click)="showArchivedPages = !showArchivedPages"
+    >
+      {{ archivedPages.length }} archived
+    </button>
     <button class="new-btn" (click)="openCreate('page')">+ New Page</button>
   </div>
 
@@ -50,14 +58,11 @@
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="archivedPages.length">
-    <button class="archived-toggle" (click)="showArchivedPages = !showArchivedPages">
-      {{ showArchivedPages ? '▾' : '▸' }} Archived ({{ archivedPages.length }})
-    </button>
-    <p class="archived-hint" *ngIf="showArchivedPages">
+  <div class="archived-block" *ngIf="showArchivedPages && archivedPages.length">
+    <p class="archived-hint">
       Archived pages don't count toward your plan and are offline. Restore one to bring it back.
     </p>
-    <div class="card-grid" *ngIf="showArchivedPages">
+    <div class="card-grid">
       <article class="card archived" *ngFor="let page of archivedPages">
         <div class="thumb">
           <img
@@ -93,6 +98,14 @@
     <span class="count" [class.at-limit]="layoutLimit !== null && activeLayouts.length >= layoutLimit">
       {{ activeLayouts.length }}<ng-container *ngIf="layoutLimit !== null"> / {{ layoutLimit }}</ng-container>
     </span>
+    <button
+      class="archived-link"
+      *ngIf="archivedLayouts.length"
+      [attr.aria-expanded]="showArchivedLayouts"
+      (click)="showArchivedLayouts = !showArchivedLayouts"
+    >
+      {{ archivedLayouts.length }} archived
+    </button>
     <button class="new-btn" (click)="openCreate('layout')">+ New Layout</button>
   </div>
 
@@ -132,14 +145,11 @@
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="archivedLayouts.length">
-    <button class="archived-toggle" (click)="showArchivedLayouts = !showArchivedLayouts">
-      {{ showArchivedLayouts ? '▾' : '▸' }} Archived ({{ archivedLayouts.length }})
-    </button>
-    <p class="archived-hint" *ngIf="showArchivedLayouts">
+  <div class="archived-block" *ngIf="showArchivedLayouts && archivedLayouts.length">
+    <p class="archived-hint">
       Archived layouts don't count toward your plan. Restore one to bring it back.
     </p>
-    <div class="card-grid" *ngIf="showArchivedLayouts">
+    <div class="card-grid">
       <article class="card archived" *ngFor="let layout of archivedLayouts">
         <div class="thumb">
           <img

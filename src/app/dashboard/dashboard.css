@@ -425,24 +425,42 @@
   cursor: not-allowed;
 }
 
-/* Archived pages/layouts: collapsed by default under each section's grid. */
+/* Archived pages/layouts: collapsed by default, revealed from a quiet link in
+   the section header. Deliberately styled as metadata sitting alongside the
+   count badge rather than as an action competing with "+ New". */
 .archived-block {
   margin-top: 1.5rem;
 }
 
-.archived-toggle {
+.archived-link {
   background: none;
   border: none;
-  padding: 0.25rem 0;
+  padding: 0.15rem 0;
   font: inherit;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #6c757d;
+  font-size: 0.8rem;
+  color: #868e96;
   cursor: pointer;
 }
 
-.archived-toggle:hover {
-  color: #2c3e50;
+/* Decorative separator from the count badge; not read out as content.
+   inline-block keeps the hover underline off it — text-decoration propagates
+   into inline descendants but is not drawn through atomic inline boxes. */
+.archived-link::before {
+  content: '·';
+  display: inline-block;
+  margin-right: 0.4rem;
+}
+
+.archived-link:hover,
+.archived-link[aria-expanded='true'] {
+  color: #495057;
+  text-decoration: underline;
+}
+
+.archived-link:focus-visible {
+  outline: 2px solid #2f6feb;
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 .archived-hint {
