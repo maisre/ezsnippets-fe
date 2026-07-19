@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
+import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { PagesService } from '../pages.service';
 import { LayoutsService } from '../layouts.service';
 import { PlansService, PlanUsage } from '../plans.service';
@@ -19,9 +21,15 @@ interface LimitModal {
   max: number;
 }
 
+interface DeleteModal {
+  kind: ResourceKind;
+  id: string;
+  name: string;
+}
+
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, OverflowMenu, CdkMenu, CdkMenuItem],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -51,6 +59,15 @@ export class Dashboard implements OnInit {
   creating = false;
   createError = '';
 
+  // Set when the user picks Delete from an overflow menu; null when hidden.
+  deleteModal: DeleteModal | null = null;
+  deleting = false;
+  deleteError = '';
+
+  // Archived items are hidden behind a toggle so they don't crowd the grids.
+  showArchivedPages = false;
+  showArchivedLayouts = false;
+
   ngOnInit() {
     this.loadPages();
     this.loadLayouts();
@@ -78,6 +95,25 @@ export class Dashboard implements OnInit {
     });
   }
 
+  // GET /pages and /layouts return archived items too, so every "how many am I
+  // using" calculation has to go through these rather than the raw arrays —
+  // archived items deliberately don't count toward the plan limit.
+  get activePages(): Page[] {
+    return this.pages.filter((p) => p.status !== 'archived');
+  }
+
+  get archivedPages(): Page[] {
+    return this.pages.filter((p) => p.status === 'archived');
+  }
+
+  get activeLayouts(): Layout[] {
+    return this.layouts.filter((l) => l.status !== 'archived');
+  }
+
+  get archivedLayouts(): Layout[] {
+    return this.layouts.filter((l) => l.status === 'archived');
+  }
+
   // -1 (or a missing limit) means unlimited. Returns null when there's no plan
   // or the limit is unlimited, so the template can hide the "used / max" badge.
   get pageLimit(): number | null {
@@ -95,13 +131,15 @@ export class Dashboard implements OnInit {
     if (!this.usage?.hasPlan) return true;
     const max = kind === 'page' ? this.pageLimit : this.layoutLimit;
     if (max == null) return false; // unlimited
-    const used = kind === 'page' ? this.pages.length : this.layouts.length;
+    const used =
+      kind === 'page' ? this.activePages.length : this.activeLayouts.length;
     return used >= max;
   }
 
   private showLimitModal(kind: ResourceKind) {
     const max = (kind === 'page' ? this.pageLimit : this.layoutLimit) ?? 0;
-    const used = kind === 'page' ? this.pages.length : this.layouts.length;
+    const used =
+      kind === 'page' ? this.activePages.length : this.activeLayouts.length;
     this.limitModal = { kind, used, max };
   }
 
@@ -249,5 +287,93 @@ export class Dashboard implements OnInit {
 
   editLayout(layoutId: string) {
     this.router.navigate(['/l/edit', layoutId]);
+  }
+
+  // Archiving frees a plan slot and takes the page offline in ez-view; the
+  // item stays in `pages` and moves to the Archived section via its status.
+  archivePage(pageId: string) {
+    this.pagesService.archivePage(pageId).subscribe({
+      next: (updated) => this.replacePage(updated),
+      error: (error) => console.error('Error archiving page:', error),
+    });
+  }
+
+  // Restoring re-occupies a plan slot, so the server may reject it with a 403;
+  // treat that like any other at-limit case.
+  restorePage(pageId: string) {
+    this.pagesService.restorePage(pageId).subscribe({
+      next: (updated) => this.replacePage(updated),
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal('page');
+        else console.error('Error restoring page:', error);
+      },
+    });
+  }
+
+  archiveLayout(layoutId: string) {
+    this.layoutsService.archiveLayout(layoutId).subscribe({
+      next: (updated) => this.replaceLayout(updated),
+      error: (error) => console.error('Error archiving layout:', error),
+    });
+  }
+
+  restoreLayout(layoutId: string) {
+    this.layoutsService.restoreLayout(layoutId).subscribe({
+      next: (updated) => this.replaceLayout(updated),
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal('layout');
+        else console.error('Error restoring layout:', error);
+      },
+    });
+  }
+
+  private replacePage(updated: Page) {
+    this.pages = this.pages.map((p) => (p.id === updated.id ? updated : p));
+    this.loadUsage();
+  }
+
+  private replaceLayout(updated: Layout) {
+    this.layouts = this.layouts.map((l) => (l.id === updated.id ? updated : l));
+    this.loadUsage();
+  }
+
+  openDelete(kind: ResourceKind, id: string, name: string) {
+    this.deleteError = '';
+    this.deleteModal = { kind, id, name };
+  }
+
+  closeDeleteModal() {
+    if (this.deleting) return;
+    this.deleteModal = null;
+  }
+
+  confirmDelete() {
+    if (!this.deleteModal || this.deleting) return;
+    const { kind, id } = this.deleteModal;
+    this.deleting = true;
+    this.deleteError = '';
+
+    const onSuccess = () => {
+      if (kind === 'page') {
+        this.pages = this.pages.filter((p) => p.id !== id);
+      } else {
+        this.layouts = this.layouts.filter((l) => l.id !== id);
+      }
+      this.deleting = false;
+      this.deleteModal = null;
+      this.loadUsage();
+    };
+
+    const onError = (error: any) => {
+      this.deleting = false;
+      this.deleteError = 'Something went wrong. Please try again.';
+      console.error(`Error deleting ${kind}:`, error);
+    };
+
+    const request =
+      kind === 'page'
+        ? this.pagesService.deletePage(id)
+        : this.layoutsService.deleteLayout(id);
+    request.subscribe({ next: onSuccess, error: onError });
   }
 }

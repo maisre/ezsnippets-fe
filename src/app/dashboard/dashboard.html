@@ -6,14 +6,14 @@
 <section class="dashboard-section">
   <div class="section-head">
     <h2>Pages</h2>
-    <span class="count" [class.at-limit]="pageLimit !== null && pages.length >= pageLimit">
-      {{ pages.length }}<ng-container *ngIf="pageLimit !== null"> / {{ pageLimit }}</ng-container>
+    <span class="count" [class.at-limit]="pageLimit !== null && activePages.length >= pageLimit">
+      {{ activePages.length }}<ng-container *ngIf="pageLimit !== null"> / {{ pageLimit }}</ng-container>
     </span>
     <button class="new-btn" (click)="openCreate('page')">+ New Page</button>
   </div>
 
   <div class="card-grid">
-    <article class="card" *ngFor="let page of pages">
+    <article class="card" *ngFor="let page of activePages">
       <div class="thumb">
         <img
           [src]="page.thumbnailUrl || placeholder"
@@ -29,7 +29,17 @@
           <button (click)="viewPage(page.id)" class="view-btn">View</button>
           <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
           <button (click)="editContent(page.id)" class="edit-btn">Edit Content</button>
-          <button (click)="duplicatePage(page.id)" class="dup-btn">Duplicate</button>
+          <ng-template #pageMenu>
+            <div class="overflow-menu" cdkMenu>
+              <button cdkMenuItem (click)="duplicatePage(page.id)">Duplicate</button>
+              <button cdkMenuItem (click)="archivePage(page.id)">Archive</button>
+              <div class="menu-separator"></div>
+              <button cdkMenuItem class="danger" (click)="openDelete('page', page.id, page.name || 'this page')">
+                Delete
+              </button>
+            </div>
+          </ng-template>
+          <app-overflow-menu [menu]="pageMenu" [label]="'Actions for ' + (page.name || 'page')" />
         </div>
       </div>
     </article>
@@ -39,19 +49,55 @@
       <span class="create-label">New Page</span>
     </button>
   </div>
+
+  <div class="archived-block" *ngIf="archivedPages.length">
+    <button class="archived-toggle" (click)="showArchivedPages = !showArchivedPages">
+      {{ showArchivedPages ? '▾' : '▸' }} Archived ({{ archivedPages.length }})
+    </button>
+    <p class="archived-hint" *ngIf="showArchivedPages">
+      Archived pages don't count toward your plan and are offline. Restore one to bring it back.
+    </p>
+    <div class="card-grid" *ngIf="showArchivedPages">
+      <article class="card archived" *ngFor="let page of archivedPages">
+        <div class="thumb">
+          <img
+            [src]="page.thumbnailUrl || placeholder"
+            (error)="onThumbnailError($event)"
+            [alt]="(page.name || 'Page') + ' preview'"
+            loading="lazy"
+          />
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ page.name || page.id }}</h3>
+          <p class="card-sub" *ngIf="page.siteName">{{ page.siteName }}</p>
+          <div class="button-group">
+            <button (click)="restorePage(page.id)" class="edit-btn">Restore</button>
+            <ng-template #archivedPageMenu>
+              <div class="overflow-menu" cdkMenu>
+                <button cdkMenuItem class="danger" (click)="openDelete('page', page.id, page.name || 'this page')">
+                  Delete
+                </button>
+              </div>
+            </ng-template>
+            <app-overflow-menu [menu]="archivedPageMenu" [label]="'Actions for ' + (page.name || 'page')" />
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
 </section>
 
 <section class="dashboard-section">
   <div class="section-head">
     <h2>Layouts</h2>
-    <span class="count" [class.at-limit]="layoutLimit !== null && layouts.length >= layoutLimit">
-      {{ layouts.length }}<ng-container *ngIf="layoutLimit !== null"> / {{ layoutLimit }}</ng-container>
+    <span class="count" [class.at-limit]="layoutLimit !== null && activeLayouts.length >= layoutLimit">
+      {{ activeLayouts.length }}<ng-container *ngIf="layoutLimit !== null"> / {{ layoutLimit }}</ng-container>
     </span>
     <button class="new-btn" (click)="openCreate('layout')">+ New Layout</button>
   </div>
 
   <div class="card-grid">
-    <article class="card" *ngFor="let layout of layouts">
+    <article class="card" *ngFor="let layout of activeLayouts">
       <div class="thumb">
         <img
           [src]="layout.thumbnailUrl || placeholder"
@@ -65,7 +111,17 @@
         <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
         <div class="button-group">
           <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
-          <button (click)="duplicateLayout(layout.id)" class="dup-btn">Duplicate</button>
+          <ng-template #layoutMenu>
+            <div class="overflow-menu" cdkMenu>
+              <button cdkMenuItem (click)="duplicateLayout(layout.id)">Duplicate</button>
+              <button cdkMenuItem (click)="archiveLayout(layout.id)">Archive</button>
+              <div class="menu-separator"></div>
+              <button cdkMenuItem class="danger" (click)="openDelete('layout', layout.id, layout.name || 'this layout')">
+                Delete
+              </button>
+            </div>
+          </ng-template>
+          <app-overflow-menu [menu]="layoutMenu" [label]="'Actions for ' + (layout.name || 'layout')" />
         </div>
       </div>
     </article>
@@ -74,6 +130,42 @@
       <span class="create-plus">+</span>
       <span class="create-label">New Layout</span>
     </button>
+  </div>
+
+  <div class="archived-block" *ngIf="archivedLayouts.length">
+    <button class="archived-toggle" (click)="showArchivedLayouts = !showArchivedLayouts">
+      {{ showArchivedLayouts ? '▾' : '▸' }} Archived ({{ archivedLayouts.length }})
+    </button>
+    <p class="archived-hint" *ngIf="showArchivedLayouts">
+      Archived layouts don't count toward your plan. Restore one to bring it back.
+    </p>
+    <div class="card-grid" *ngIf="showArchivedLayouts">
+      <article class="card archived" *ngFor="let layout of archivedLayouts">
+        <div class="thumb">
+          <img
+            [src]="layout.thumbnailUrl || placeholder"
+            (error)="onThumbnailError($event)"
+            [alt]="(layout.name || 'Layout') + ' preview'"
+            loading="lazy"
+          />
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ layout.name || layout.id }}</h3>
+          <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
+          <div class="button-group">
+            <button (click)="restoreLayout(layout.id)" class="edit-btn">Restore</button>
+            <ng-template #archivedLayoutMenu>
+              <div class="overflow-menu" cdkMenu>
+                <button cdkMenuItem class="danger" (click)="openDelete('layout', layout.id, layout.name || 'this layout')">
+                  Delete
+                </button>
+              </div>
+            </ng-template>
+            <app-overflow-menu [menu]="archivedLayoutMenu" [label]="'Actions for ' + (layout.name || 'layout')" />
+          </div>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 
@@ -115,6 +207,23 @@
     <div class="modal-actions">
       <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
       <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="deleteModal" (click)="closeDeleteModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Delete {{ deleteModal.kind === 'page' ? 'page' : 'layout' }}?</h3>
+    <p>
+      "{{ deleteModal.name }}" will be removed from your dashboard. If you only want to free up a
+      plan slot and keep it, archive it instead.
+    </p>
+    <p class="form-error" *ngIf="deleteError">{{ deleteError }}</p>
+    <div class="modal-actions">
+      <button class="modal-secondary" (click)="closeDeleteModal()" [disabled]="deleting">Cancel</button>
+      <button class="modal-danger" (click)="confirmDelete()" [disabled]="deleting">
+        {{ deleting ? 'Deleting…' : 'Delete' }}
+      </button>
     </div>
   </div>
 </div>

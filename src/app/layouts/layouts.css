@@ -345,3 +345,66 @@ li {
 
 
 
+
+.modal-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-danger {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: #c0392b;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.modal-danger:hover:not(:disabled) {
+  background: #a5321f;
+}
+
+.modal-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #c0392b;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+/* Archived items: collapsed by default beneath the main list. */
+.archived-block {
+  margin-top: 1.5rem;
+}
+
+.archived-toggle {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+.archived-toggle:hover {
+  color: #2c3e50;
+}
+
+.archived-hint {
+  margin: 0.35rem 0 0.85rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+li.archived > span:first-child {
+  color: #6c757d;
+}

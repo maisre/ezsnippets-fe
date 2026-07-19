@@ -14,6 +14,12 @@ export interface Page {
   textVariant?: 'lorem' | 'generic' | 'customized';
   /** URL of the ez-view preview screenshot, populated by the ez-background job. */
   thumbnailUrl?: string;
+  /**
+   * Archived pages don't count toward the plan limit and stop rendering in
+   * ez-view, but stay listed here and can be restored. Defaults to 'active'
+   * server-side; absent on documents created before archiving existed.
+   */
+  status?: 'active' | 'archived';
 }
 
 export interface CreatePageDto {

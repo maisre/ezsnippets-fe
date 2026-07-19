@@ -368,7 +368,8 @@
 }
 
 .modal-primary,
-.modal-secondary {
+.modal-secondary,
+.modal-danger {
   padding: 0.6rem 1.25rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -402,4 +403,60 @@
 
 .modal-secondary:hover {
   background: #f8f9fa;
+}
+
+.modal-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-danger {
+  background: #c0392b;
+  color: #ffffff;
+  border: none;
+}
+
+.modal-danger:hover:not(:disabled) {
+  background: #a5321f;
+}
+
+.modal-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Archived pages/layouts: collapsed by default under each section's grid. */
+.archived-block {
+  margin-top: 1.5rem;
+}
+
+.archived-toggle {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+.archived-toggle:hover {
+  color: #2c3e50;
+}
+
+.archived-hint {
+  margin: 0.35rem 0 0.85rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Muted treatment so archived cards read as inactive next to live ones. */
+.card.archived {
+  opacity: 0.75;
+  background: #fafbfc;
+}
+
+.card.archived .thumb img {
+  filter: grayscale(1);
 }

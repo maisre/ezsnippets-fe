@@ -21,6 +21,12 @@ export interface Layout {
   textVariant?: 'lorem' | 'generic' | 'customized';
   /** URL of the ez-view preview screenshot, populated by the ez-background job. */
   thumbnailUrl?: string;
+  /**
+   * Archived layouts don't count toward the plan limit but stay listed here and
+   * can be restored. Defaults to 'active' server-side; absent on documents
+   * created before archiving existed.
+   */
+  status?: 'active' | 'archived';
 }
 
 export interface CreateLayoutDto {

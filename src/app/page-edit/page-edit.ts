@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   DragDropModule,
@@ -14,7 +15,7 @@ import { Page, SnippetOverride, SnippetFilters } from '../models';
 
 @Component({
   selector: 'app-page-edit',
-  imports: [CommonModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './page-edit.html',
   styleUrl: './page-edit.css',
 })
@@ -36,6 +37,13 @@ export class PageEdit implements OnInit {
   activeTypeFilter = '';
   activeTagFilter = '';
 
+  // Editable name/siteName/description, seeded from the loaded page. Kept
+  // separate from `page` so Cancel can discard edits and `detailsDirty` can
+  // compare against what's actually saved.
+  details = { name: '', siteName: '', description: '' };
+  savingDetails = false;
+  detailsError = '';
+
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
@@ -49,6 +57,7 @@ export class PageEdit implements OnInit {
     this.pagesService.getPageById(this.pageId).subscribe({
       next: (data) => {
         this.page = data;
+        this.seedDetails();
         this.loadAvailableSnippets();
       },
       error: (error) => {
@@ -188,5 +197,59 @@ export class PageEdit implements OnInit {
 
   trackBySnippetId(index: number, snippet: SnippetOverride): string {
     return snippet.id || index.toString();
+  }
+
+  private seedDetails() {
+    this.details = {
+      name: this.page?.name ?? '',
+      siteName: this.page?.siteName ?? '',
+      description: this.page?.description ?? '',
+    };
+  }
+
+  get detailsDirty(): boolean {
+    if (!this.page) return false;
+    return (
+      this.details.name.trim() !== (this.page.name ?? '') ||
+      this.details.siteName.trim() !== (this.page.siteName ?? '') ||
+      this.details.description.trim() !== (this.page.description ?? '')
+    );
+  }
+
+  resetDetails() {
+    this.seedDetails();
+    this.detailsError = '';
+  }
+
+  saveDetails() {
+    if (!this.pageId || this.savingDetails || !this.detailsDirty) return;
+    if (!this.details.name.trim()) {
+      this.detailsError = 'Name is required.';
+      return;
+    }
+
+    this.savingDetails = true;
+    this.detailsError = '';
+
+    this.pagesService
+      .updatePageDetails(this.pageId, {
+        name: this.details.name.trim(),
+        siteName: this.details.siteName.trim(),
+        description: this.details.description.trim(),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.page = updated;
+          // Re-seed from the server's response so `detailsDirty` compares
+          // against what was actually persisted (e.g. after trimming).
+          this.seedDetails();
+          this.savingDetails = false;
+        },
+        error: (error) => {
+          this.savingDetails = false;
+          this.detailsError = 'Could not save changes. Please try again.';
+          console.error('Error updating page details:', error);
+        },
+      });
   }
 }

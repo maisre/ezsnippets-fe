@@ -1,3 +1,7 @@
+/* Positioning/backdrop styles for CDK overlays (the "…" overflow menus render
+   through one, so they escape the card's overflow:hidden clipping). */
+@import '@angular/cdk/overlay-prebuilt.css';
+
 /* Global reset */
 *, *::before, *::after {
   margin: 0;
@@ -11,4 +15,56 @@ body {
   color: #333;
   background-color: #fff;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Overflow ("…") menu panel. Global rather than scoped to OverflowMenu because
+   the items are projected in from each consuming component and so carry that
+   component's style scoping, which the component's own CSS can't reach. */
+.overflow-menu {
+  min-width: 11rem;
+  padding: 0.25rem;
+  border: 1px solid #d5d8dd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(16, 22, 30, 0.14);
+}
+
+.overflow-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  color: #22272e;
+  text-align: left;
+  cursor: pointer;
+}
+
+.overflow-menu button:hover:not(:disabled),
+.overflow-menu button:focus-visible {
+  background: #f1f3f5;
+  outline: none;
+}
+
+.overflow-menu button:disabled {
+  color: #9aa2ac;
+  cursor: default;
+}
+
+.overflow-menu button.danger {
+  color: #c0392b;
+}
+
+.overflow-menu button.danger:hover:not(:disabled),
+.overflow-menu button.danger:focus-visible {
+  background: #fdecea;
+}
+
+.overflow-menu .menu-separator {
+  height: 1px;
+  margin: 0.25rem 0;
+  background: #e6e8ec;
 }

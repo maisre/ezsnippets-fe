@@ -26,11 +26,36 @@ export class PagesService {
     return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}`, { snippets });
   }
 
+  /**
+   * Updates only the page's metadata. The server applies just the fields it
+   * receives, so snippets and textVariant are left untouched; sending an empty
+   * string for siteName/description clears that field.
+   */
+  updatePageDetails(
+    pageId: string,
+    details: { name: string; siteName: string; description: string },
+  ): Observable<Page> {
+    return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}`, details);
+  }
+
   customizePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/customize`, {});
   }
 
   duplicatePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/duplicate`, {});
+  }
+
+  archivePage(pageId: string): Observable<Page> {
+    return this.http.patch<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/archive`, {});
+  }
+
+  /** Fails with 403 if restoring would push the org over its plan limit. */
+  restorePage(pageId: string): Observable<Page> {
+    return this.http.patch<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/restore`, {});
+  }
+
+  deletePage(pageId: string): Observable<void> {
+    return this.http.delete<void>(`${runtimeConfig.apiUrl}/pages/${pageId}`);
   }
 }

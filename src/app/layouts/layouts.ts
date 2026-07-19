@@ -2,13 +2,15 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
+import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { LayoutsService } from '../layouts.service';
 import { PlansService, PlanUsage } from '../plans.service';
 import { Layout } from '../models';
 
 @Component({
   selector: 'app-layouts',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, OverflowMenu, CdkMenu, CdkMenuItem],
   templateUrl: './layouts.html',
   styleUrl: './layouts.css',
 })
@@ -42,6 +44,17 @@ export class Layouts implements OnInit {
       next: (data) => (this.usage = data),
       error: (error) => console.error('Error fetching usage:', error),
     });
+  }
+
+  // GET /layouts returns archived layouts too; they're listed separately and
+  // don't count toward the plan limit (the server's usage figures already
+  // exclude them, so canCreate/limitMessage need no adjustment).
+  get activeLayouts(): Layout[] {
+    return this.layouts.filter((l) => l.status !== 'archived');
+  }
+
+  get archivedLayouts(): Layout[] {
+    return this.layouts.filter((l) => l.status === 'archived');
   }
 
   get canCreate(): boolean {
@@ -109,5 +122,67 @@ export class Layouts implements OnInit {
 
   editLayout(layoutId: string) {
     this.router.navigate(['/l/edit', layoutId]);
+  }
+
+  // Set when the user picks Delete from an overflow menu; null when hidden.
+  deleteTarget: { id: string; name: string } | null = null;
+  deleting = false;
+  deleteError = '';
+
+  showArchived = false;
+
+  // Archiving frees a plan slot; the layout stays listed under Archived.
+  archiveLayout(layoutId: string) {
+    this.layoutsService.archiveLayout(layoutId).subscribe({
+      next: (updated) => this.replaceLayout(updated),
+      error: (error) => console.error('Error archiving layout:', error),
+    });
+  }
+
+  // Restoring re-occupies a plan slot, so the server may reject it with a 403.
+  restoreLayout(layoutId: string) {
+    this.layoutsService.restoreLayout(layoutId).subscribe({
+      next: (updated) => this.replaceLayout(updated),
+      error: (error) => {
+        if (error?.status === 403) this.showLimitModal = true;
+        else console.error('Error restoring layout:', error);
+      },
+    });
+  }
+
+  private replaceLayout(updated: Layout) {
+    this.layouts = this.layouts.map((l) => (l.id === updated.id ? updated : l));
+    this.loadUsage();
+  }
+
+  openDelete(layout: Layout) {
+    this.deleteError = '';
+    this.deleteTarget = { id: layout.id, name: layout.name || 'this layout' };
+  }
+
+  closeDeleteModal() {
+    if (this.deleting) return;
+    this.deleteTarget = null;
+  }
+
+  confirmDelete() {
+    if (!this.deleteTarget || this.deleting) return;
+    const id = this.deleteTarget.id;
+    this.deleting = true;
+    this.deleteError = '';
+
+    this.layoutsService.deleteLayout(id).subscribe({
+      next: () => {
+        this.layouts = this.layouts.filter((l) => l.id !== id);
+        this.deleting = false;
+        this.deleteTarget = null;
+        this.loadUsage();
+      },
+      error: (error) => {
+        this.deleting = false;
+        this.deleteError = 'Something went wrong. Please try again.';
+        console.error('Error deleting layout:', error);
+      },
+    });
   }
 }

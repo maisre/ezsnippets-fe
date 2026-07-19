@@ -48,14 +48,45 @@
 
   <h2>Layouts</h2>
   <ul>
-    <li *ngFor="let layout of layouts">
+    <li *ngFor="let layout of activeLayouts">
       <span>{{ layout.name || layout.id }}</span>
       <div class="button-group">
         <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
-        <button (click)="duplicateLayout(layout.id)" class="dup-btn">Duplicate</button>
+        <ng-template #layoutMenu>
+          <div class="overflow-menu" cdkMenu>
+            <button cdkMenuItem (click)="duplicateLayout(layout.id)">Duplicate</button>
+            <button cdkMenuItem (click)="archiveLayout(layout.id)">Archive</button>
+            <div class="menu-separator"></div>
+            <button cdkMenuItem class="danger" (click)="openDelete(layout)">Delete</button>
+          </div>
+        </ng-template>
+        <app-overflow-menu [menu]="layoutMenu" [label]="'Actions for ' + (layout.name || 'layout')" />
       </div>
     </li>
   </ul>
+
+  <div class="archived-block" *ngIf="archivedLayouts.length">
+    <button class="archived-toggle" (click)="showArchived = !showArchived">
+      {{ showArchived ? '▾' : '▸' }} Archived ({{ archivedLayouts.length }})
+    </button>
+    <p class="archived-hint" *ngIf="showArchived">
+      Archived layouts don't count toward your plan. Restore one to bring it back.
+    </p>
+    <ul *ngIf="showArchived">
+      <li *ngFor="let layout of archivedLayouts" class="archived">
+        <span>{{ layout.name || layout.id }}</span>
+        <div class="button-group">
+          <button (click)="restoreLayout(layout.id)" class="edit-btn">Restore</button>
+          <ng-template #archivedLayoutMenu>
+            <div class="overflow-menu" cdkMenu>
+              <button cdkMenuItem class="danger" (click)="openDelete(layout)">Delete</button>
+            </div>
+          </ng-template>
+          <app-overflow-menu [menu]="archivedLayoutMenu" [label]="'Actions for ' + (layout.name || 'layout')" />
+        </div>
+      </li>
+    </ul>
+  </div>
 </ng-container>
 
 <div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
@@ -65,6 +96,23 @@
     <div class="modal-actions">
       <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
       <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="deleteTarget" (click)="closeDeleteModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Delete layout?</h3>
+    <p>
+      "{{ deleteTarget.name }}" will be removed from your dashboard. If you only want to free up a
+      plan slot and keep it, archive it instead.
+    </p>
+    <p class="form-error" *ngIf="deleteError">{{ deleteError }}</p>
+    <div class="modal-actions">
+      <button class="modal-secondary" (click)="closeDeleteModal()" [disabled]="deleting">Cancel</button>
+      <button class="modal-danger" (click)="confirmDelete()" [disabled]="deleting">
+        {{ deleting ? 'Deleting…' : 'Delete' }}
+      </button>
     </div>
   </div>
 </div>

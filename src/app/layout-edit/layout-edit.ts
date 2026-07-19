@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   DragDropModule,
@@ -14,7 +15,7 @@ import { Layout, SnippetOverride, SnippetFilters } from '../models';
 
 @Component({
   selector: 'app-layout-edit',
-  imports: [CommonModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './layout-edit.html',
   styleUrl: './layout-edit.css',
 })
@@ -40,6 +41,13 @@ export class LayoutEdit implements OnInit {
   activeTypeFilter = '';
   activeTagFilter = '';
 
+  // Editable name/siteName/description, seeded from the loaded layout. Kept
+  // separate from `layout` so Cancel can discard edits and `detailsDirty` can
+  // compare against what's actually saved.
+  details = { name: '', siteName: '', description: '' };
+  savingDetails = false;
+  detailsError = '';
+
   ngOnInit() {
     this.layoutId = this.route.snapshot.paramMap.get('id');
     if (this.layoutId) {
@@ -56,6 +64,7 @@ export class LayoutEdit implements OnInit {
       next: (data) => {
         this.layout = data;
         this.errorMessage = null;
+        this.seedDetails();
         this.loadAvailableSnippets();
       },
       error: (error) => {
@@ -285,5 +294,59 @@ export class LayoutEdit implements OnInit {
 
   trackBySubPageIndex(index: number): number {
     return index;
+  }
+
+  private seedDetails() {
+    this.details = {
+      name: this.layout?.name ?? '',
+      siteName: this.layout?.siteName ?? '',
+      description: this.layout?.description ?? '',
+    };
+  }
+
+  get detailsDirty(): boolean {
+    if (!this.layout) return false;
+    return (
+      this.details.name.trim() !== (this.layout.name ?? '') ||
+      this.details.siteName.trim() !== (this.layout.siteName ?? '') ||
+      this.details.description.trim() !== (this.layout.description ?? '')
+    );
+  }
+
+  resetDetails() {
+    this.seedDetails();
+    this.detailsError = '';
+  }
+
+  saveDetails() {
+    if (!this.layoutId || this.savingDetails || !this.detailsDirty) return;
+    if (!this.details.name.trim()) {
+      this.detailsError = 'Name is required.';
+      return;
+    }
+
+    this.savingDetails = true;
+    this.detailsError = '';
+
+    this.layoutsService
+      .updateLayoutDetails(this.layoutId, {
+        name: this.details.name.trim(),
+        siteName: this.details.siteName.trim(),
+        description: this.details.description.trim(),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.layout = updated;
+          // Re-seed from the server's response so `detailsDirty` compares
+          // against what was actually persisted (e.g. after trimming).
+          this.seedDetails();
+          this.savingDetails = false;
+        },
+        error: (error) => {
+          this.savingDetails = false;
+          this.detailsError = 'Could not save changes. Please try again.';
+          console.error('Error updating layout details:', error);
+        },
+      });
   }
 }

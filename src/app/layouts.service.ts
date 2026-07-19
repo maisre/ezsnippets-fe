@@ -30,11 +30,36 @@ export class LayoutsService {
     return this.http.put<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}`, layoutData);
   }
 
+  /**
+   * Updates only the layout's metadata. The server applies just the fields it
+   * receives, so nav/footer/subPages are left untouched; sending an empty
+   * string for siteName/description clears that field.
+   */
+  updateLayoutDetails(
+    layoutId: string,
+    details: { name: string; siteName: string; description: string },
+  ): Observable<Layout> {
+    return this.http.put<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}`, details);
+  }
+
   customizeLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/customize`, {});
   }
 
   duplicateLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/duplicate`, {});
+  }
+
+  archiveLayout(layoutId: string): Observable<Layout> {
+    return this.http.patch<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/archive`, {});
+  }
+
+  /** Fails with 403 if restoring would push the org over its plan limit. */
+  restoreLayout(layoutId: string): Observable<Layout> {
+    return this.http.patch<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/restore`, {});
+  }
+
+  deleteLayout(layoutId: string): Observable<void> {
+    return this.http.delete<void>(`${runtimeConfig.apiUrl}/layouts/${layoutId}`);
   }
 }

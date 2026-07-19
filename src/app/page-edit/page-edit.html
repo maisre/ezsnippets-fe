@@ -1,19 +1,62 @@
 <div *ngIf="page" class="page-edit-container">
   <h2>Edit Page: {{ page.name || page.name || page.id }}</h2>
 
-  <div class="page-info">
-    <div *ngIf="page.name"><strong>Name:</strong> {{ page.name }}</div>
-    <div *ngIf="page.siteName"><strong>Site Name:</strong> {{ page.siteName }}</div>
-    <div *ngIf="page.description"><strong>Description:</strong> {{ page.description }}</div>
-    <div><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</div>
-    <button
-      class="customize-button"
-      [disabled]="customizing"
-      (click)="customize()"
-    >
-      {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize with AI' : 'Customize with AI' }}
-    </button>
-  </div>
+  <form class="page-info" (ngSubmit)="saveDetails()">
+    <div class="detail-field">
+      <label for="pageName">Name</label>
+      <input
+        id="pageName"
+        name="pageName"
+        type="text"
+        [(ngModel)]="details.name"
+        placeholder="Page name"
+        required
+      />
+    </div>
+    <div class="detail-field">
+      <label for="pageSiteName">Site Name</label>
+      <input
+        id="pageSiteName"
+        name="pageSiteName"
+        type="text"
+        [(ngModel)]="details.siteName"
+        placeholder="Optional"
+      />
+    </div>
+    <div class="detail-field">
+      <label for="pageDescription">Description</label>
+      <input
+        id="pageDescription"
+        name="pageDescription"
+        type="text"
+        [(ngModel)]="details.description"
+        placeholder="Optional"
+      />
+    </div>
+
+    <p class="form-error" *ngIf="detailsError">{{ detailsError }}</p>
+
+    <div class="detail-actions" *ngIf="detailsDirty">
+      <button type="button" class="detail-cancel" (click)="resetDetails()" [disabled]="savingDetails">
+        Cancel
+      </button>
+      <button type="submit" class="detail-save" [disabled]="savingDetails || !details.name.trim()">
+        {{ savingDetails ? 'Saving…' : 'Save changes' }}
+      </button>
+    </div>
+
+    <div class="detail-meta">
+      <span><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</span>
+      <button
+        type="button"
+        class="customize-button"
+        [disabled]="customizing"
+        (click)="customize()"
+      >
+        {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize with AI' : 'Customize with AI' }}
+      </button>
+    </div>
+  </form>
 
   <div class="drag-drop-container">
     <!-- Left side: Page Snippets -->
