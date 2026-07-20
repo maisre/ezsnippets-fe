@@ -123,6 +123,7 @@
         <h3 class="card-title">{{ layout.name || layout.id }}</h3>
         <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
         <div class="button-group">
+          <button (click)="viewLayout(layout.id)" class="view-btn">View</button>
           <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
           <ng-template #layoutMenu>
             <div class="overflow-menu" cdkMenu>

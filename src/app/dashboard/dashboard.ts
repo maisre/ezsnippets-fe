@@ -285,6 +285,10 @@ export class Dashboard implements OnInit {
     this.authService.refreshSessionCookie().subscribe({ next: go, error: go });
   }
 
+  viewLayout(layoutId: string) {
+    window.open(`${runtimeConfig.viewUrl}/view/layout/${layoutId}`, '_blank');
+  }
+
   editLayout(layoutId: string) {
     this.router.navigate(['/l/edit', layoutId]);
   }
