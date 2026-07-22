@@ -70,6 +70,17 @@ export class PagesService {
     );
   }
 
+  /** The Shutterstock images on the page that need licensing before publishing. */
+  getLicensing(
+    pageId: string,
+  ): Observable<{
+    images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
+  }> {
+    return this.http.get<{
+      images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
+    }>(`${runtimeConfig.apiUrl}/pages/${pageId}/licensing`);
+  }
+
   duplicatePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/duplicate`, {});
   }

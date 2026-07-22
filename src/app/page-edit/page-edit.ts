@@ -67,6 +67,13 @@ export class PageEdit implements OnInit {
   // Snippet palette lives in a slide-in drawer opened by "Add snippet".
   showPalette = false;
 
+  // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
+  showFinalize = false;
+  finalizeTab: 'checklist' | 'licensing' = 'checklist';
+  licensing: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }> = [];
+  licensingLoading = false;
+  licensingError = '';
+
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
@@ -97,6 +104,7 @@ export class PageEdit implements OnInit {
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.showPalette) this.closePalette();
+    if (this.showFinalize) this.closeFinalize();
   }
 
   /** Append a snippet from the palette, persist, and refresh the preview. */
@@ -279,9 +287,54 @@ export class PageEdit implements OnInit {
     }
   }
 
-  // Placeholder until the Finalize slice (download + image licensing) lands.
+  // --- Finalize drawer ---
   finalize() {
-    // TODO(edit-page-redesign): open the Finalize drawer.
+    this.showFinalize = true;
+    this.finalizeTab = 'checklist';
+    this.loadLicensing();
+  }
+  closeFinalize() {
+    this.showFinalize = false;
+  }
+  setFinalizeTab(tab: 'checklist' | 'licensing') {
+    this.finalizeTab = tab;
+  }
+
+  loadLicensing() {
+    if (!this.pageId) return;
+    this.licensingLoading = true;
+    this.licensingError = '';
+    this.pagesService.getLicensing(this.pageId).subscribe({
+      next: (data) => {
+        this.licensing = data.images;
+        this.licensingLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading licensing:', error);
+        this.licensingError = 'Could not load the image list. Please try again.';
+        this.licensingLoading = false;
+      },
+    });
+  }
+
+  /** Deep link to the asset on Shutterstock so the user can license it. */
+  shutterstockUrl(id: string): string {
+    return `https://www.shutterstock.com/image-photo/${id}`;
+  }
+
+  /** Download the licensing manifest as a CSV the user can hand to a client. */
+  exportLicensingCsv() {
+    const header = 'shutterstock_id,uses,preview_url\n';
+    const rows = this.licensing
+      .map((i) => `${i.shutterstockId},${i.uses},${i.previewUrl}`)
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${this.page?.name || 'page'}-image-licenses.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   /** Bring the snippet palette into view (matters when the layout stacks). */

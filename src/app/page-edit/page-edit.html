@@ -279,9 +279,11 @@
   </div>
 </div>
 
-<!-- ===== Snippet palette drawer ===== -->
-<div class="scrim" [class.show]="showPalette" (click)="closePalette()"></div>
-<aside class="palette-drawer" [class.show]="showPalette" [attr.aria-hidden]="!showPalette" aria-label="Add a snippet">
+<!-- ===== Drawers ===== -->
+<div class="scrim" [class.show]="showPalette || showFinalize" (click)="closePalette(); closeFinalize()"></div>
+
+<!-- Snippet palette -->
+<aside class="drawer palette-drawer" [class.show]="showPalette" [attr.aria-hidden]="!showPalette" aria-label="Add a snippet">
   <div class="drawer-head">
     <div class="drawer-titles">
       <h3>Add a snippet</h3>
@@ -343,6 +345,102 @@
       </span>
     </button>
     <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+  </div>
+</aside>
+
+<!-- Finalize -->
+<aside class="drawer finalize-drawer" [class.show]="showFinalize" [attr.aria-hidden]="!showFinalize" aria-label="Finalize and hand off">
+  <div class="drawer-head">
+    <div class="drawer-titles">
+      <h3>Finalize &amp; hand off</h3>
+      <span class="drawer-sub">Get the page ready to download and publish</span>
+    </div>
+    <button type="button" class="close" (click)="closeFinalize()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button type="button" [class.active]="finalizeTab === 'checklist'" (click)="setFinalizeTab('checklist')">Checklist</button>
+    <button type="button" [class.active]="finalizeTab === 'licensing'" (click)="setFinalizeTab('licensing')">
+      Image licensing
+      <span class="tab-count" *ngIf="licensing.length">{{ licensing.length }}</span>
+    </button>
+  </div>
+
+  <!-- Checklist -->
+  <div class="drawer-body" *ngIf="finalizeTab === 'checklist'">
+    <div class="check">
+      <span class="ck-ic" [class.ok]="snippetCount() > 0" [class.warn]="snippetCount() === 0">{{ snippetCount() > 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ snippetCount() }} snippet{{ snippetCount() === 1 ? '' : 's' }} placed</div>
+        <div class="d" *ngIf="snippetCount() === 0">Add snippets before you finalize.</div>
+      </div>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="textMissingCount() === 0" [class.warn]="textMissingCount() > 0">{{ textMissingCount() === 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ textMissingCount() === 0 ? 'All snippets have customized text' : textMissingCount() + ' snippet(s) still need text' }}</div>
+        <div class="d" *ngIf="textMissingCount() > 0">They still show the library default copy.</div>
+      </div>
+      <button *ngIf="textMissingCount() > 0" type="button" class="btn sm" [disabled]="customizing" (click)="customize(true)">Fix</button>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="imagesMissingCount() === 0" [class.warn]="imagesMissingCount() > 0">{{ imagesMissingCount() === 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ imagesMissingCount() === 0 ? 'All snippets have images' : imagesMissingCount() + ' snippet(s) still need images' }}</div>
+        <div class="d" *ngIf="imagesMissingCount() > 0">Some image slots are still empty.</div>
+      </div>
+      <button *ngIf="imagesMissingCount() > 0" type="button" class="btn sm" [disabled]="findingImages" (click)="findImages({ onlyMissing: true })">Fix</button>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="page && page.textVariant !== 'lorem'" [class.warn]="page && page.textVariant === 'lorem'">{{ page && page.textVariant !== 'lorem' ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ page && page.textVariant === 'lorem' ? 'Page is showing placeholder text' : 'No lorem placeholder text' }}</div>
+      </div>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="!!details.name.trim()" [class.warn]="!details.name.trim()">{{ details.name.trim() ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">Page name set</div>
+        <div class="d">Used for the page title in the export.</div>
+      </div>
+    </div>
+
+    <div class="finalize-foot">
+      <span class="finalize-note" *ngIf="needsWorkCount() > 0">{{ needsWorkCount() }} snippet(s) still need attention.</span>
+      <span class="finalize-note ok" *ngIf="needsWorkCount() === 0 && snippetCount() > 0">Everything looks ready.</span>
+      <button type="button" class="btn primary" disabled title="Coming in the next update">Download website (.zip)</button>
+    </div>
+  </div>
+
+  <!-- Image licensing -->
+  <div class="drawer-body" *ngIf="finalizeTab === 'licensing'">
+    <p class="lic-intro">
+      Your download uses <b>watermarked preview images</b>. License these on Shutterstock —
+      or send the list to your client to license on their own account — before publishing.
+    </p>
+
+    <div class="lic-loading" *ngIf="licensingLoading">Loading images…</div>
+    <p class="form-error" *ngIf="licensingError">{{ licensingError }}</p>
+
+    <div class="empty-state" *ngIf="!licensingLoading && !licensingError && licensing.length === 0">
+      No Shutterstock images on this page yet. Use <strong>Find images with AI</strong> first.
+    </div>
+
+    <div class="lic" *ngFor="let img of licensing">
+      <img class="lic-thumb" [src]="img.previewUrl" alt="" loading="lazy" />
+      <div class="lic-meta">
+        <div class="lic-id">{{ img.shutterstockId }}</div>
+        <div class="lic-uses">Used {{ img.uses }}×</div>
+      </div>
+      <a class="btn sm" [href]="shutterstockUrl(img.shutterstockId)" target="_blank" rel="noopener">License ↗</a>
+    </div>
+
+    <div class="lic-foot" *ngIf="licensing.length">
+      <button type="button" class="btn" (click)="exportLicensingCsv()">Export list (CSV)</button>
+      <span class="lic-total">{{ licensing.length }} image{{ licensing.length === 1 ? '' : 's' }} to license</span>
+    </div>
   </div>
 </aside>
 
