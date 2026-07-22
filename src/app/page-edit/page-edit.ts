@@ -44,6 +44,10 @@ export class PageEdit implements OnInit {
   savingDetails = false;
   detailsError = '';
 
+  // Page settings (name/siteName/description) live in a collapsible card now
+  // that the name shows in the action bar; the bar's rename button opens it.
+  showDetails = false;
+
   // Stock-image population. Kept separate from `customizing` so the two AI
   // actions can't be mistaken for one, and so re-running text never re-runs
   // images (each is its own OpenAI call server-side).
@@ -207,6 +211,51 @@ export class PageEdit implements OnInit {
   }
   isAiCustomized(): boolean {
     return this.snippetCount() > 0 && this.textMissingCount() === 0;
+  }
+
+  // --- Action bar: preview / edit-content links ---
+  /** Public rendered page in ez-view (no auth needed). */
+  openPreview() {
+    if (this.pageId) window.open(`${this.viewUrl}/view/page/${this.pageId}`, '_blank');
+  }
+  /** ez-view content & image editor (gated by the session cookie). */
+  openEditContent() {
+    if (this.pageId) window.open(`${this.viewUrl}/edit/page/${this.pageId}`, '_blank');
+  }
+
+  // --- Readiness: a snippet is "ready" once its text and images are both done ---
+  snippetReady(s: SnippetOverride): boolean {
+    return s.aiCustomized === true && s.aiImagesPopulated === true;
+  }
+  needsWorkCount(): number {
+    return (this.page?.snippets ?? []).filter((s) => !this.snippetReady(s)).length;
+  }
+  /** 'empty' | 'ready' | 'attention' — drives the action-bar readiness pill. */
+  readinessState(): 'empty' | 'ready' | 'attention' {
+    if (this.snippetCount() === 0) return 'empty';
+    return this.needsWorkCount() === 0 ? 'ready' : 'attention';
+  }
+  readinessLabel(): string {
+    switch (this.readinessState()) {
+      case 'empty':
+        return 'No snippets yet';
+      case 'ready':
+        return 'Ready to finalize';
+      default:
+        return `Almost ready · ${this.needsWorkCount()} to fix`;
+    }
+  }
+
+  // Placeholder until the Finalize slice (download + image licensing) lands.
+  finalize() {
+    // TODO(edit-page-redesign): open the Finalize drawer.
+  }
+
+  /** Bring the snippet palette into view (matters when the layout stacks). */
+  scrollToPalette() {
+    document
+      .getElementById('available-panel')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /**
