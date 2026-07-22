@@ -427,11 +427,13 @@
   overflow-y: auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
   padding: 14px;
 }
 .palette-item {
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -441,20 +443,22 @@
 }
 .palette-item:hover { border-color: var(--ink-3); box-shadow: var(--shadow); }
 .palette-item:active { cursor: grabbing; }
+/* Snippet screenshots are all 1920px wide but with very different heights
+   (a slim header vs. a tall multi-row section). Show each at full tile width
+   and its natural height so the whole snippet is legible — a fixed-height box
+   crushed the tall ones into an unreadable strip. */
 .palette-thumb {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  object-position: top;
-  background: var(--surface-3);
+  height: auto;
+  background: var(--surface-2);
 }
 .palette-type {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink-2);
-  padding: 6px 9px;
+  padding: 8px 11px;
   border-top: 1px solid var(--line-2);
   text-transform: capitalize;
   white-space: nowrap;

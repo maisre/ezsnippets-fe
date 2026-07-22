@@ -213,6 +213,8 @@
               [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
               alt=""
               class="snip-thumb"
+              loading="lazy"
+              decoding="async"
             />
             <div class="snip-meta">
               <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
@@ -295,6 +297,8 @@
               [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
               alt=""
               class="palette-thumb"
+              loading="lazy"
+              decoding="async"
             />
             <span class="palette-type" *ngIf="snippet.type">{{ snippet.type }}</span>
           </div>
