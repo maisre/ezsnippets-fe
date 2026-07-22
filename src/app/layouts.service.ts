@@ -74,6 +74,24 @@ export class LayoutsService {
     );
   }
 
+  /** Download the layout as a self-contained static-site zip. */
+  downloadLayout(layoutId: string): Observable<Blob> {
+    return this.http.get(`${runtimeConfig.apiUrl}/layouts/${layoutId}/download`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** The Shutterstock images on the layout that need licensing before publishing. */
+  getLicensing(
+    layoutId: string,
+  ): Observable<{
+    images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
+  }> {
+    return this.http.get<{
+      images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
+    }>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/licensing`);
+  }
+
   duplicateLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/duplicate`, {});
   }

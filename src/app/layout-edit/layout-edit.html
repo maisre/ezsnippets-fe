@@ -1,349 +1,348 @@
 <div *ngIf="layout" class="layout-edit-container">
-  <h2>Edit Layout: {{ layout.name || layout.id }}</h2>
-
-  <form class="layout-info" (ngSubmit)="saveDetails()">
-    <div class="detail-field">
-      <label for="layoutName">Name</label>
-      <input
-        id="layoutName"
-        name="layoutName"
-        type="text"
-        [(ngModel)]="details.name"
-        placeholder="Layout name"
-        required
-      />
-    </div>
-    <div class="detail-field">
-      <label for="layoutSiteName">Site Name</label>
-      <input
-        id="layoutSiteName"
-        name="layoutSiteName"
-        type="text"
-        [(ngModel)]="details.siteName"
-        placeholder="Optional"
-      />
-    </div>
-    <div class="detail-field">
-      <label for="layoutDescription">Description</label>
-      <input
-        id="layoutDescription"
-        name="layoutDescription"
-        type="text"
-        [(ngModel)]="details.description"
-        placeholder="Optional"
-      />
-    </div>
-
-    <p class="form-error" *ngIf="detailsError">{{ detailsError }}</p>
-
-    <div class="detail-actions" *ngIf="detailsDirty">
-      <button type="button" class="detail-cancel" (click)="resetDetails()" [disabled]="savingDetails">
-        Cancel
-      </button>
-      <button type="submit" class="detail-save" [disabled]="savingDetails || !details.name.trim()">
-        {{ savingDetails ? 'Saving…' : 'Save changes' }}
-      </button>
-    </div>
-
-    <div class="detail-meta">
-      <!-- Text customization. Counts are per subpage snippet, so adding a
-           snippet after customizing shows as "N missing" and can be filled
-           without redoing the rest. -->
-      <div class="ai-group">
-        <span class="ai-status">
-          <strong>Text customized:</strong>
-          {{ textCustomizedCount() }} / {{ snippetCount() }}
-          <span class="ai-missing" *ngIf="snippetCount() > 0 && textMissingCount() > 0">
-            · {{ textMissingCount() }} missing
-          </span>
-        </span>
-        <div class="ai-actions">
-          <button
-            *ngIf="textCustomizedCount() === 0"
-            type="button"
-            class="customize-button"
-            [disabled]="customizing || findingImages || snippetCount() === 0"
-            (click)="customize(false)"
-          >
-            {{ customizing ? 'Customizing…' : 'Customize text with AI' }}
-          </button>
-          <button
-            *ngIf="textCustomizedCount() > 0 && textMissingCount() > 0"
-            type="button"
-            class="customize-button"
-            [disabled]="customizing || findingImages"
-            (click)="customize(true)"
-          >
-            {{ customizing ? 'Customizing…' : 'Customize ' + textMissingCount() + ' missing' }}
-          </button>
-          <button
-            *ngIf="textCustomizedCount() > 0"
-            type="button"
-            class="customize-button secondary"
-            [disabled]="customizing || findingImages"
-            (click)="customize(false)"
-          >
-            {{ customizing ? 'Customizing…' : 'Re-customize all' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Image population. Same per-snippet model via the aiImagesPopulated
-           flag; "missing" fills the not-yet-populated snippets only. -->
-      <div class="ai-group">
-        <span class="ai-status">
-          <strong>Images set:</strong>
-          {{ imagesPopulatedCount() }} / {{ snippetCount() }}
-          <span class="ai-missing" *ngIf="snippetCount() > 0 && imagesMissingCount() > 0">
-            · {{ imagesMissingCount() }} missing
-          </span>
-        </span>
-        <div class="ai-actions">
-          <button
-            *ngIf="imagesPopulatedCount() === 0"
-            type="button"
-            class="customize-button images"
-            [disabled]="customizing || findingImages || snippetCount() === 0"
-            (click)="findImages()"
-          >
-            {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
-          </button>
-          <button
-            *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0"
-            type="button"
-            class="customize-button images"
-            [disabled]="customizing || findingImages"
-            (click)="findImages({ onlyMissing: true })"
-          >
-            {{ findingImages ? 'Finding images…' : 'Find images for ' + imagesMissingCount() + ' missing' }}
-          </button>
-          <button
-            *ngIf="imagesPopulatedCount() > 0"
-            type="button"
-            class="customize-button images secondary"
-            [disabled]="customizing || findingImages"
-            (click)="findImages({ replaceExisting: true })"
-          >
-            {{ findingImages ? 'Finding images…' : 'Redo all images' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="image-direction">
+  <!-- ===== Action bar ===== -->
+  <header class="edit-topbar">
+    <div class="crumb">
+      <button type="button" class="crumb-back" (click)="router.navigate(['/layouts'])">Layouts</button>
+      <span class="sep">/</span>
+      <span class="crumb-title">{{ layout.name || layout.id }}</span>
       <button
         type="button"
-        class="direction-toggle"
-        [attr.aria-expanded]="showImageDirection"
-        (click)="showImageDirection = !showImageDirection"
+        class="crumb-rename"
+        [class.active]="showDetails"
+        [attr.aria-expanded]="showDetails"
+        (click)="showDetails = !showDetails"
+        title="Layout settings"
       >
-        {{ showImageDirection ? '▾' : '▸' }} Art direction (optional)
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       </button>
-      <div class="direction-field" *ngIf="showImageDirection">
-        <input
-          id="layoutImageDirection"
-          name="layoutImageDirection"
-          type="text"
-          [(ngModel)]="imageDirection"
-          placeholder="e.g. warm natural light, no people"
-        />
-        <p class="direction-hint">
-          Guides the style of the images we search for. Queries are written from your
-          description, so leave this blank unless you want a specific look.
-        </p>
-      </div>
     </div>
 
-    <p class="form-error" *ngIf="imagesError">{{ imagesError }}</p>
-  </form>
+    <div class="topbar-spacer"></div>
 
-  <div class="drag-drop-wrapper">
-    <!-- Left side: Layout Areas -->
-    <div class="layout-areas">
-      <!-- Navbar Area -->
-      <div class="layout-area">
-        <h3>Navbar</h3>
+    <span
+      class="ready-pill"
+      [class.ready]="readinessState() === 'ready'"
+      [class.attention]="readinessState() === 'attention'"
+    >
+      <span class="dot"></span>{{ readinessLabel() }}
+    </span>
+
+    <div class="topbar-actions">
+      <button type="button" class="btn" (click)="openPreview()">Preview</button>
+      <button type="button" class="btn primary" (click)="finalize()">Finalize</button>
+    </div>
+  </header>
+
+  <div class="edit-body">
+    <!-- ===== Left rail ===== -->
+    <div class="edit-rail">
+      <!-- Layout settings (collapsible) -->
+      <form class="card layout-info" *ngIf="showDetails" (ngSubmit)="saveDetails()">
+        <div class="card-head"><h3>Layout settings</h3></div>
+        <div class="card-pad">
+          <div class="detail-field">
+            <label for="layoutName">Name</label>
+            <input id="layoutName" name="layoutName" type="text" [(ngModel)]="details.name" placeholder="Layout name" required />
+          </div>
+          <div class="detail-field">
+            <label for="layoutSiteName">Site name</label>
+            <input id="layoutSiteName" name="layoutSiteName" type="text" [(ngModel)]="details.siteName" placeholder="Optional" />
+          </div>
+          <div class="detail-field">
+            <label for="layoutDescription">Description</label>
+            <input id="layoutDescription" name="layoutDescription" type="text" [(ngModel)]="details.description" placeholder="Optional" />
+          </div>
+          <p class="form-error" *ngIf="detailsError">{{ detailsError }}</p>
+          <div class="detail-actions" *ngIf="detailsDirty">
+            <button type="button" class="btn ghost sm" (click)="resetDetails()" [disabled]="savingDetails">Cancel</button>
+            <button type="submit" class="btn primary sm" [disabled]="savingDetails || !details.name.trim()">
+              {{ savingDetails ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- AI content -->
+      <section class="card">
+        <div class="card-head">
+          <h3>AI content</h3>
+          <span class="card-tag">Powered by AI</span>
+        </div>
+        <div class="detail-meta">
+          <div class="ai-group">
+            <span class="ai-status">
+              <strong>Text customized:</strong>
+              {{ textCustomizedCount() }} / {{ snippetCount() }}
+              <span class="ai-missing" *ngIf="snippetCount() > 0 && textMissingCount() > 0">· {{ textMissingCount() }} missing</span>
+            </span>
+            <div class="ai-actions">
+              <button *ngIf="textCustomizedCount() === 0" type="button" class="customize-button" [disabled]="customizing || findingImages || snippetCount() === 0" (click)="customize(false)">
+                {{ customizing ? 'Customizing…' : 'Customize text with AI' }}
+              </button>
+              <button *ngIf="textCustomizedCount() > 0 && textMissingCount() > 0" type="button" class="customize-button" [disabled]="customizing || findingImages" (click)="customize(true)">
+                {{ customizing ? 'Customizing…' : 'Customize ' + textMissingCount() + ' missing' }}
+              </button>
+              <button *ngIf="textCustomizedCount() > 0" type="button" class="customize-button secondary" [disabled]="customizing || findingImages" (click)="customize(false)">
+                {{ customizing ? 'Customizing…' : 'Re-customize all' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="ai-group">
+            <span class="ai-status">
+              <strong>Images set:</strong>
+              {{ imagesPopulatedCount() }} / {{ snippetCount() }}
+              <span class="ai-missing" *ngIf="snippetCount() > 0 && imagesMissingCount() > 0">· {{ imagesMissingCount() }} missing</span>
+            </span>
+            <div class="ai-actions">
+              <button *ngIf="imagesPopulatedCount() === 0" type="button" class="customize-button images" [disabled]="customizing || findingImages || snippetCount() === 0" (click)="findImages()">
+                {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
+              </button>
+              <button *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0" type="button" class="customize-button images" [disabled]="customizing || findingImages" (click)="findImages({ onlyMissing: true })">
+                {{ findingImages ? 'Finding images…' : 'Find images for ' + imagesMissingCount() + ' missing' }}
+              </button>
+              <button *ngIf="imagesPopulatedCount() > 0" type="button" class="customize-button images secondary" [disabled]="customizing || findingImages" (click)="findImages({ replaceExisting: true })">
+                {{ findingImages ? 'Finding images…' : 'Redo all images' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="image-direction">
+          <button type="button" class="direction-toggle" [attr.aria-expanded]="showImageDirection" (click)="showImageDirection = !showImageDirection">
+            {{ showImageDirection ? '▾' : '▸' }} Art direction (optional)
+          </button>
+          <div class="direction-field" *ngIf="showImageDirection">
+            <input id="layoutImageDirection" name="layoutImageDirection" type="text" [(ngModel)]="imageDirection" placeholder="e.g. warm natural light, no people" />
+            <p class="direction-hint">Guides the style of the images we search for. Leave blank unless you want a specific look.</p>
+          </div>
+        </div>
+
+        <p class="form-error inset" *ngIf="imagesError">{{ imagesError }}</p>
+      </section>
+
+      <!-- Composition: Navbar -->
+      <section class="card">
+        <div class="card-head"><h3>Navbar</h3></div>
         <div
           cdkDropList
           id="navbar-snippets"
           [cdkDropListData]="navbarSnippets"
           [cdkDropListConnectedTo]="getConnectedDropLists()"
           (cdkDropListDropped)="drop($event, 'navbar')"
-          class="snippet-drop-zone single-snippet"
+          class="snippet-list drop-zone single"
         >
-          <div
-            *ngFor="let snippet of navbarSnippets; trackBy: trackBySnippetId"
-            cdkDrag
-            [cdkDragStartDelay]="0"
-            class="snippet-item"
-          >
-            <div class="snippet-content">
-              <img
-                [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
-                alt="Navbar snippet"
-                class="snippet-screenshot"
-              />
-              <span class="drag-handle">⋮⋮</span>
-            </div>
+          <div *ngFor="let snippet of navbarSnippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
+            <span class="grip" cdkDragHandle>⋮⋮</span>
+            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <div class="snip-meta"><div class="snip-name">{{ snippet.type || 'Navbar' }}</div></div>
           </div>
-          <div *ngIf="navbarSnippets.length === 0" class="empty-state">
-            Drop navbar snippet here
-          </div>
+          <div *ngIf="navbarSnippets.length === 0" class="empty-state">Drag a navbar snippet here</div>
         </div>
-      </div>
+      </section>
 
-      <!-- SubPages Tabbed Area -->
-      <div class="layout-area subpages-area">
-        <div class="subpages-header">
-          <h3>SubPages</h3>
-          <div class="tabs">
+      <!-- Composition: Subpages -->
+      <section class="card">
+        <div class="card-head">
+          <h3>Subpages</h3>
+          <div class="subpage-tabs">
             <button
               *ngFor="let subPage of layout.subPages; let i = index; trackBy: trackBySubPageIndex"
+              type="button"
+              class="subpage-tab"
               [class.active]="activeSubPageIndex === i"
               (click)="setActiveSubPage(i)"
-              class="tab-button"
-            >
-              {{ subPage.name }}
-            </button>
+            >{{ subPage.name }}</button>
           </div>
         </div>
-        <div
-          *ngFor="let subPage of layout.subPages; let i = index; trackBy: trackBySubPageIndex"
-          [class.hidden]="activeSubPageIndex !== i"
-        >
+        <div *ngFor="let subPage of layout.subPages; let i = index; trackBy: trackBySubPageIndex" [hidden]="activeSubPageIndex !== i">
           <div
             cdkDropList
             [id]="'subpage-' + i"
             [cdkDropListData]="subPage.snippets"
             [cdkDropListConnectedTo]="getConnectedDropLists()"
             (cdkDropListDropped)="drop($event, 'subpage')"
-            class="snippet-drop-zone"
+            class="snippet-list drop-zone"
           >
-            <div
-              *ngFor="let snippet of subPage.snippets; trackBy: trackBySnippetId"
-              cdkDrag
-              [cdkDragStartDelay]="0"
-              class="snippet-item"
-            >
-              <div class="snippet-content">
-                <img
-                  [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
-                  alt="Snippet screenshot"
-                  class="snippet-screenshot"
-                />
-                <span class="drag-handle">⋮⋮</span>
+            <div *ngFor="let snippet of subPage.snippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
+              <span class="grip" cdkDragHandle>⋮⋮</span>
+              <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+              <div class="snip-meta">
+                <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
+                <div class="badges">
+                  <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
+                  <ng-container *ngIf="!snippetReady(snippet)">
+                    <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
+                    <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                  </ng-container>
+                </div>
               </div>
             </div>
-            <div *ngIf="subPage.snippets.length === 0" class="empty-state">
-              Drop snippets here for {{ subPage.name }}
-            </div>
+            <div *ngIf="subPage.snippets.length === 0" class="empty-state">Drag snippets here for {{ subPage.name }}</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Footer Area -->
-      <div class="layout-area">
-        <h3>Footer</h3>
+      <!-- Composition: Footer -->
+      <section class="card">
+        <div class="card-head"><h3>Footer</h3></div>
         <div
           cdkDropList
           id="footer-snippets"
           [cdkDropListData]="footerSnippets"
           [cdkDropListConnectedTo]="getConnectedDropLists()"
           (cdkDropListDropped)="drop($event, 'footer')"
-          class="snippet-drop-zone single-snippet"
+          class="snippet-list drop-zone single"
         >
-          <div
-            *ngFor="let snippet of footerSnippets; trackBy: trackBySnippetId"
-            cdkDrag
-            [cdkDragStartDelay]="0"
-            class="snippet-item"
-          >
-            <div class="snippet-content">
-              <img
-                [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
-                alt="Footer snippet"
-                class="snippet-screenshot"
-              />
-              <span class="drag-handle">⋮⋮</span>
+          <div *ngFor="let snippet of footerSnippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
+            <span class="grip" cdkDragHandle>⋮⋮</span>
+            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <div class="snip-meta"><div class="snip-name">{{ snippet.type || 'Footer' }}</div></div>
+          </div>
+          <div *ngIf="footerSnippets.length === 0" class="empty-state">Drag a footer snippet here</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== Right: available snippets (drag source) ===== -->
+    <div class="edit-main">
+      <section class="card" id="available-panel">
+        <div class="card-head">
+          <h3>Available snippets</h3>
+          <span class="card-hint">Drag into a layout area</span>
+        </div>
+
+        <div class="snippet-filters" *ngIf="filters.types.length || filters.tags.length">
+          <div class="filter-group" *ngIf="filters.types.length">
+            <label>Type</label>
+            <div class="filter-chips">
+              <button *ngFor="let type of filters.types" class="filter-chip" [class.active]="activeTypeFilter === type" (click)="setTypeFilter(type)">{{ type }}</button>
             </div>
           </div>
-          <div *ngIf="footerSnippets.length === 0" class="empty-state">
-            Drop footer snippet here
+          <div class="filter-group" *ngIf="filters.tags.length">
+            <label>Tags</label>
+            <div class="filter-chips">
+              <button *ngFor="let tag of filters.tags" class="filter-chip" [class.active]="activeTagFilter === tag" (click)="setTagFilter(tag)">{{ tag }}</button>
+            </div>
           </div>
+          <button *ngIf="activeTypeFilter || activeTagFilter" class="clear-filters" (click)="clearFilters()">Clear filters</button>
         </div>
-      </div>
-    </div>
 
-    <!-- Right side: Available Snippets -->
-    <div class="available-snippets-container">
-      <h3>Available Snippets</h3>
-      <div class="snippet-filters" *ngIf="filters.types.length || filters.tags.length">
-        <div class="filter-group" *ngIf="filters.types.length">
-          <label>Type:</label>
-          <div class="filter-chips">
-            <button
-              *ngFor="let type of filters.types"
-              class="filter-chip"
-              [class.active]="activeTypeFilter === type"
-              (click)="setTypeFilter(type)"
-            >{{ type }}</button>
-          </div>
-        </div>
-        <div class="filter-group" *ngIf="filters.tags.length">
-          <label>Tags:</label>
-          <div class="filter-chips">
-            <button
-              *ngFor="let tag of filters.tags"
-              class="filter-chip"
-              [class.active]="activeTagFilter === tag"
-              (click)="setTagFilter(tag)"
-            >{{ tag }}</button>
-          </div>
-        </div>
-        <button
-          *ngIf="activeTypeFilter || activeTagFilter"
-          class="clear-filters"
-          (click)="clearFilters()"
-        >Clear filters</button>
-      </div>
-      <div
-        cdkDropList
-        id="available-snippets"
-        [cdkDropListData]="filteredSnippets"
-        [cdkDropListConnectedTo]="getConnectedDropLists()"
-        (cdkDropListDropped)="drop($event, 'subpage')"
-        class="snippet-list"
-      >
         <div
-          *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
-          cdkDrag
-          [cdkDragStartDelay]="0"
-          class="snippet-item"
+          cdkDropList
+          id="available-snippets"
+          [cdkDropListData]="filteredSnippets"
+          [cdkDropListConnectedTo]="getConnectedDropLists()"
+          (cdkDropListDropped)="drop($event, 'subpage')"
+          class="snippet-list palette-grid"
         >
-          <div class="snippet-content">
-            <img
-              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
-              alt="Snippet screenshot"
-              class="snippet-screenshot"
-            />
-            <span class="drag-handle">⋮⋮</span>
+          <div
+            *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
+            cdkDrag
+            [cdkDragStartDelay]="0"
+            class="palette-item"
+          >
+            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="palette-thumb" loading="lazy" decoding="async" />
+            <span class="palette-type" *ngIf="snippet.type">{{ snippet.type }}</span>
           </div>
+          <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
         </div>
-        <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!layout && !errorMessage && layoutId" class="edit-loading">
+  <p>Loading layout…</p>
+</div>
+
+<div *ngIf="errorMessage" class="edit-loading">
+  <p class="form-error">{{ errorMessage }}</p>
+  <button type="button" class="btn" (click)="router.navigate(['/layouts'])">Back to Layouts</button>
+</div>
+
+<!-- ===== Finalize drawer ===== -->
+<div class="scrim" [class.show]="showFinalize" (click)="closeFinalize()"></div>
+<aside class="drawer finalize-drawer" [class.show]="showFinalize" [attr.aria-hidden]="!showFinalize" aria-label="Finalize and hand off">
+  <div class="drawer-head">
+    <div class="drawer-titles">
+      <h3>Finalize &amp; hand off</h3>
+      <span class="drawer-sub">Get the layout ready to download and publish</span>
+    </div>
+    <button type="button" class="close" (click)="closeFinalize()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button type="button" [class.active]="finalizeTab === 'checklist'" (click)="setFinalizeTab('checklist')">Checklist</button>
+    <button type="button" [class.active]="finalizeTab === 'licensing'" (click)="setFinalizeTab('licensing')">
+      Image licensing
+      <span class="tab-count" *ngIf="licensing.length">{{ licensing.length }}</span>
+    </button>
+  </div>
+
+  <div class="drawer-body" *ngIf="finalizeTab === 'checklist'">
+    <div class="check">
+      <span class="ck-ic" [class.ok]="snippetCount() > 0" [class.warn]="snippetCount() === 0">{{ snippetCount() > 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ snippetCount() }} subpage snippet{{ snippetCount() === 1 ? '' : 's' }} placed</div>
+        <div class="d" *ngIf="snippetCount() === 0">Add snippets to your subpages before you finalize.</div>
       </div>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="textMissingCount() === 0" [class.warn]="textMissingCount() > 0">{{ textMissingCount() === 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ textMissingCount() === 0 ? 'All snippets have customized text' : textMissingCount() + ' snippet(s) still need text' }}</div>
+      </div>
+      <button *ngIf="textMissingCount() > 0" type="button" class="btn sm" [disabled]="customizing" (click)="customize(true)">Fix</button>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="imagesMissingCount() === 0" [class.warn]="imagesMissingCount() > 0">{{ imagesMissingCount() === 0 ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">{{ imagesMissingCount() === 0 ? 'All snippets have images' : imagesMissingCount() + ' snippet(s) still need images' }}</div>
+      </div>
+      <button *ngIf="imagesMissingCount() > 0" type="button" class="btn sm" [disabled]="findingImages" (click)="findImages({ onlyMissing: true })">Fix</button>
+    </div>
+    <div class="check">
+      <span class="ck-ic" [class.ok]="!!details.name.trim()" [class.warn]="!details.name.trim()">{{ details.name.trim() ? '✓' : '!' }}</span>
+      <div class="ck-body">
+        <div class="t">Layout name set</div>
+        <div class="d">Used for the page title in the export.</div>
+      </div>
+    </div>
+
+    <div class="finalize-foot">
+      <span class="finalize-note" *ngIf="needsWorkCount() > 0">{{ needsWorkCount() }} snippet(s) still need attention — you can download anyway.</span>
+      <span class="finalize-note ok" *ngIf="needsWorkCount() === 0 && snippetCount() > 0">Everything looks ready.</span>
+      <p class="form-error" *ngIf="downloadError">{{ downloadError }}</p>
+      <button type="button" class="btn primary" [disabled]="downloading || snippetCount() === 0" (click)="downloadZip()">
+        {{ downloading ? 'Preparing download…' : 'Download website (.zip)' }}
+      </button>
     </div>
   </div>
 
-  <div class="actions">
-    <button (click)="router.navigate(['/layouts'])">Back to Layouts</button>
+  <div class="drawer-body" *ngIf="finalizeTab === 'licensing'">
+    <p class="lic-intro">
+      Your download uses <b>watermarked preview images</b>. License these on Shutterstock —
+      or send the list to your client to license on their own account — before publishing.
+    </p>
+    <div class="lic-loading" *ngIf="licensingLoading">Loading images…</div>
+    <p class="form-error" *ngIf="licensingError">{{ licensingError }}</p>
+    <div class="empty-state" *ngIf="!licensingLoading && !licensingError && licensing.length === 0">
+      No Shutterstock images on this layout yet. Use <strong>Find images with AI</strong> first.
+    </div>
+    <div class="lic" *ngFor="let img of licensing">
+      <img class="lic-thumb" [src]="img.previewUrl" alt="" loading="lazy" />
+      <div class="lic-meta">
+        <div class="lic-id">{{ img.shutterstockId }}</div>
+        <div class="lic-uses">Used {{ img.uses }}×</div>
+      </div>
+      <a class="btn sm" [href]="shutterstockUrl(img.shutterstockId)" target="_blank" rel="noopener">License ↗</a>
+    </div>
+    <div class="lic-foot" *ngIf="licensing.length">
+      <button type="button" class="btn" (click)="exportLicensingCsv()">Export list (CSV)</button>
+      <span class="lic-total">{{ licensing.length }} image{{ licensing.length === 1 ? '' : 's' }} to license</span>
+    </div>
   </div>
-</div>
-
-<div *ngIf="!layout && !errorMessage && layoutId">
-  <p>Loading layout...</p>
-</div>
-
-<div *ngIf="errorMessage" class="error-container">
-  <p class="error-message">{{ errorMessage }}</p>
-  <button (click)="router.navigate(['/layouts'])">Back to Layouts</button>
-</div>
+</aside>

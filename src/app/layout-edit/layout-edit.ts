@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -56,6 +56,18 @@ export class LayoutEdit implements OnInit {
   imageDirection = '';
   showImageDirection = false;
 
+  // Layout settings live in a collapsible card opened from the action bar.
+  showDetails = false;
+
+  // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
+  showFinalize = false;
+  finalizeTab: 'checklist' | 'licensing' = 'checklist';
+  licensing: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }> = [];
+  licensingLoading = false;
+  licensingError = '';
+  downloading = false;
+  downloadError = '';
+
   ngOnInit() {
     this.layoutId = this.route.snapshot.paramMap.get('id');
     if (this.layoutId) {
@@ -63,6 +75,113 @@ export class LayoutEdit implements OnInit {
     } else {
       this.errorMessage = 'No layout ID provided';
     }
+  }
+
+  // --- Action bar: preview link ---
+  /** Public rendered layout in ez-view (no auth needed). */
+  openPreview() {
+    if (this.layoutId) window.open(`${this.viewUrl}/view/layout/${this.layoutId}`, '_blank');
+  }
+
+  // --- Readiness (over subpage snippets) ---
+  snippetReady(s: SnippetOverride): boolean {
+    return s.aiCustomized === true && s.aiImagesPopulated === true;
+  }
+  needsWorkCount(): number {
+    return this.layoutSnippets().filter((s) => !this.snippetReady(s)).length;
+  }
+  readinessState(): 'empty' | 'ready' | 'attention' {
+    if (this.snippetCount() === 0) return 'empty';
+    return this.needsWorkCount() === 0 ? 'ready' : 'attention';
+  }
+  readinessLabel(): string {
+    switch (this.readinessState()) {
+      case 'empty':
+        return 'No snippets yet';
+      case 'ready':
+        return 'Ready to finalize';
+      default:
+        return `Almost ready · ${this.needsWorkCount()} to fix`;
+    }
+  }
+
+  // --- Finalize drawer ---
+  finalize() {
+    this.showFinalize = true;
+    this.finalizeTab = 'checklist';
+    this.loadLicensing();
+  }
+  closeFinalize() {
+    this.showFinalize = false;
+  }
+  setFinalizeTab(tab: 'checklist' | 'licensing') {
+    this.finalizeTab = tab;
+  }
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.showFinalize) this.closeFinalize();
+  }
+
+  loadLicensing() {
+    if (!this.layoutId) return;
+    this.licensingLoading = true;
+    this.licensingError = '';
+    this.layoutsService.getLicensing(this.layoutId).subscribe({
+      next: (data) => {
+        this.licensing = data.images;
+        this.licensingLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading licensing:', error);
+        this.licensingError = 'Could not load the image list. Please try again.';
+        this.licensingLoading = false;
+      },
+    });
+  }
+
+  shutterstockUrl(id: string): string {
+    return `https://www.shutterstock.com/image-photo/${id}`;
+  }
+
+  exportLicensingCsv() {
+    const header = 'shutterstock_id,uses,preview_url\n';
+    const rows = this.licensing
+      .map((i) => `${i.shutterstockId},${i.uses},${i.previewUrl}`)
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${this.layout?.name || 'layout'}-image-licenses.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  downloadZip() {
+    if (!this.layoutId || this.downloading) return;
+    this.downloading = true;
+    this.downloadError = '';
+    this.layoutsService.downloadLayout(this.layoutId).subscribe({
+      next: (blob) => {
+        const slug =
+          (this.layout?.name || 'layout')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'layout';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloading = false;
+      },
+      error: (error) => {
+        console.error('Error downloading layout:', error);
+        this.downloadError = 'Could not build the download. Please try again.';
+        this.downloading = false;
+      },
+    });
   }
 
   loadLayout() {
