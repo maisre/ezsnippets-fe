@@ -428,12 +428,17 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: max-content;
+  align-items: start;
   gap: 12px;
   padding: 14px;
 }
+/* Plain block, NOT flex-column: a flex column collapsed around the
+   percentage-width / auto-height screenshot, so the tile shrank to ~2px and
+   overflow:hidden clipped every preview into a sliver. A block sizes to the
+   image reliably. */
 .palette-item {
-  display: flex;
-  flex-direction: column;
+  display: block;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   overflow: hidden;
