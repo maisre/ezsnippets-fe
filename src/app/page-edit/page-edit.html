@@ -197,12 +197,11 @@
           cdkDropList
           id="page-snippets"
           [cdkDropListData]="pageSnippets"
-          [cdkDropListConnectedTo]="['available-snippets']"
           (cdkDropListDropped)="drop($event)"
           class="snippet-list rail-list"
         >
           <div
-            *ngFor="let snippet of pageSnippets; trackBy: trackBySnippetId"
+            *ngFor="let snippet of pageSnippets; let i = index; trackBy: trackBySnippetId"
             cdkDrag
             [cdkDragStartDelay]="0"
             [cdkDragBoundary]="'.page-edit-container'"
@@ -226,13 +225,22 @@
                 </ng-container>
               </div>
             </div>
+            <button
+              type="button"
+              class="snip-remove"
+              (click)="removeSnippet(i)"
+              title="Remove from page"
+              aria-label="Remove snippet"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
           <div *ngIf="pageSnippets.length === 0" class="empty-state">
-            No snippets yet — add one from the palette →
+            No snippets yet — use <strong>Add snippet</strong> below
           </div>
         </div>
         <div class="add-row">
-          <button type="button" class="btn add-btn" (click)="scrollToPalette()">
+          <button type="button" class="btn add-btn" (click)="openPalette()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Add snippet
           </button>
@@ -240,74 +248,103 @@
       </section>
     </div>
 
-    <!-- ===== Right: available snippets ===== -->
+    <!-- ===== Right: live preview ===== -->
     <div class="edit-main">
-      <section class="card" id="available-panel">
-        <div class="card-head">
-          <h3>Available snippets</h3>
-          <span class="card-hint">Drag onto the page structure</span>
+      <section class="card preview-card">
+        <div class="preview-head">
+          <h3>Live preview</h3>
+          <span class="preview-spacer"></span>
+          <div class="seg" role="tablist" aria-label="Preview device">
+            <button type="button" [class.active]="previewDevice === 'desktop'" (click)="setDevice('desktop')">Desktop</button>
+            <button type="button" [class.active]="previewDevice === 'mobile'" (click)="setDevice('mobile')">Mobile</button>
+          </div>
+          <button type="button" class="btn ghost sm" (click)="refreshPreview()" title="Refresh preview" aria-label="Refresh preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4h-4"/></svg>
+          </button>
+          <button type="button" class="btn ghost sm" (click)="openPreview()" title="Open in new tab" aria-label="Open in new tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </button>
         </div>
-
-        <div class="snippet-filters" *ngIf="filters.types.length || filters.tags.length">
-          <div class="filter-group" *ngIf="filters.types.length">
-            <label>Type</label>
-            <div class="filter-chips">
-              <button
-                *ngFor="let type of filters.types"
-                class="filter-chip"
-                [class.active]="activeTypeFilter === type"
-                (click)="setTypeFilter(type)"
-              >{{ type }}</button>
-            </div>
-          </div>
-          <div class="filter-group" *ngIf="filters.tags.length">
-            <label>Tags</label>
-            <div class="filter-chips">
-              <button
-                *ngFor="let tag of filters.tags"
-                class="filter-chip"
-                [class.active]="activeTagFilter === tag"
-                (click)="setTagFilter(tag)"
-              >{{ tag }}</button>
-            </div>
-          </div>
-          <button
-            *ngIf="activeTypeFilter || activeTagFilter"
-            class="clear-filters"
-            (click)="clearFilters()"
-          >Clear filters</button>
-        </div>
-
-        <div
-          cdkDropList
-          id="available-snippets"
-          [cdkDropListData]="filteredSnippets"
-          [cdkDropListConnectedTo]="['page-snippets']"
-          (cdkDropListDropped)="drop($event)"
-          class="snippet-list palette-grid"
-        >
-          <div
-            *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
-            cdkDrag
-            [cdkDragStartDelay]="0"
-            [cdkDragBoundary]="'.page-edit-container'"
-            class="palette-item"
-          >
-            <img
-              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
-              alt=""
-              class="palette-thumb"
-              loading="lazy"
-              decoding="async"
-            />
-            <span class="palette-type" *ngIf="snippet.type">{{ snippet.type }}</span>
-          </div>
-          <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+        <div class="stage">
+          <iframe
+            *ngIf="safePreviewUrl"
+            [src]="safePreviewUrl"
+            class="preview-frame"
+            [class.mobile]="previewDevice === 'mobile'"
+            title="Page preview"
+          ></iframe>
         </div>
       </section>
     </div>
   </div>
 </div>
+
+<!-- ===== Snippet palette drawer ===== -->
+<div class="scrim" [class.show]="showPalette" (click)="closePalette()"></div>
+<aside class="palette-drawer" [class.show]="showPalette" [attr.aria-hidden]="!showPalette" aria-label="Add a snippet">
+  <div class="drawer-head">
+    <div class="drawer-titles">
+      <h3>Add a snippet</h3>
+      <span class="drawer-sub">Click a snippet to add it to the page</span>
+    </div>
+    <button type="button" class="close" (click)="closePalette()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-filters" *ngIf="filters.types.length || filters.tags.length">
+    <div class="filter-group" *ngIf="filters.types.length">
+      <label>Type</label>
+      <div class="filter-chips">
+        <button
+          *ngFor="let type of filters.types"
+          class="filter-chip"
+          [class.active]="activeTypeFilter === type"
+          (click)="setTypeFilter(type)"
+        >{{ type }}</button>
+      </div>
+    </div>
+    <div class="filter-group" *ngIf="filters.tags.length">
+      <label>Tags</label>
+      <div class="filter-chips">
+        <button
+          *ngFor="let tag of filters.tags"
+          class="filter-chip"
+          [class.active]="activeTagFilter === tag"
+          (click)="setTagFilter(tag)"
+        >{{ tag }}</button>
+      </div>
+    </div>
+    <button
+      *ngIf="activeTypeFilter || activeTagFilter"
+      class="clear-filters"
+      (click)="clearFilters()"
+    >Clear filters</button>
+  </div>
+
+  <div class="palette-grid">
+    <button
+      *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
+      type="button"
+      class="palette-item"
+      (click)="addSnippetToPage(snippet)"
+      title="Add to page"
+    >
+      <img
+        [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+        alt=""
+        class="palette-thumb"
+        loading="lazy"
+        decoding="async"
+      />
+      <span class="palette-type" *ngIf="snippet.type">
+        {{ snippet.type }}
+        <span class="palette-add">+ Add</span>
+      </span>
+    </button>
+    <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+  </div>
+</aside>
 
 <div *ngIf="!page && pageId" class="edit-loading">
   <p>Loading page…</p>

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,8 +6,8 @@ import {
   DragDropModule,
   CdkDragDrop,
   moveItemInArray,
-  transferArrayItem,
 } from '@angular/cdk/drag-drop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig } from '../runtime-config';
@@ -24,6 +24,7 @@ export class PageEdit implements OnInit {
   router = inject(Router);
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
+  private sanitizer = inject(DomSanitizer);
 
   page: Page | null = null;
   pageId: string | null = null;
@@ -56,11 +57,58 @@ export class PageEdit implements OnInit {
   imageDirection = '';
   showImageDirection = false;
 
+  // Live preview (right pane) — an iframe of the public rendered page. The
+  // src carries a version counter so we can force a reload after every edit
+  // without touching the cross-origin frame directly.
+  safePreviewUrl: SafeResourceUrl | null = null;
+  previewDevice: 'desktop' | 'mobile' = 'desktop';
+  private previewVersion = 0;
+
+  // Snippet palette lives in a slide-in drawer opened by "Add snippet".
+  showPalette = false;
+
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
+      this.refreshPreview();
       this.loadPage();
     }
+  }
+
+  /** Rebuild the preview iframe URL, bumping the version to force a reload. */
+  refreshPreview() {
+    if (!this.pageId) return;
+    this.previewVersion += 1;
+    this.safePreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `${this.viewUrl}/view/page/${this.pageId}?_=${this.previewVersion}`,
+    );
+  }
+
+  setDevice(device: 'desktop' | 'mobile') {
+    this.previewDevice = device;
+  }
+
+  openPalette() {
+    this.showPalette = true;
+  }
+  closePalette() {
+    this.showPalette = false;
+  }
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.showPalette) this.closePalette();
+  }
+
+  /** Append a snippet from the palette, persist, and refresh the preview. */
+  addSnippetToPage(snippet: SnippetOverride) {
+    this.pageSnippets.push({ ...snippet });
+    this.updatePageSnippets();
+  }
+
+  /** Remove a snippet from the page by position, persist, and refresh. */
+  removeSnippet(index: number) {
+    this.pageSnippets.splice(index, 1);
+    this.updatePageSnippets();
   }
 
   loadPage() {
@@ -124,27 +172,11 @@ export class PageEdit implements OnInit {
     });
   }
 
+  /** Reorder within the page structure list (adding is done via the palette). */
   drop(event: CdkDragDrop<SnippetOverride[]>) {
-    if (event.previousContainer === event.container) {
-      // Reordering within the same list
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-
-      // If reordering within page snippets, save the new order
-      if (event.container.id === 'page-snippets') {
-        this.updatePageSnippets();
-      }
-    } else {
-      // Moving between lists
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
-      );
-
-      // Update the page's snippets on the server
-      this.updatePageSnippets();
-    }
+    if (event.previousIndex === event.currentIndex) return;
+    moveItemInArray(this.pageSnippets, event.previousIndex, event.currentIndex);
+    this.updatePageSnippets();
   }
 
   updatePageSnippets() {
@@ -165,7 +197,8 @@ export class PageEdit implements OnInit {
     }));
     this.pagesService.updatePageSnippets(this.pageId, snippets).subscribe({
       next: (data) => {
-        console.log('Page snippets updated successfully:', data);
+        this.page = data;
+        this.refreshPreview();
       },
       error: (error) => {
         console.error('Error updating page snippets:', error);
@@ -270,6 +303,7 @@ export class PageEdit implements OnInit {
       next: (data) => {
         this.page = data;
         this.customizing = false;
+        this.refreshPreview();
       },
       error: (error) => {
         console.error('Error customizing page:', error);
@@ -317,6 +351,7 @@ export class PageEdit implements OnInit {
         next: (data) => {
           this.page = data;
           this.findingImages = false;
+          this.refreshPreview();
         },
         error: (error) => {
           this.findingImages = false;
