@@ -194,15 +194,30 @@ export class PageEdit implements OnInit {
     this.applyFilters();
   }
 
+  // --- Text customization status (per snippet, via the aiCustomized flag) ---
+  snippetCount(): number {
+    return this.page?.snippets?.length ?? 0;
+  }
+  textCustomizedCount(): number {
+    return (this.page?.snippets ?? []).filter((s) => s.aiCustomized === true)
+      .length;
+  }
+  textMissingCount(): number {
+    return this.snippetCount() - this.textCustomizedCount();
+  }
   isAiCustomized(): boolean {
-    if (!this.page || this.page.snippets.length === 0) return false;
-    return this.page.snippets.every((s) => s.aiCustomized === true);
+    return this.snippetCount() > 0 && this.textMissingCount() === 0;
   }
 
-  customize() {
+  /**
+   * Run AI text customization. onlyMissing customizes just the snippets that
+   * were never customized (e.g. ones added after an earlier run) and leaves the
+   * others untouched; omit it to re-customize the whole page.
+   */
+  customize(onlyMissing = false) {
     if (!this.pageId || this.customizing) return;
     this.customizing = true;
-    this.pagesService.customizePage(this.pageId).subscribe({
+    this.pagesService.customizePage(this.pageId, onlyMissing).subscribe({
       next: (data) => {
         this.page = data;
         this.customizing = false;
@@ -218,17 +233,26 @@ export class PageEdit implements OnInit {
     return snippet.id || index.toString();
   }
 
-  /** True once any snippet on the page has had its images auto-populated. */
+  // --- Image population status (per snippet, via the aiImagesPopulated flag) ---
+  imagesPopulatedCount(): number {
+    return (this.page?.snippets ?? []).filter(
+      (s) => s.aiImagesPopulated === true,
+    ).length;
+  }
+  imagesMissingCount(): number {
+    return this.snippetCount() - this.imagesPopulatedCount();
+  }
+  /** True once every snippet on the page has been through image population. */
   hasAiImages(): boolean {
-    return (this.page?.snippets || []).some((s) => s.aiImagesPopulated === true);
+    return this.snippetCount() > 0 && this.imagesMissingCount() === 0;
   }
 
   /**
-   * Ask the server to fill this page's image slots with stock photos. By
-   * default only empty slots are filled, so images picked by hand survive;
-   * once images exist the button offers to replace them instead.
+   * Ask the server to fill this page's image slots with stock photos.
+   * onlyMissing targets just the not-yet-populated snippets (leaving the rest
+   * alone); replaceExisting redoes every slot on the targeted snippets.
    */
-  findImages(replaceExisting = false) {
+  findImages(opts: { onlyMissing?: boolean; replaceExisting?: boolean } = {}) {
     if (!this.pageId || this.findingImages) return;
 
     this.findingImages = true;
@@ -237,7 +261,8 @@ export class PageEdit implements OnInit {
     this.pagesService
       .customizePageImages(this.pageId, {
         direction: this.imageDirection.trim() || undefined,
-        replaceExisting,
+        onlyMissing: opts.onlyMissing,
+        replaceExisting: opts.replaceExisting,
       })
       .subscribe({
         next: (data) => {

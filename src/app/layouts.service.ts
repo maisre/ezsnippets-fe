@@ -42,17 +42,31 @@ export class LayoutsService {
     return this.http.put<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}`, details);
   }
 
-  customizeLayout(layoutId: string): Observable<Layout> {
-    return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/customize`, {});
+  /**
+   * Run AI text customization. Pass onlyMissing to customize just the snippets
+   * that were never customized (e.g. ones added after an earlier run), leaving
+   * the rest untouched; omit it to re-customize the whole layout.
+   */
+  customizeLayout(layoutId: string, onlyMissing = false): Observable<Layout> {
+    return this.http.post<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/customize`,
+      { onlyMissing },
+    );
   }
 
   /**
    * Fill the layout's image slots with AI-chosen stock photos. Separate from
-   * customizeLayout so re-running text never re-runs images.
+   * customizeLayout so re-running text never re-runs images. Pass onlyMissing to
+   * populate just the not-yet-populated snippets; replaceExisting to redo every
+   * slot on the targeted snippets.
    */
   customizeLayoutImages(
     layoutId: string,
-    options: { direction?: string; replaceExisting?: boolean } = {},
+    options: {
+      direction?: string;
+      replaceExisting?: boolean;
+      onlyMissing?: boolean;
+    } = {},
   ): Observable<Layout> {
     return this.http.post<Layout>(
       `${runtimeConfig.apiUrl}/layouts/${layoutId}/customize-images`,

@@ -275,24 +275,38 @@ export class LayoutEdit implements OnInit {
     this.applyFilters();
   }
 
-  isAiCustomized(): boolean {
-    if (!this.layout) return false;
-    const allSnippets: SnippetOverride[] = [];
-    if (this.layout.nav) allSnippets.push(this.layout.nav as any);
-    if (this.layout.footer) allSnippets.push(this.layout.footer as any);
-    if (this.layout.subPages) {
-      for (const sp of this.layout.subPages) {
-        allSnippets.push(...(sp.snippets || []));
-      }
+  // The customizable snippets in a layout are the subpage snippets (across all
+  // subpages). nav/footer are stored as bare id strings, carry no flags, and are
+  // skipped by the server's customize, so they're intentionally excluded here.
+  private layoutSnippets(): SnippetOverride[] {
+    const out: SnippetOverride[] = [];
+    for (const sp of this.layout?.subPages ?? []) {
+      out.push(...(sp.snippets ?? []));
     }
-    if (allSnippets.length === 0) return false;
-    return allSnippets.every((s) => s.aiCustomized === true);
+    return out;
+  }
+  snippetCount(): number {
+    return this.layoutSnippets().length;
+  }
+  textCustomizedCount(): number {
+    return this.layoutSnippets().filter((s) => s.aiCustomized === true).length;
+  }
+  textMissingCount(): number {
+    return this.snippetCount() - this.textCustomizedCount();
+  }
+  isAiCustomized(): boolean {
+    return this.snippetCount() > 0 && this.textMissingCount() === 0;
   }
 
-  customize() {
+  /**
+   * Run AI text customization. onlyMissing customizes just the snippets that
+   * were never customized (e.g. ones added after an earlier run) and leaves the
+   * others untouched; omit it to re-customize the whole layout.
+   */
+  customize(onlyMissing = false) {
     if (!this.layoutId || this.customizing) return;
     this.customizing = true;
-    this.layoutsService.customizeLayout(this.layoutId).subscribe({
+    this.layoutsService.customizeLayout(this.layoutId, onlyMissing).subscribe({
       next: (data) => {
         this.layout = data;
         this.customizing = false;
@@ -312,23 +326,25 @@ export class LayoutEdit implements OnInit {
     return index;
   }
 
-  /** True once any snippet in the layout has had its images auto-populated. */
+  // Image population status, over the same subpage snippets as the text counts.
+  imagesPopulatedCount(): number {
+    return this.layoutSnippets().filter((s) => s.aiImagesPopulated === true)
+      .length;
+  }
+  imagesMissingCount(): number {
+    return this.snippetCount() - this.imagesPopulatedCount();
+  }
+  /** True once every subpage snippet has been through image population. */
   hasAiImages(): boolean {
-    const refs: any[] = [];
-    if ((this.layout as any)?.nav) refs.push((this.layout as any).nav);
-    if ((this.layout as any)?.footer) refs.push((this.layout as any).footer);
-    (this.layout?.subPages || []).forEach((sp: any) => {
-      (sp.snippets || []).forEach((s: any) => refs.push(s));
-    });
-    return refs.some((r) => r?.aiImagesPopulated === true);
+    return this.snippetCount() > 0 && this.imagesMissingCount() === 0;
   }
 
   /**
-   * Ask the server to fill this layout's image slots with stock photos. By
-   * default only empty slots are filled, so images picked by hand survive;
-   * once images exist the button offers to replace them instead.
+   * Ask the server to fill this layout's image slots with stock photos.
+   * onlyMissing targets just the not-yet-populated snippets (leaving the rest
+   * alone); replaceExisting redoes every slot on the targeted snippets.
    */
-  findImages(replaceExisting = false) {
+  findImages(opts: { onlyMissing?: boolean; replaceExisting?: boolean } = {}) {
     if (!this.layoutId || this.findingImages) return;
 
     this.findingImages = true;
@@ -337,7 +353,8 @@ export class LayoutEdit implements OnInit {
     this.layoutsService
       .customizeLayoutImages(this.layoutId, {
         direction: this.imageDirection.trim() || undefined,
-        replaceExisting,
+        onlyMissing: opts.onlyMissing,
+        replaceExisting: opts.replaceExisting,
       })
       .subscribe({
         next: (data) => {

@@ -38,17 +38,31 @@ export class PagesService {
     return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}`, details);
   }
 
-  customizePage(pageId: string): Observable<Page> {
-    return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/customize`, {});
+  /**
+   * Run AI text customization. Pass onlyMissing to customize just the snippets
+   * that were never customized (e.g. ones added after an earlier run), leaving
+   * the rest untouched; omit it to re-customize the whole page.
+   */
+  customizePage(pageId: string, onlyMissing = false): Observable<Page> {
+    return this.http.post<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/customize`,
+      { onlyMissing },
+    );
   }
 
   /**
    * Fill the page's image slots with AI-chosen stock photos. Separate from
-   * customizePage so re-running text never re-runs images.
+   * customizePage so re-running text never re-runs images. Pass onlyMissing to
+   * populate just the not-yet-populated snippets; replaceExisting to redo every
+   * slot on the targeted snippets.
    */
   customizePageImages(
     pageId: string,
-    options: { direction?: string; replaceExisting?: boolean } = {},
+    options: {
+      direction?: string;
+      replaceExisting?: boolean;
+      onlyMissing?: boolean;
+    } = {},
   ): Observable<Page> {
     return this.http.post<Page>(
       `${runtimeConfig.apiUrl}/pages/${pageId}/customize-images`,

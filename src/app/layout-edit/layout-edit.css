@@ -421,12 +421,29 @@
 
 .detail-meta {
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e1e4e8;
+}
+
+/* One row per AI operation (text, images): status on the left, actions right. */
+.ai-group {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e1e4e8;
+}
+
+.ai-status {
+  font-size: 0.9rem;
+}
+
+/* Draws the eye to the fact that some snippets still need customizing. */
+.ai-missing {
+  color: #b26a00;
+  font-weight: 600;
 }
 
 .form-error {
@@ -449,6 +466,18 @@
 
 .customize-button.images:hover:not(:disabled) {
   background: #5a32a3;
+}
+
+/* The "re-run everything" action is the less-common choice once a layout is
+   partially done, so it reads as secondary next to "customize missing". */
+.customize-button.secondary {
+  background: transparent;
+  color: #57606a;
+  border: 1px solid #d0d7de;
+}
+
+.customize-button.secondary:hover:not(:disabled) {
+  background: #f3f4f6;
 }
 
 .image-direction {

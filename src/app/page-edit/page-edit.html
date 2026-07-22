@@ -46,24 +46,87 @@
     </div>
 
     <div class="detail-meta">
-      <span><strong>AI Customized:</strong> {{ isAiCustomized() ? 'Yes' : 'No' }}</span>
-      <div class="ai-actions">
-        <button
-          type="button"
-          class="customize-button"
-          [disabled]="customizing || findingImages"
-          (click)="customize()"
-        >
-          {{ customizing ? 'Customizing...' : isAiCustomized() ? 'Re-customize text' : 'Customize text with AI' }}
-        </button>
-        <button
-          type="button"
-          class="customize-button images"
-          [disabled]="customizing || findingImages"
-          (click)="findImages(hasAiImages())"
-        >
-          {{ findingImages ? 'Finding images...' : hasAiImages() ? 'Replace images with AI' : 'Find images with AI' }}
-        </button>
+      <!-- Text customization. Counts are per snippet, so adding a snippet after
+           customizing shows as "N missing" and can be filled without redoing
+           the rest. -->
+      <div class="ai-group">
+        <span class="ai-status">
+          <strong>Text customized:</strong>
+          {{ textCustomizedCount() }} / {{ snippetCount() }}
+          <span class="ai-missing" *ngIf="snippetCount() > 0 && textMissingCount() > 0">
+            · {{ textMissingCount() }} missing
+          </span>
+        </span>
+        <div class="ai-actions">
+          <button
+            *ngIf="textCustomizedCount() === 0"
+            type="button"
+            class="customize-button"
+            [disabled]="customizing || findingImages || snippetCount() === 0"
+            (click)="customize(false)"
+          >
+            {{ customizing ? 'Customizing…' : 'Customize text with AI' }}
+          </button>
+          <button
+            *ngIf="textCustomizedCount() > 0 && textMissingCount() > 0"
+            type="button"
+            class="customize-button"
+            [disabled]="customizing || findingImages"
+            (click)="customize(true)"
+          >
+            {{ customizing ? 'Customizing…' : 'Customize ' + textMissingCount() + ' missing' }}
+          </button>
+          <button
+            *ngIf="textCustomizedCount() > 0"
+            type="button"
+            class="customize-button secondary"
+            [disabled]="customizing || findingImages"
+            (click)="customize(false)"
+          >
+            {{ customizing ? 'Customizing…' : 'Re-customize all' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Image population. Same per-snippet model via the aiImagesPopulated
+           flag; "missing" fills the not-yet-populated snippets only. -->
+      <div class="ai-group">
+        <span class="ai-status">
+          <strong>Images set:</strong>
+          {{ imagesPopulatedCount() }} / {{ snippetCount() }}
+          <span class="ai-missing" *ngIf="snippetCount() > 0 && imagesMissingCount() > 0">
+            · {{ imagesMissingCount() }} missing
+          </span>
+        </span>
+        <div class="ai-actions">
+          <button
+            *ngIf="imagesPopulatedCount() === 0"
+            type="button"
+            class="customize-button images"
+            [disabled]="customizing || findingImages || snippetCount() === 0"
+            (click)="findImages()"
+          >
+            {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
+          </button>
+          <button
+            *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0"
+            type="button"
+            class="customize-button images"
+            [disabled]="customizing || findingImages"
+            (click)="findImages({ onlyMissing: true })"
+          >
+            {{ findingImages ? 'Finding images…' : 'Find images for ' + imagesMissingCount() + ' missing' }}
+          </button>
+          <button
+            *ngIf="imagesPopulatedCount() > 0"
+            type="button"
+            class="customize-button images secondary"
+            [disabled]="customizing || findingImages"
+            (click)="findImages({ replaceExisting: true })"
+          >
+            {{ findingImages ? 'Finding images…' : 'Redo all images' }}
+          </button>
+        </div>
       </div>
     </div>
 
