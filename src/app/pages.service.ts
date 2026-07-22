@@ -70,6 +70,13 @@ export class PagesService {
     );
   }
 
+  /** Download the page as a self-contained static-site zip. */
+  downloadPage(pageId: string): Observable<Blob> {
+    return this.http.get(`${runtimeConfig.apiUrl}/pages/${pageId}/download`, {
+      responseType: 'blob',
+    });
+  }
+
   /** The Shutterstock images on the page that need licensing before publishing. */
   getLicensing(
     pageId: string,

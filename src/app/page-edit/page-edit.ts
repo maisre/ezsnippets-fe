@@ -73,6 +73,8 @@ export class PageEdit implements OnInit {
   licensing: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }> = [];
   licensingLoading = false;
   licensingError = '';
+  downloading = false;
+  downloadError = '';
 
   ngOnInit() {
     this.pageId = this.route.snapshot.paramMap.get('id');
@@ -320,6 +322,34 @@ export class PageEdit implements OnInit {
   /** Deep link to the asset on Shutterstock so the user can license it. */
   shutterstockUrl(id: string): string {
     return `https://www.shutterstock.com/image-photo/${id}`;
+  }
+
+  /** Download the whole page as a static-site zip. */
+  downloadZip() {
+    if (!this.pageId || this.downloading) return;
+    this.downloading = true;
+    this.downloadError = '';
+    this.pagesService.downloadPage(this.pageId).subscribe({
+      next: (blob) => {
+        const slug =
+          (this.page?.name || 'page')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'page';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloading = false;
+      },
+      error: (error) => {
+        console.error('Error downloading page:', error);
+        this.downloadError = 'Could not build the download. Please try again.';
+        this.downloading = false;
+      },
+    });
   }
 
   /** Download the licensing manifest as a CSV the user can hand to a client. */

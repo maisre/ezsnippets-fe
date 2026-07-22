@@ -408,9 +408,17 @@
     </div>
 
     <div class="finalize-foot">
-      <span class="finalize-note" *ngIf="needsWorkCount() > 0">{{ needsWorkCount() }} snippet(s) still need attention.</span>
+      <span class="finalize-note" *ngIf="needsWorkCount() > 0">{{ needsWorkCount() }} snippet(s) still need attention — you can download anyway.</span>
       <span class="finalize-note ok" *ngIf="needsWorkCount() === 0 && snippetCount() > 0">Everything looks ready.</span>
-      <button type="button" class="btn primary" disabled title="Coming in the next update">Download website (.zip)</button>
+      <p class="form-error" *ngIf="downloadError">{{ downloadError }}</p>
+      <button
+        type="button"
+        class="btn primary"
+        [disabled]="downloading || snippetCount() === 0"
+        (click)="downloadZip()"
+      >
+        {{ downloading ? 'Preparing download…' : 'Download website (.zip)' }}
+      </button>
     </div>
   </div>
 
