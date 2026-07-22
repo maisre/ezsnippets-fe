@@ -222,11 +222,19 @@ export class LayoutEdit implements OnInit {
       subPages:
         this.layout.subPages?.map((subPage) => ({
           name: subPage.name,
+          // Carry page-scoped customizations through on every list edit, so
+          // dragging a snippet into a subpage doesn't blank the AI text/image
+          // overrides on the others. The server preserves these defensively
+          // too; sending them keeps the payload honest.
           snippets: subPage.snippets.map((snippet) => ({
             id: snippet.id,
-            cssOverride: '',
-            htmlOverride: {},
-            jsOverride: '',
+            cssOverride: snippet.cssOverride ?? '',
+            htmlOverride: snippet.htmlOverride ?? {},
+            jsOverride: snippet.jsOverride ?? '',
+            textReplacementOverride: snippet.textReplacementOverride,
+            imageReplacementOverride: snippet.imageReplacementOverride,
+            aiCustomized: snippet.aiCustomized,
+            aiImagesPopulated: snippet.aiImagesPopulated,
           })),
         })) || [],
     };

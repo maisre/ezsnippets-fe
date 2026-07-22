@@ -110,8 +110,12 @@ export class PageEdit implements OnInit {
       const foundSnippet = this.availableSnippets.find((snippet) => snippet.id === pageSnippet.id);
 
       if (foundSnippet) {
-        // Copy the snippet into pageSnippets array
-        this.pageSnippets.push({ ...foundSnippet });
+        // The library summary supplies display fields (name/type/tags) for the
+        // palette; the page's stored snippet supplies the page-scoped
+        // customizations (text/image overrides, AI flags). Spread the stored
+        // snippet last so its customizations survive — otherwise editing the
+        // snippet list would round-trip a customization-free copy and wipe it.
+        this.pageSnippets.push({ ...foundSnippet, ...pageSnippet });
       }
     });
   }
@@ -142,11 +146,18 @@ export class PageEdit implements OnInit {
   updatePageSnippets() {
     if (!this.pageId) return;
 
+    // Carry the page-scoped customizations through on every list edit. The
+    // server also preserves these defensively, but sending them keeps the
+    // payload honest and avoids re-submitting blanked overrides.
     const snippets = this.pageSnippets.map((snippet) => ({
       id: snippet.id,
-      cssOverride: '',
-      jsOverride: '',
-      htmlOverride: '',
+      cssOverride: snippet.cssOverride ?? '',
+      jsOverride: snippet.jsOverride ?? '',
+      htmlOverride: snippet.htmlOverride ?? '',
+      textReplacementOverride: snippet.textReplacementOverride,
+      imageReplacementOverride: snippet.imageReplacementOverride,
+      aiCustomized: snippet.aiCustomized,
+      aiImagesPopulated: snippet.aiImagesPopulated,
     }));
     this.pagesService.updatePageSnippets(this.pageId, snippets).subscribe({
       next: (data) => {
