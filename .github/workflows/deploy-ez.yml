@@ -1,0 +1,75 @@
+# Deploy the Angular frontend to the lean-EC2 stack (Option A) in the `ez`
+# business account: build → S3 sync → CloudFront invalidate. The frontend is
+# static in both hosting options; only the account/bucket/distribution differ
+# from deploy-prod.yml (which targets the personal account).
+name: Deploy ez-frontend (ez / lean-EC2)
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  SENTRY_ORG: ez-snippets
+  SENTRY_PROJECT: ez-frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build for production
+        run: npx ng build --configuration=production
+
+      - name: Write prod config.json
+        env:
+          API_URL: https://api.ez-snippets.com
+          VIEW_URL: https://view.ez-snippets.com
+          PADDLE_CLIENT_TOKEN: ${{ secrets.PADDLE_CLIENT_TOKEN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_RELEASE: ${{ github.sha }}
+        run: |
+          cat > dist/ez-frontend/browser/config.json <<EOF
+          {
+            "apiUrl": "${API_URL}",
+            "viewUrl": "${VIEW_URL}",
+            "paddleClientToken": "${PADDLE_CLIENT_TOKEN}",
+            "sentryDsn": "${SENTRY_DSN}",
+            "sentryEnvironment": "production",
+            "sentryRelease": "${SENTRY_RELEASE}"
+          }
+          EOF
+
+      - name: Upload source maps to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          npx sentry-cli releases new "${{ github.sha }}"
+          npx sentry-cli sourcemaps upload --release="${{ github.sha }}" dist/ez-frontend/browser
+          npx sentry-cli releases finalize "${{ github.sha }}"
+
+      - name: Strip source maps from build output
+        run: find dist/ez-frontend/browser -name "*.map" -delete
+
+      - name: Configure AWS credentials (ez account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.EZ_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: aws s3 sync dist/ez-frontend/browser/ s3://${{ vars.EZ_FRONTEND_BUCKET }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.EZ_PROD_CLOUDFRONT_ID }} --paths "/*"
