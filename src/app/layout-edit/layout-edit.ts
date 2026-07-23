@@ -11,7 +11,7 @@ import {
 import { LayoutsService } from '../layouts.service';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig } from '../runtime-config';
-import { Layout, SnippetOverride, SnippetFilters } from '../models';
+import { Layout, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
 
 @Component({
   selector: 'app-layout-edit',
@@ -62,9 +62,16 @@ export class LayoutEdit implements OnInit {
   // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
   showFinalize = false;
   finalizeTab: 'checklist' | 'licensing' = 'checklist';
-  licensing: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }> = [];
+  licensing: LicensingImage[] = [];
   licensingLoading = false;
   licensingError = '';
+  // One-click "license everything" link, built on demand (a Shutterstock
+  // Collection created from the layout's images, affiliate-wrapped). Null until
+  // generated; not persisted — an ez-background cron reaps the collection by age.
+  collectionsEnabled = false;
+  licenseAllUrl: string | null = null;
+  generatingCollection = false;
+  collectionError = '';
   downloading = false;
   downloadError = '';
 
@@ -129,6 +136,9 @@ export class LayoutEdit implements OnInit {
     this.layoutsService.getLicensing(this.layoutId).subscribe({
       next: (data) => {
         this.licensing = data.images;
+        this.collectionsEnabled = data.collectionsEnabled;
+        this.licenseAllUrl = null;
+        this.collectionError = '';
         this.licensingLoading = false;
       },
       error: (error) => {
@@ -139,8 +149,27 @@ export class LayoutEdit implements OnInit {
     });
   }
 
-  shutterstockUrl(id: string): string {
-    return `https://www.shutterstock.com/image-photo/${id}`;
+  /**
+   * Build a one-click "license all images" link on demand: the server creates a
+   * Shutterstock Collection from this layout's images and returns its
+   * affiliate-wrapped share URL. Nothing is stored — reaped by age server-side.
+   */
+  generateCollection() {
+    if (!this.layoutId || this.generatingCollection) return;
+    this.generatingCollection = true;
+    this.collectionError = '';
+    this.layoutsService.generateCollection(this.layoutId).subscribe({
+      next: (res) => {
+        this.licenseAllUrl = res.licenseAllUrl;
+        this.generatingCollection = false;
+      },
+      error: (error) => {
+        console.error('Error generating collection:', error);
+        this.collectionError =
+          'Could not build the license-all link. Please try again.';
+        this.generatingCollection = false;
+      },
+    });
   }
 
   exportLicensingCsv() {

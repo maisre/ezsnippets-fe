@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { runtimeConfig } from './runtime-config';
-import { Page, CreatePageDto, SnippetOverride } from './models';
+import {
+  Page,
+  CreatePageDto,
+  SnippetOverride,
+  LicensingResponse,
+  GenerateCollectionResponse,
+} from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -78,14 +84,18 @@ export class PagesService {
   }
 
   /** The Shutterstock images on the page that need licensing before publishing. */
-  getLicensing(
-    pageId: string,
-  ): Observable<{
-    images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
-  }> {
-    return this.http.get<{
-      images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
-    }>(`${runtimeConfig.apiUrl}/pages/${pageId}/licensing`);
+  getLicensing(pageId: string): Observable<LicensingResponse> {
+    return this.http.get<LicensingResponse>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/licensing`,
+    );
+  }
+
+  /** Build a one-click "license all images" Shutterstock Collection link. */
+  generateCollection(pageId: string): Observable<GenerateCollectionResponse> {
+    return this.http.post<GenerateCollectionResponse>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/collection`,
+      {},
+    );
   }
 
   duplicatePage(pageId: string): Observable<Page> {

@@ -332,13 +332,35 @@
     <div class="empty-state" *ngIf="!licensingLoading && !licensingError && licensing.length === 0">
       No Shutterstock images on this layout yet. Use <strong>Find images with AI</strong> first.
     </div>
+
+    <!-- One-click "license everything" via an on-demand Shutterstock Collection -->
+    <div class="lic-collection" *ngIf="!licensingLoading && collectionsEnabled && licensing.length">
+      <a *ngIf="licenseAllUrl" class="btn primary lic-all" [href]="licenseAllUrl" target="_blank" rel="noopener">
+        License all images on Shutterstock ↗
+      </a>
+      <button
+        *ngIf="!licenseAllUrl"
+        type="button"
+        class="btn primary lic-all"
+        (click)="generateCollection()"
+        [disabled]="generatingCollection"
+      >
+        {{ generatingCollection ? 'Building link…' : 'Build one-click license link' }}
+      </button>
+      <p class="lic-hint" *ngIf="licenseAllUrl">
+        This link bundles every image above into one Shutterstock collection your client can
+        license in a single checkout. It expires automatically after ~30 days.
+      </p>
+      <p class="form-error" *ngIf="collectionError">{{ collectionError }}</p>
+    </div>
+
     <div class="lic" *ngFor="let img of licensing">
       <img class="lic-thumb" [src]="img.previewUrl" alt="" loading="lazy" />
       <div class="lic-meta">
         <div class="lic-id">{{ img.shutterstockId }}</div>
         <div class="lic-uses">Used {{ img.uses }}×</div>
       </div>
-      <a class="btn sm" [href]="shutterstockUrl(img.shutterstockId)" target="_blank" rel="noopener">License ↗</a>
+      <a class="btn sm" [href]="img.licenseUrl" target="_blank" rel="noopener">License ↗</a>
     </div>
     <div class="lic-foot" *ngIf="licensing.length">
       <button type="button" class="btn" (click)="exportLicensingCsv()">Export list (CSV)</button>

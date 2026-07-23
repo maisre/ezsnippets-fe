@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { runtimeConfig } from './runtime-config';
-import { Layout, CreateLayoutDto, SnippetOverride } from './models';
+import {
+  Layout,
+  CreateLayoutDto,
+  SnippetOverride,
+  LicensingResponse,
+  GenerateCollectionResponse,
+} from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -82,14 +88,18 @@ export class LayoutsService {
   }
 
   /** The Shutterstock images on the layout that need licensing before publishing. */
-  getLicensing(
-    layoutId: string,
-  ): Observable<{
-    images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
-  }> {
-    return this.http.get<{
-      images: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }>;
-    }>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/licensing`);
+  getLicensing(layoutId: string): Observable<LicensingResponse> {
+    return this.http.get<LicensingResponse>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/licensing`,
+    );
+  }
+
+  /** Build a one-click "license all images" Shutterstock Collection link. */
+  generateCollection(layoutId: string): Observable<GenerateCollectionResponse> {
+    return this.http.post<GenerateCollectionResponse>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/collection`,
+      {},
+    );
   }
 
   duplicateLayout(layoutId: string): Observable<Layout> {

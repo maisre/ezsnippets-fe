@@ -11,7 +11,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig } from '../runtime-config';
-import { Page, SnippetOverride, SnippetFilters } from '../models';
+import { Page, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
 
 @Component({
   selector: 'app-page-edit',
@@ -70,9 +70,17 @@ export class PageEdit implements OnInit {
   // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
   showFinalize = false;
   finalizeTab: 'checklist' | 'licensing' = 'checklist';
-  licensing: Array<{ shutterstockId: string; previewUrl: string; token: string; uses: number }> = [];
+  licensing: LicensingImage[] = [];
   licensingLoading = false;
   licensingError = '';
+  // One-click "license everything" link, built on demand (a Shutterstock
+  // Collection created from the page's images, affiliate-wrapped). Null until
+  // the user generates it; not persisted — an ez-background cron reaps the
+  // collection by age.
+  collectionsEnabled = false;
+  licenseAllUrl: string | null = null;
+  generatingCollection = false;
+  collectionError = '';
   downloading = false;
   downloadError = '';
 
@@ -309,6 +317,9 @@ export class PageEdit implements OnInit {
     this.pagesService.getLicensing(this.pageId).subscribe({
       next: (data) => {
         this.licensing = data.images;
+        this.collectionsEnabled = data.collectionsEnabled;
+        this.licenseAllUrl = null;
+        this.collectionError = '';
         this.licensingLoading = false;
       },
       error: (error) => {
@@ -319,9 +330,28 @@ export class PageEdit implements OnInit {
     });
   }
 
-  /** Deep link to the asset on Shutterstock so the user can license it. */
-  shutterstockUrl(id: string): string {
-    return `https://www.shutterstock.com/image-photo/${id}`;
+  /**
+   * Build a one-click "license all images" link on demand: the server creates a
+   * Shutterstock Collection from this page's images and returns its
+   * affiliate-wrapped share URL. Nothing is stored — the collection is reaped by
+   * age server-side.
+   */
+  generateCollection() {
+    if (!this.pageId || this.generatingCollection) return;
+    this.generatingCollection = true;
+    this.collectionError = '';
+    this.pagesService.generateCollection(this.pageId).subscribe({
+      next: (res) => {
+        this.licenseAllUrl = res.licenseAllUrl;
+        this.generatingCollection = false;
+      },
+      error: (error) => {
+        console.error('Error generating collection:', error);
+        this.collectionError =
+          'Could not build the license-all link. Please try again.';
+        this.generatingCollection = false;
+      },
+    });
   }
 
   /** Download the whole page as a static-site zip. */
