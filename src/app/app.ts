@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { AuthService } from './auth.service';
+import { runtimeConfig } from './runtime-config';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,11 @@ export class App {
   private router = inject(Router);
 
   isAuthenticated$ = this.authService.isAuthenticated$;
+
+  /** Pre-launch gate — hides public Sign Up CTAs. See runtime-config. */
+  get comingSoon(): boolean {
+    return runtimeConfig.comingSoon;
+  }
 
   logout() {
     this.authService.logout();

@@ -39,6 +39,11 @@ jobs:
           PADDLE_CLIENT_TOKEN: ${{ secrets.PADDLE_CLIENT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_RELEASE: ${{ github.sha }}
+          # Pre-launch gate: hides public Sign Up CTAs. Defaults to true; set the
+          # COMING_SOON repo variable to "false" to open sign-ups. (Can also be
+          # flipped instantly by editing config.json in S3 + a CloudFront
+          # invalidation, no rebuild needed.)
+          COMING_SOON: ${{ vars.COMING_SOON || 'true' }}
         run: |
           cat > dist/ez-frontend/browser/config.json <<EOF
           {
@@ -47,7 +52,8 @@ jobs:
             "paddleClientToken": "${PADDLE_CLIENT_TOKEN}",
             "sentryDsn": "${SENTRY_DSN}",
             "sentryEnvironment": "production",
-            "sentryRelease": "${SENTRY_RELEASE}"
+            "sentryRelease": "${SENTRY_RELEASE}",
+            "comingSoon": ${COMING_SOON}
           }
           EOF
 

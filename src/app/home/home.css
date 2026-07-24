@@ -156,3 +156,28 @@
     padding: 2.5rem 1rem;
   }
 }
+
+/* Pre-launch "coming soon" gate (see runtime-config comingSoon). */
+.coming-soon {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+  color: #fff;
+}
+.coming-soon-content { max-width: 640px; }
+.coming-soon h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 800;
+  margin: 0 0 1rem;
+  line-height: 1.1;
+}
+.coming-soon-sub {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin: 0;
+}
