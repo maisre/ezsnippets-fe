@@ -21,6 +21,7 @@ export interface PortalSession {
 export class PaymentsService {
   private http = inject(HttpClient);
   private paddleLoad?: Promise<void>;
+  private initialized = false;
 
   createCheckoutSession(priceId: string): Observable<{ transactionId: string }> {
     return this.http.post<{ transactionId: string }>(
@@ -50,31 +51,54 @@ export class PaymentsService {
   private loadPaddle(): Promise<void> {
     if (this.paddleLoad) return this.paddleLoad;
 
-    this.paddleLoad = new Promise<void>((resolve, reject) => {
-      if (window.Paddle) {
-        this.initPaddle();
-        resolve();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-      script.async = true;
-      script.onload = () => {
-        this.initPaddle();
-        resolve();
-      };
-      script.onerror = () => reject(new Error('Failed to load Paddle.js'));
-      document.head.appendChild(script);
+    // A failed attempt must not be cached. Caching one leaves every later
+    // click failing for a reason that already went away.
+    this.paddleLoad = this.doLoadPaddle().catch((err) => {
+      this.paddleLoad = undefined;
+      throw err;
     });
     return this.paddleLoad;
   }
 
-  // Sandbox client tokens are prefixed `test_`; live tokens are `live_`.
-  private initPaddle(): void {
-    const token = runtimeConfig.paddleClientToken;
-    if (token.startsWith('test_')) {
-      window.Paddle!.Environment.set('sandbox');
+  /**
+   * Note the shape: initPaddle() runs *outside* the promise executor.
+   * Calling it inside script.onload — as this used to — meant anything it threw
+   * was swallowed by the callback, leaving the promise permanently unsettled.
+   * openCheckout then awaited forever: no checkout, no error, nothing logged.
+   */
+  private async doLoadPaddle(): Promise<void> {
+    if (!window.Paddle) {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () =>
+          reject(new Error('Failed to load Paddle.js from cdn.paddle.com'));
+        document.head.appendChild(script);
+      });
     }
-    window.Paddle!.Initialize({ token });
+    this.initPaddle();
+  }
+
+  private initPaddle(): void {
+    if (this.initialized) return;
+
+    const token = runtimeConfig.paddleClientToken ?? '';
+    if (!token) {
+      throw new Error(
+        'paddleClientToken is missing from config.json — checkout cannot open',
+      );
+    }
+    if (!window.Paddle?.Initialize) {
+      throw new Error('Paddle.js loaded but window.Paddle.Initialize is missing');
+    }
+
+    // Sandbox client tokens are prefixed `test_`; live tokens are `live_`.
+    if (token.startsWith('test_')) {
+      window.Paddle.Environment.set('sandbox');
+    }
+    window.Paddle.Initialize({ token });
+    this.initialized = true;
   }
 }

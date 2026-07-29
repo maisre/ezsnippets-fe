@@ -50,6 +50,9 @@ export class Pricing implements OnInit {
    * Paddle account is worse than asking someone to come back in a minute.
    */
   unavailable = false;
+  checkoutError = '';
+  /** Name of the plan whose checkout is being opened, for the button state. */
+  opening: string | null = null;
 
   ngOnInit() {
     this.http.get<Catalog>(`${runtimeConfig.apiUrl}/plans`).subscribe({
@@ -113,8 +116,10 @@ export class Pricing implements OnInit {
   trialLabel(plan: CatalogPlan): string | null {
     const trial = this.priceFor(plan)?.trial;
     if (!trial) return null;
-    const unit = trial.frequency === 1 ? trial.interval : `${trial.interval}s`;
-    return `${trial.frequency}-${unit} free trial`;
+    // "7 day free trial", matching Paddle's own checkout wording. The unit is
+    // adjectival here, so it stays singular however many there are — "7-days
+    // free trial" was the previous output.
+    return `${trial.frequency} ${trial.interval} free trial`;
   }
 
   limitFeatures(plan: CatalogPlan): string[] {
@@ -141,14 +146,26 @@ export class Pricing implements OnInit {
     const price = this.priceFor(plan);
     if (!price) return;
 
+    this.checkoutError = '';
+    this.opening = plan.name;
+
     this.paymentsService.createCheckoutSession(price.id).subscribe({
       next: (res) => {
-        this.paymentsService.openCheckout(res.transactionId).catch((err) => {
-          console.error('Failed to open checkout:', err);
-        });
+        this.paymentsService
+          .openCheckout(res.transactionId)
+          .catch((err) => {
+            // Anything that stops the overlay opening has to be visible: a
+            // checkout that fails silently reads as a dead button.
+            console.error('Failed to open checkout:', err);
+            this.checkoutError =
+              'Could not open checkout. Please try again, or contact support if it keeps happening.';
+          })
+          .finally(() => (this.opening = null));
       },
       error: (err) => {
         console.error('Checkout error:', err);
+        this.checkoutError = 'Could not start checkout. Please try again.';
+        this.opening = null;
       },
     });
   }

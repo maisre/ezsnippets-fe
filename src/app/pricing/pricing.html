@@ -55,10 +55,15 @@
               <li>{{ feature }}</li>
             }
           </ul>
-          <button (click)="selectPlan(plan)" class="{{ ctaClass(plan) }}">{{ plan.cta }}</button>
+          <button (click)="selectPlan(plan)" class="{{ ctaClass(plan) }}" [disabled]="opening === plan.name">
+            {{ opening === plan.name ? 'Opening...' : plan.cta }}
+          </button>
         </div>
       }
     </div>
+    @if (checkoutError) {
+      <p class="checkout-error">{{ checkoutError }}</p>
+    }
   }
 
   <div class="pricing-faq">
