@@ -1,5 +1,7 @@
 import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { runtimeConfig } from '../runtime-config';
 import { AuthService } from '../auth.service';
 import { OrgsService } from '../orgs.service';
 import { PaymentsService } from '../payments.service';
@@ -12,6 +14,7 @@ import { Org } from '../models';
   styleUrl: './account.css',
 })
 export class Account implements OnInit {
+  private http = inject(HttpClient);
   private authService = inject(AuthService);
   private orgsService = inject(OrgsService);
   private paymentsService = inject(PaymentsService);
@@ -20,24 +23,30 @@ export class Account implements OnInit {
   openingPortal = false;
   portalError = '';
 
-  private planNames: Record<string, string> = {
-    pri_01kr05y9cq25yt75ey1ddkpger: 'Basic Monthly',
-    pri_01kr07scygf6jf4a2xbvra76y6: 'Basic Yearly',
-    pri_01kr07vbve5a770reznmza9hdq: 'Pro Monthly',
-    pri_01kr07vyv692rrj6gn8m57e683: 'Pro Yearly',
-    pri_01kr07xbjrdw0jztyfta1xfqre: 'Enterprise Monthly',
-    pri_01kr07xy7sty2xhwcqjgzny8x4: 'Enterprise Yearly',
-  };
+  // The plan's name comes from the API rather than a local price-id map, so a
+  // new price under an existing plan doesn't show up here as a raw id.
+  planName = 'None';
 
   ngOnInit() {
     this.orgsService.getMyOrgs().subscribe((orgs) => {
       this.org = orgs.find((o) => o.personal) || orgs[0] || null;
     });
+    this.loadUsage();
   }
 
-  getPlanName(): string {
-    if (!this.org?.plan) return 'None';
-    return this.planNames[this.org.plan] || this.org.plan;
+  private loadUsage() {
+    this.http
+      .get<{ hasPlan: boolean; plan: string | null }>(
+        `${runtimeConfig.apiUrl}/plans/usage`,
+      )
+      .subscribe({
+        next: (usage) => {
+          this.planName = usage.hasPlan && usage.plan ? usage.plan : 'None';
+        },
+        error: () => {
+          this.planName = 'None';
+        },
+      });
   }
 
   getStatusLabel(): string {

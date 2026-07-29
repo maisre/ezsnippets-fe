@@ -152,6 +152,31 @@
   margin: -0.25rem 0 0.75rem;
 }
 
+.plan-note {
+  color: #888;
+  font-size: 0.8rem;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.plan-trial {
+  color: #2980b9;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.pricing-status {
+  text-align: center;
+  color: #666;
+  padding: 3rem 1rem;
+}
+
+.pricing-status-hint {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+
 .plan-description {
   color: #666;
   font-size: 0.95rem;

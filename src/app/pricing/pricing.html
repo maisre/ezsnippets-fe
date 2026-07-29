@@ -3,42 +3,63 @@
     <h1>Simple, transparent pricing</h1>
     <p>Start for free, upgrade when you're ready.</p>
 
-    <div class="billing-toggle">
-      <span [class.active]="billingPeriod === 'monthly'">Monthly</span>
-      <button class="toggle-switch" (click)="toggleBilling()" [class.yearly]="billingPeriod === 'yearly'">
-        <span class="toggle-knob"></span>
-      </button>
-      <span [class.active]="billingPeriod === 'yearly'">
-        Yearly
-        <span class="save-badge">Save 17%</span>
-      </span>
-    </div>
-  </div>
-
-  <div class="pricing-grid">
-    @for (plan of plans; track plan.name) {
-      <div class="pricing-card" [class.featured]="plan.featured">
-        @if (plan.featured) {
-          <div class="featured-badge">Most Popular</div>
-        }
-        <div class="plan-name">{{ plan.name }}</div>
-        <div class="plan-price">
-          <span class="price">{{ '$' + getPrice(plan) }}</span>
-          <span class="period">/{{ billingPeriod === 'monthly' ? 'mo' : 'yr' }}</span>
-        </div>
-        @if (billingPeriod === 'yearly') {
-          <p class="plan-savings">{{ '$' + (plan.monthly * 12 - plan.yearly) }} saved per year</p>
-        }
-        <p class="plan-description">{{ plan.description }}</p>
-        <ul class="plan-features">
-          @for (feature of plan.features; track feature) {
-            <li>{{ feature }}</li>
-          }
-        </ul>
-        <button (click)="selectPlan(plan)" class="{{ plan.ctaStyle }}">{{ plan.cta }}</button>
+    @if (!loading && !unavailable) {
+      <div class="billing-toggle">
+        <span [class.active]="interval === 'month'">Monthly</span>
+        <button class="toggle-switch" (click)="toggleBilling()" [class.yearly]="interval === 'year'">
+          <span class="toggle-knob"></span>
+        </button>
+        <span [class.active]="interval === 'year'">Yearly</span>
       </div>
     }
   </div>
+
+  @if (loading) {
+    <p class="pricing-status">Loading plans...</p>
+  } @else if (unavailable) {
+    <div class="pricing-status">
+      <p>Pricing is temporarily unavailable. Please try again in a moment.</p>
+      <p class="pricing-status-hint">
+        If this keeps happening, email
+        <a href="mailto:support@ez-snippets.com">support&#64;ez-snippets.com</a>
+        and we'll get you set up.
+      </p>
+    </div>
+  } @else {
+    <div class="pricing-grid">
+      @for (plan of plans; track plan.name) {
+        <div class="pricing-card" [class.featured]="plan.featured">
+          @if (plan.featured) {
+            <div class="featured-badge">Most Popular</div>
+          }
+          <div class="plan-name">{{ plan.name }}</div>
+          <div class="plan-price">
+            <span class="price">{{ '$' + priceFor(plan)?.amount }}</span>
+            <span class="period">/{{ periodSuffix(plan) }}</span>
+          </div>
+          @if (isIntervalMismatch(plan)) {
+            <p class="plan-note">{{ intervalLabelFor(plan) }}</p>
+          }
+          @if (yearlySaving(plan); as saved) {
+            <p class="plan-savings">{{ '$' + saved }} saved per year</p>
+          }
+          @if (trialLabel(plan); as trial) {
+            <p class="plan-trial">{{ trial }}</p>
+          }
+          <p class="plan-description">{{ plan.description }}</p>
+          <ul class="plan-features">
+            @for (feature of limitFeatures(plan); track feature) {
+              <li>{{ feature }}</li>
+            }
+            @for (feature of plan.features; track feature) {
+              <li>{{ feature }}</li>
+            }
+          </ul>
+          <button (click)="selectPlan(plan)" class="{{ ctaClass(plan) }}">{{ plan.cta }}</button>
+        </div>
+      }
+    </div>
+  }
 
   <div class="pricing-faq">
     <h2>Frequently asked questions</h2>
@@ -49,7 +70,7 @@
       </div>
       <div class="faq-item">
         <h3>Is there a free trial?</h3>
-        <p>Pro and Enterprise plans include a 14-day free trial. No credit card required to start.</p>
+        <p>Where a plan includes one, the trial length is shown on its card above.</p>
       </div>
       <div class="faq-item">
         <h3>What payment methods do you accept?</h3>
@@ -57,7 +78,7 @@
       </div>
       <div class="faq-item">
         <h3>Can I cancel anytime?</h3>
-        <p>Absolutely. Cancel with one click from your account settings. No questions asked.</p>
+        <p>Absolutely. Cancel from Manage Billing in your account settings — your plan stays active until the end of the period you've paid for.</p>
       </div>
     </div>
   </div>
