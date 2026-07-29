@@ -48,20 +48,19 @@
           </div>
         }
 
-        @if (org.subscriptionStatus === 'active' && !org.cancelAtPeriodEnd) {
+        @if (canManageBilling()) {
           <div class="subscription-actions">
-            @if (!showConfirm) {
-              <button class="btn btn-danger-outline" (click)="confirmCancel()">Cancel Subscription</button>
-            } @else {
-              <div class="confirm-cancel">
-                <p>Are you sure? Your subscription will remain active until the end of the current billing period.</p>
-                <div class="confirm-buttons">
-                  <button class="btn btn-danger" (click)="cancelSubscription()" [disabled]="cancelling">
-                    {{ cancelling ? 'Cancelling...' : 'Yes, Cancel' }}
-                  </button>
-                  <button class="btn btn-outline" (click)="dismissCancel()" [disabled]="cancelling">Keep Subscription</button>
-                </div>
-              </div>
+            <button class="btn btn-outline" (click)="openBilling()" [disabled]="openingPortal">
+              {{ openingPortal ? 'Opening...' : 'Manage Billing' }}
+            </button>
+            @if (org.subscriptionStatus === 'active' && !org.cancelAtPeriodEnd) {
+              <button class="btn btn-danger-outline" (click)="openBilling('cancel')" [disabled]="openingPortal">
+                Cancel Subscription
+              </button>
+            }
+            <p class="billing-hint">Invoices, receipts, payment method, and cancellation — opens in a new tab.</p>
+            @if (portalError) {
+              <p class="billing-error">{{ portalError }}</p>
             }
           </div>
         }

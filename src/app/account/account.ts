@@ -1,5 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 import { OrgsService } from '../orgs.service';
 import { PaymentsService } from '../payments.service';
 import { Org } from '../models';
@@ -11,12 +12,13 @@ import { Org } from '../models';
   styleUrl: './account.css',
 })
 export class Account implements OnInit {
+  private authService = inject(AuthService);
   private orgsService = inject(OrgsService);
   private paymentsService = inject(PaymentsService);
 
   org: Org | null = null;
-  cancelling = false;
-  showConfirm = false;
+  openingPortal = false;
+  portalError = '';
 
   private planNames: Record<string, string> = {
     pri_01kr05y9cq25yt75ey1ddkpger: 'Basic Monthly',
@@ -69,33 +71,54 @@ export class Account implements OnInit {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   }
 
-  confirmCancel() {
-    this.showConfirm = true;
+  // Display only — the API enforces owner-only on the portal session itself.
+  canManageBilling(): boolean {
+    const userId = this.authService.getUserId();
+    if (!userId || !this.org?.paddleCustomerId) return false;
+    return this.org.members.some(
+      (m) => m.user === userId && m.role === 'owner',
+    );
   }
 
-  dismissCancel() {
-    this.showConfirm = false;
-  }
+  // Cancelling goes through the portal too, so Paddle's retention flow gets a
+  // chance to make the customer an offer before it's confirmed.
+  openBilling(target: 'overview' | 'cancel' = 'overview') {
+    // The tab has to be opened on the click itself; opening it once the
+    // request comes back reads as a popup and gets blocked.
+    const tab = window.open('', '_blank');
+    this.openingPortal = true;
+    this.portalError = '';
 
-  cancelSubscription() {
-    this.cancelling = true;
-    this.paymentsService.cancelSubscription().subscribe({
-      next: () => {
-        if (this.org) {
-          this.org = { ...this.org, cancelAtPeriodEnd: true };
+    this.paymentsService.createPortalSession().subscribe({
+      next: (session) => {
+        this.openingPortal = false;
+        const url =
+          target === 'cancel'
+            ? session.cancelUrl || session.overviewUrl
+            : session.overviewUrl;
+        if (tab) {
+          tab.location.href = url;
+        } else {
+          window.location.href = url;
         }
-        this.showConfirm = false;
-        this.cancelling = false;
-        // Reload org data to get updated status
-        this.orgsService.getMyOrgs().subscribe((orgs) => {
-          this.org = orgs.find((o) => o.personal) || orgs[0] || null;
-        });
       },
       error: (err) => {
-        console.error('Cancel error:', err);
-        this.cancelling = false;
-        this.showConfirm = false;
+        this.openingPortal = false;
+        tab?.close();
+        this.portalError = 'Could not open billing. Please try again.';
+        console.error('Portal error:', err);
       },
+    });
+  }
+
+  // The cancellation itself happens in the Paddle portal, so the result
+  // arrives here by webhook rather than by response. Re-read the org when the
+  // tab regains focus so the status reflects it without a manual refresh.
+  @HostListener('window:focus')
+  refreshOrg() {
+    if (!this.org) return;
+    this.orgsService.getMyOrgs().subscribe((orgs) => {
+      this.org = orgs.find((o) => o.personal) || orgs[0] || null;
     });
   }
 }

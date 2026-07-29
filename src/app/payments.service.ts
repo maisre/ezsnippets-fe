@@ -9,6 +9,12 @@ declare global {
   }
 }
 
+export interface PortalSession {
+  overviewUrl: string;
+  updatePaymentMethodUrl?: string;
+  cancelUrl?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -23,9 +29,9 @@ export class PaymentsService {
     );
   }
 
-  cancelSubscription(): Observable<{ status: string }> {
-    return this.http.post<{ status: string }>(
-      `${runtimeConfig.apiUrl}/payments/cancel-subscription`,
+  createPortalSession(): Observable<PortalSession> {
+    return this.http.post<PortalSession>(
+      `${runtimeConfig.apiUrl}/payments/portal-session`,
       {},
     );
   }

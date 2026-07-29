@@ -31,6 +31,20 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  // Reads `sub` out of the JWT payload without verifying it. Only ever used to
+  // decide what to show — every actual permission is enforced server-side, so
+  // a tampered token buys nothing but a misleading button.
+  getUserId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload?.sub ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   // withCredentials so the browser stores the ez_session cookie ez-api sets
   // (used by the cross-subdomain ez-view editor). The SPA still uses the
   // localStorage Bearer token for its own API calls.

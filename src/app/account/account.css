@@ -88,16 +88,16 @@
   border-top: 1px solid #f0f0f0;
 }
 
-.confirm-cancel p {
-  color: #666;
-  font-size: 0.9rem;
-  margin: 0 0 1rem;
-  line-height: 1.5;
+.billing-hint {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0.6rem 0 0;
 }
 
-.confirm-buttons {
-  display: flex;
-  gap: 0.75rem;
+.billing-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin: 0.6rem 0 0;
 }
 
 /* Buttons */
