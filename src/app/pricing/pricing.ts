@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { PaymentsService } from '../payments.service';
 import { AuthService } from '../auth.service';
@@ -31,7 +31,7 @@ interface Catalog {
 
 @Component({
   selector: 'app-pricing',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './pricing.html',
   styleUrl: './pricing.css',
 })

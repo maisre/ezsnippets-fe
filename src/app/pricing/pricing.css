@@ -299,3 +299,21 @@
     font-size: 2.5rem;
   }
 }
+
+.pricing-legal {
+  max-width: 720px;
+  margin: 2rem auto 0;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #777;
+}
+
+.pricing-legal a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.pricing-legal a:hover {
+  text-decoration: underline;
+}

@@ -82,17 +82,20 @@
 .site-footer {
   background-color: #2c3e50;
   color: rgba(255, 255, 255, 0.7);
-  padding: 2.5rem 2rem;
+  padding: 3rem 2rem 2rem;
 }
 
 .footer-content {
   max-width: 1100px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+}
+
+/* Tier one — brand block plus link columns */
+.footer-top {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.2fr;
+  gap: 2.5rem;
+  align-items: start;
 }
 
 .footer-brand {
@@ -101,29 +104,78 @@
   color: white;
 }
 
-.footer-links {
-  display: flex;
-  gap: 1.5rem;
+.footer-tagline {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 22rem;
 }
 
-.footer-links a {
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.footer-heading {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.footer-col a {
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.2s;
 }
 
-.footer-links a:hover {
+.footer-col a:hover {
   color: white;
 }
 
-.footer-copy {
+/* Tier two — legal bar */
+.footer-bottom {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.footer-copy,
+.footer-mor {
   font-size: 0.8rem;
 }
 
+.footer-mor {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 900px) {
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .footer-brand-col {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 600px) {
-  .footer-content {
+  .footer-top {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-bottom {
     flex-direction: column;
-    text-align: center;
+    align-items: flex-start;
   }
 }

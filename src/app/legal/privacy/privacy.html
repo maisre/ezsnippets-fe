@@ -1,0 +1,262 @@
+<!--
+  FIRST-PASS COPY — NOT LEGAL ADVICE. Have a lawyer review before go-live.
+  Placeholders to fill: [LEGAL ENTITY], [BUSINESS ADDRESS], [EFFECTIVE DATE].
+
+  Voice and structure adapted from the Basecamp open-source policies (CC BY
+  4.0). Attribution line at the bottom is required by the licence.
+
+  The retention windows below (30/60/90 days) are commitments — make sure the
+  deletion jobs actually honour them before this goes live. Keep the
+  sub-processor list in sync with what we really run.
+-->
+<div class="legal-page">
+  <h1>Privacy Notice</h1>
+  <p class="legal-updated">Last updated [EFFECTIVE DATE]</p>
+
+  <p class="legal-lead">
+    Your data is yours, not ours. This notice sets out what we collect and why,
+    who else ever touches it, how long we keep it, and what you can make us do
+    with it. One thing up front, because it's the question people actually care
+    about: <strong>we don't sell your personal data, and we never will.</strong>
+  </p>
+
+  <div class="legal-toc">
+    <ul>
+      <li><a [routerLink]="[]" fragment="collect">What we collect and why</a></li>
+      <li><a [routerLink]="[]" fragment="access">When we access or share your information</a></li>
+      <li><a [routerLink]="[]" fragment="rights">Your rights over your information</a></li>
+      <li><a [routerLink]="[]" fragment="security">How we secure your data</a></li>
+      <li><a [routerLink]="[]" fragment="deletion">What happens when you delete things</a></li>
+      <li><a [routerLink]="[]" fragment="retention">Data retention</a></li>
+      <li><a [routerLink]="[]" fragment="location">Where your data lives</a></li>
+      <li><a [routerLink]="[]" fragment="changes">Changes and questions</a></li>
+    </ul>
+  </div>
+
+  <p>
+    The data controller is [LEGAL ENTITY] of [BUSINESS ADDRESS]. This notice
+    covers visitors to ez-snippets.com and people who hold or use an EZ Snippet
+    account.
+  </p>
+  <p>
+    It does not cover the visitors to pages <em>you</em> publish with EZ
+    Snippet. For those, you are the controller and we're processing on your
+    instructions — if you collect personal data through a page you've built, you
+    need your own privacy notice for it.
+  </p>
+
+  <h2 id="collect">What we collect and why</h2>
+  <p>
+    The guiding principle is to collect only what we actually need to run the
+    Service. In practice:
+  </p>
+
+  <h3>Identity and access</h3>
+  <p>
+    When you sign up we ask for an email address, a username, and a password. We
+    store the password only as a bcrypt hash — we never hold the plain text, and
+    we can't tell you what your password is. We use your email to sign you in,
+    to reset your password, and to send you things you need to know about your
+    account.
+  </p>
+
+  <h3>Billing information</h3>
+  <p>
+    If you subscribe, your payment details go straight to Paddle.com, our
+    merchant of record. Full card numbers never reach our servers. What we store
+    is the plan you're on, its status and renewal date, and the brand and last
+    four digits of the card, so we can show you what you're paying for and help
+    when billing goes wrong.
+  </p>
+
+  <h3>Your content</h3>
+  <p>
+    We store the pages, layouts, snippet configurations, text, and images you
+    create or upload, because storing them is the product. Uploaded images are
+    kept in cloud object storage and served through a content delivery network.
+    We keep this content for as long as your account is active.
+  </p>
+
+  <h3>Organization membership</h3>
+  <p>
+    We record which organizations you belong to, your role in them, and who
+    invited whom, so that access control works.
+  </p>
+
+  <h3>Technical and log data</h3>
+  <p>
+    We log IP addresses on sign-up and sign-in, for security and to deal with
+    abusive registrations. We collect browser and device information and error
+    diagnostics when something breaks, so we can fix it. Error reports can
+    incidentally include fragments of what you were working on at the moment of
+    the failure; we keep them briefly and then discard them.
+  </p>
+
+  <h3>Correspondence</h3>
+  <p>
+    When you email support, we keep the thread so we have context next time you
+    write.
+  </p>
+
+  <h3>Cookies</h3>
+  <p>
+    We use cookies and browser storage that are necessary to run the Service —
+    principally to keep you signed in and to carry your editing session between
+    the app and the page editor. Paddle sets its own cookies during checkout. We
+    don't run advertising cookies and we don't track you across other sites.
+  </p>
+
+  <h2 id="access">When we access or share your information</h2>
+  <p>
+    <strong>Service providers.</strong> A handful of companies process data on
+    our behalf so that EZ Snippet can run at all:
+  </p>
+  <ul>
+    <li>
+      <strong>Paddle.com</strong> — merchant of record: checkout, payments, tax,
+      invoicing, and the billing portal.
+    </li>
+    <li>
+      <strong>Amazon Web Services</strong> — hosting, databases, and storage for
+      uploaded images.
+    </li>
+    <li><strong>Sentry</strong> — error monitoring and diagnostics.</li>
+    <li>
+      <strong>Our email provider</strong> — password resets, billing notices,
+      and other transactional email.
+    </li>
+  </ul>
+  <p>
+    <strong>Human access.</strong> Nobody here reads your content as a matter of
+    routine. The exceptions are the same short list as in our
+    <a routerLink="/terms">Terms of Service</a>: helping with a support request
+    you've made and consented to, repairing an automated process that failed
+    partway through, investigating abuse, and complying with a valid legal
+    order.
+  </p>
+  <p>
+    <strong>Legal requests.</strong> We don't hand over data on request. We hand
+    it over when we're compelled by a legally binding order, and we tell the
+    affected account holder unless we're prohibited from doing so. If a tax
+    authority audits us, we disclose the minimum billing information the audit
+    requires and nothing more.
+  </p>
+  <p>
+    <strong>Aggregated data.</strong> We may aggregate or de-identify usage
+    information and use it to understand how the Service is being used. That
+    data can't be traced back to you.
+  </p>
+  <p>
+    <strong>If the company changes hands.</strong> We have no plans to sell or
+    merge. If it ever happened, we'd tell you before your personal data moved to
+    anyone else or came under a different privacy notice.
+  </p>
+
+  <h2 id="rights">Your rights over your information</h2>
+  <p>
+    We apply these to everyone, wherever you live, rather than only to the
+    people whose local law demands it:
+  </p>
+  <ul>
+    <li><strong>To know</strong> what we collect and what we do with it.</li>
+    <li><strong>To access</strong> the personal data we hold about you.</li>
+    <li><strong>To correct</strong> anything inaccurate.</li>
+    <li>
+      <strong>To erasure</strong> — to have your data deleted. Deleting some of
+      it means the Service stops working for you, so this usually means closing
+      the account.
+    </li>
+    <li>
+      <strong>To portability</strong> — to get your data out in a usable form
+      and take it elsewhere.
+    </li>
+    <li>
+      <strong>To restrict or object to</strong> processing in certain
+      circumstances.
+    </li>
+    <li>
+      <strong>To complain</strong> to your data protection authority. If you're
+      in the UK or EEA, you can go to them directly, and you don't have to come
+      to us first.
+    </li>
+    <li>
+      <strong>Not to be treated differently</strong> for exercising any of the
+      above. We won't charge you more or give you worse support for it.
+    </li>
+  </ul>
+  <p>
+    Email
+    <a href="mailto:support@ez-snippets.com">support&#64;ez-snippets.com</a> to
+    exercise any of these and we'll respond within the time applicable law
+    allows. We may need to verify who you are first — usually by confirming you
+    control the account's email address.
+  </p>
+
+  <h2 id="security">How we secure your data</h2>
+  <p>
+    Traffic between you and us is encrypted with TLS. Passwords are stored as
+    bcrypt hashes. Access to production data is limited to the people who need
+    it to operate the Service. Backups are encrypted.
+  </p>
+  <p>
+    No system is perfectly secure and we'd rather say so than imply otherwise.
+    If a breach affects your personal data, we'll notify you and the relevant
+    authority.
+  </p>
+
+  <h2 id="deletion">What happens when you delete things</h2>
+  <p>
+    When you delete a page, layout, or uploaded asset, it stops being accessible
+    in the app straight away. It may remain on active servers for up to 30 days
+    and in backups for up to 60 days after that. Within 90 days it's gone from
+    everything.
+  </p>
+  <p>
+    If you close your account, your content becomes inaccessible immediately and
+    is purged from our systems within 60 days. We can't recover any of it after
+    that, so export anything you want to keep first.
+  </p>
+
+  <h2 id="retention">Data retention</h2>
+  <p>
+    We keep information for as long as we need it for the purpose we collected
+    it. Account and content data lasts as long as the account. Error diagnostics
+    are kept for a short period and then discarded. Billing and tax records we
+    have to keep longer, because the law requires it — typically seven years.
+  </p>
+
+  <h2 id="location">Where your data lives</h2>
+  <p>
+    EZ Snippet runs on infrastructure in the United States. If you're in the UK,
+    the EEA, or anywhere else outside the US,
+    <strong>your information will be transferred to and stored in the United
+    States</strong>. Where those transfers need a legal basis, they're covered
+    by Standard Contractual Clauses with the providers involved.
+  </p>
+
+  <h2 id="changes">Changes and questions</h2>
+  <p>
+    We'll update this notice as the Service changes and as regulations require.
+    When a change is significant, we'll update the date at the top and tell you
+    by email or in the app before it takes effect.
+  </p>
+  <p>
+    Questions, concerns, or a request about your data? Email
+    <a href="mailto:support@ez-snippets.com">support&#64;ez-snippets.com</a> —
+    a real person reads it.
+  </p>
+
+  <p class="legal-attribution">
+    Voice and structure adapted from the
+    <a href="https://github.com/basecamp/policies" rel="noopener" target="_blank"
+      >Basecamp open-source policies</a
+    >
+    /
+    <a
+      href="https://creativecommons.org/licenses/by/4.0/"
+      rel="noopener"
+      target="_blank"
+      >CC BY 4.0</a
+    >.
+  </p>
+</div>

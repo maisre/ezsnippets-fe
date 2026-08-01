@@ -59,6 +59,11 @@
               </button>
             }
             <p class="billing-hint">Invoices, receipts, payment method, and cancellation — opens in a new tab.</p>
+            <p class="billing-hint">
+              Cancelling keeps your plan active until the end of the period
+              you've paid for. See our
+              <a routerLink="/refunds">Refund Policy</a>.
+            </p>
             @if (portalError) {
               <p class="billing-error">{{ portalError }}</p>
             }

@@ -23,18 +23,54 @@
   <router-outlet />
 </main>
 
-@if (!(isAuthenticated$ | async)) {
+@if (showFooter()) {
   <footer class="site-footer">
     <div class="footer-content">
-      <div class="footer-brand">EZ Snippet</div>
-      <div class="footer-links">
-        @if (!comingSoon) {
-          <a routerLink="/pricing">Pricing</a>
-          <a routerLink="/signup">Sign Up</a>
-        }
-        <a routerLink="/login">Login</a>
+      <div class="footer-top">
+        <div class="footer-brand-col">
+          <div class="footer-brand">EZ Snippet</div>
+          <p class="footer-tagline">
+            Build websites faster with reusable snippets.
+          </p>
+        </div>
+
+        <nav class="footer-col" aria-labelledby="footer-product">
+          <h2 class="footer-heading" id="footer-product">Product</h2>
+          @if (isAuthenticated$ | async) {
+            <a routerLink="/dashboard">Dashboard</a>
+            <a routerLink="/pages">Pages</a>
+            <a routerLink="/layouts">Layouts</a>
+            <a routerLink="/account">Account</a>
+          } @else {
+            @if (!comingSoon) {
+              <a routerLink="/pricing">Pricing</a>
+              <a routerLink="/signup">Sign Up</a>
+            }
+            <a routerLink="/login">Login</a>
+          }
+        </nav>
+
+        <nav class="footer-col" aria-labelledby="footer-legal">
+          <h2 class="footer-heading" id="footer-legal">Legal</h2>
+          <a routerLink="/terms">Terms of Service</a>
+          <a routerLink="/privacy">Privacy Notice</a>
+          <a routerLink="/refunds">Refund Policy</a>
+        </nav>
+
+        <nav class="footer-col" aria-labelledby="footer-support">
+          <h2 class="footer-heading" id="footer-support">Support</h2>
+          <a href="mailto:support@ez-snippets.com">support&#64;ez-snippets.com</a>
+        </nav>
       </div>
-      <div class="footer-copy">&copy; 2025 EZ Snippet. All rights reserved.</div>
+
+      <div class="footer-bottom">
+        <span class="footer-copy"
+          >&copy; {{ currentYear }} EZ Snippet. All rights reserved.</span
+        >
+        <span class="footer-mor">
+          Payments are processed by Paddle.com, our merchant of record.
+        </span>
+      </div>
     </div>
   </footer>
 }
