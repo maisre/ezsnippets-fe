@@ -1,14 +1,12 @@
 <!--
   FIRST-PASS COPY — NOT LEGAL ADVICE. Have a lawyer review before go-live.
-  Placeholders to fill: [LEGAL ENTITY], [BUSINESS ADDRESS], [GOVERNING LAW],
-  [EFFECTIVE DATE].
 
   Voice and section structure adapted from the Basecamp open-source policies
   (CC BY 4.0). Attribution line at the bottom is required by the licence.
 -->
 <div class="legal-page">
   <h1>Terms of Service</h1>
-  <p class="legal-updated">Last updated [EFFECTIVE DATE]</p>
+  <p class="legal-updated">Last updated August 24, 2026</p>
 
   <p class="legal-lead">
     Thanks for using EZ Snippet. We've tried to write these terms the way we'd
@@ -19,9 +17,9 @@
 
   <p>
     When we say <strong>"we"</strong>, <strong>"us"</strong>, or
-    <strong>"the Company"</strong>, we mean [LEGAL ENTITY], of
-    [BUSINESS ADDRESS]. When we say <strong>"the Service"</strong>, we mean
-    ez-snippets.com, the EZ Snippet application, the pages and layouts it
+    <strong>"the Company"</strong>, we mean EzSnippets LLC, of 7533 S Center View
+    Ct #6294, West Jordan, UT 84084. When we say <strong>"the Service"</strong>,
+    we mean ez-snippets.com, the EZ Snippet application, the pages and layouts it
     publishes, and anything else we build and run under the EZ Snippet name.
     When we say <strong>"you"</strong>, we mean the person or organization that
     owns an account.
@@ -119,8 +117,11 @@
       use the Service for something we want no part of.
     </li>
     <li>
-      Abuse or threats directed at anyone who works here ends the account
-      immediately.
+      Two things we act on immediately, without the warning above: abuse or
+      threats directed at anyone who works here, and abuse of the AI features as
+      described in <a [routerLink]="[]" fragment="ai">AI features</a>. The second
+      is there because AI usage bills us per request — by the time a warning
+      cycle has played out, the damage is already paid for.
     </li>
   </ol>
 
@@ -134,7 +135,13 @@
     <li>send spam, or build pages whose purpose is to send it;</li>
     <li>
       scrape the Service, hammer it with automated requests, or work around plan
-      limits, rate limits, and quotas; or
+      limits, rate limits, and quotas;
+    </li>
+    <li>
+      abuse the AI features — as a general-purpose model endpoint, through
+      automation, or to get around the limits on them. The detail is in
+      <a [routerLink]="[]" fragment="ai">AI features</a>, and we enforce that one
+      immediately; or
     </li>
     <li>resell the Service, or repackage it as your own product.</li>
   </ul>
@@ -233,6 +240,83 @@
     never mid-period.
   </p>
 
+  <h2 id="ai">AI features</h2>
+  <p>
+    Parts of EZ Snippet are powered by third-party AI models — rewriting snippet
+    copy to fit your site, suggesting imagery, and the chat that edits a page for
+    you. When you use those features, what you type and the relevant part of your
+    page is sent to our AI provider to produce a response. Our
+    <a routerLink="/privacy">Privacy Notice</a> names who that is and what
+    happens to the data.
+  </p>
+  <ol>
+    <li>
+      <strong>Check the output before you publish it.</strong> Generated text and
+      suggestions can be wrong, bland, or a bad fit, and the same prompt can
+      produce similar output for someone else. We don't warrant that anything the
+      AI produces is accurate, original, or free of someone else's rights, and
+      reviewing it is your job, not ours.
+    </li>
+    <li>
+      <strong>What it produces for you is yours.</strong> AI output that ends up
+      in your pages is treated as your content under
+      <a [routerLink]="[]" fragment="content">Who owns what</a>. We can't grant
+      you exclusivity over it, because we can't stop a model producing something
+      similar for somebody else.
+    </li>
+    <li>
+      <strong>These features are for building your own pages.</strong> They're
+      part of the editor, not a general-purpose AI endpoint. In particular, don't
+      use them to:
+      <ul>
+        <li>
+          run prompts unrelated to building or editing your pages, or treat the
+          Service as a cheaper way to reach a model you'd otherwise pay for
+          directly;
+        </li>
+        <li>
+          script, automate, or bulk-send requests through the AI features, or
+          drive them from anything other than the EZ Snippet interface;
+        </li>
+        <li>
+          resell, share, or otherwise pass on access to them to people who don't
+          have their own account;
+        </li>
+        <li>
+          try to extract our prompts, model configuration, or provider
+          credentials, or use prompt injection, jailbreaks, or similar techniques
+          to get around the limits we've put on the feature;
+        </li>
+        <li>
+          generate content that breaches
+          <a [routerLink]="[]" fragment="acceptable-use">what you can't use the
+          Service for</a>, or that breaches our AI provider's own usage
+          policies; or
+        </li>
+        <li>deliberately run up usage in order to cost us money.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>We meter AI usage, and we act on it.</strong> Every AI request
+      costs us real money to a third party, so this is the one place we won't
+      wait. We may throttle, disable the AI features on, suspend, or terminate an
+      account we reasonably believe is doing any of the above, and we may do it
+      immediately and without the advance warning we'd otherwise give under
+      <a [routerLink]="[]" fragment="cancellation">Cancellation and
+      termination</a>. Where the usage was deliberate, we may also require you to
+      cover the provider costs it ran up. We'd much rather talk to you first, and
+      normally we will — but a fair-use ceiling only means anything if we can
+      enforce it the same day.
+    </li>
+    <li>
+      Where your plan sets a limit or a fair-use ceiling on AI usage, that limit
+      is part of what you bought, and working around it is a breach of these
+      terms in its own right. We may introduce or adjust those ceilings as we
+      learn what normal use looks like; if a change would affect how you're
+      already using the Service, you'll get notice by email first.
+    </li>
+  </ol>
+
   <h2 id="automated-access">Automated access</h2>
   <p>
     We don't currently offer a public API. Anything that accesses the Service
@@ -273,8 +357,8 @@
 
   <h2 id="law">Governing law</h2>
   <p>
-    These terms are governed by the laws of [GOVERNING LAW], and the courts of
-    [GOVERNING LAW] have exclusive jurisdiction over any dispute, without regard
+    These terms are governed by the laws of the State of Utah, and the courts of
+    the State of Utah have exclusive jurisdiction over any dispute, without regard
     to conflict-of-law rules.
   </p>
 
