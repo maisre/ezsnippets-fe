@@ -209,7 +209,7 @@
           >
             <span class="grip" cdkDragHandle>⋮⋮</span>
             <img
-              [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+              [src]="snippetThumbUrl(snippet.id)"
               alt=""
               class="snip-thumb"
               loading="lazy"
@@ -333,7 +333,7 @@
       title="Add to page"
     >
       <img
-        [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'"
+        [src]="snippetThumbUrl(snippet.id)"
         alt=""
         class="palette-thumb"
         loading="lazy"

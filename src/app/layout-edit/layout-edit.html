@@ -134,7 +134,7 @@
         >
           <div *ngFor="let snippet of navbarSnippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
             <span class="grip" cdkDragHandle>⋮⋮</span>
-            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <div class="snip-meta"><div class="snip-name">{{ snippet.type || 'Navbar' }}</div></div>
           </div>
           <div *ngIf="navbarSnippets.length === 0" class="empty-state">Drag a navbar snippet here</div>
@@ -166,7 +166,7 @@
           >
             <div *ngFor="let snippet of subPage.snippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
               <span class="grip" cdkDragHandle>⋮⋮</span>
-              <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+              <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
               <div class="snip-meta">
                 <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
                 <div class="badges">
@@ -196,7 +196,7 @@
         >
           <div *ngFor="let snippet of footerSnippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
             <span class="grip" cdkDragHandle>⋮⋮</span>
-            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <div class="snip-meta"><div class="snip-name">{{ snippet.type || 'Footer' }}</div></div>
           </div>
           <div *ngIf="footerSnippets.length === 0" class="empty-state">Drag a footer snippet here</div>
@@ -242,7 +242,7 @@
             [cdkDragStartDelay]="0"
             class="palette-item"
           >
-            <img [src]="viewUrl + '/public/images/screenshots/' + snippet.id + '.png'" alt="" class="palette-thumb" loading="lazy" decoding="async" />
+            <img [src]="snippetThumbUrl(snippet.id)" alt="" class="palette-thumb" loading="lazy" decoding="async" />
             <span class="palette-type" *ngIf="snippet.type">{{ snippet.type }}</span>
           </div>
           <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>

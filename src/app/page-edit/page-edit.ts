@@ -10,7 +10,7 @@ import {
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
-import { runtimeConfig } from '../runtime-config';
+import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
 import { Page, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
 
 @Component({
@@ -32,6 +32,8 @@ export class PageEdit implements OnInit {
   availableSnippets: SnippetOverride[] = [];
   filteredSnippets: SnippetOverride[] = [];
   viewUrl = runtimeConfig.viewUrl;
+  // Bound in the template for every snippet thumbnail.
+  snippetThumbUrl = snippetThumbUrl;
   customizing = false;
 
   filters: SnippetFilters = { types: [], tags: [] };

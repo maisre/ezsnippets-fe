@@ -36,6 +36,10 @@ jobs:
         env:
           API_URL: https://api.ez-snippets.com
           VIEW_URL: https://view.ez-snippets.com
+          # AssetsStack's CloudFront domain. Serves the snippet preview
+          # images published by ez-api's upload-snippet-shots.js. Must match
+          # the ASSETS_CDN_URL given to ez-api and ez-background.
+          ASSETS_CDN_URL: ${{ vars.ASSETS_CDN_URL || 'https://d3czwtt2i1r7wf.cloudfront.net' }}
           PADDLE_CLIENT_TOKEN: ${{ secrets.PADDLE_CLIENT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_RELEASE: ${{ github.sha }}
@@ -49,6 +53,7 @@ jobs:
           {
             "apiUrl": "${API_URL}",
             "viewUrl": "${VIEW_URL}",
+            "assetsCdnUrl": "${ASSETS_CDN_URL}",
             "paddleClientToken": "${PADDLE_CLIENT_TOKEN}",
             "sentryDsn": "${SENTRY_DSN}",
             "sentryEnvironment": "production",

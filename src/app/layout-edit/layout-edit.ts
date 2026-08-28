@@ -10,7 +10,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { LayoutsService } from '../layouts.service';
 import { SnippetsService } from '../snippets.service';
-import { runtimeConfig } from '../runtime-config';
+import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
 import { Layout, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
 
 @Component({
@@ -35,6 +35,8 @@ export class LayoutEdit implements OnInit {
   filteredSnippets: SnippetOverride[] = [];
   activeSubPageIndex = 0;
   viewUrl = runtimeConfig.viewUrl;
+  // Bound in the template for every snippet thumbnail.
+  snippetThumbUrl = snippetThumbUrl;
   customizing = false;
 
   filters: SnippetFilters = { types: [], tags: [] };
