@@ -6,7 +6,13 @@ import { runtimeConfig } from './runtime-config';
 export interface PlanUsage {
   hasPlan: boolean;
   plan: string | null;
-  limits: { maxPages: number; maxLayouts: number; maxSnippets: number } | null;
+  limits: {
+    maxPages: number;
+    maxLayouts: number;
+    maxSeats: number;
+    maxCustomDomains: number;
+    aiDailyLimit: number;
+  } | null;
   usage: { pages: number; layouts: number } | null;
 }
 

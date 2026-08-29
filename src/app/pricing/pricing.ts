@@ -20,7 +20,13 @@ interface CatalogPlan {
   features: string[];
   featured: boolean;
   cta: string;
-  limits: { maxPages: number; maxLayouts: number; maxSnippets: number };
+  limits: {
+    maxPages: number;
+    maxLayouts: number;
+    maxSeats: number;
+    maxCustomDomains: number;
+    aiDailyLimit: number;
+  };
   prices: Partial<Record<BillingInterval, CatalogPrice>>;
 }
 
@@ -123,14 +129,31 @@ export class Pricing implements OnInit {
   }
 
   limitFeatures(plan: CatalogPlan): string[] {
-    const { maxPages, maxLayouts, maxSnippets } = plan.limits;
-    return [
-      maxPages === -1 ? 'Unlimited pages' : `Up to ${maxPages} pages`,
+    const { maxPages, maxLayouts, maxSeats, maxCustomDomains, aiDailyLimit } =
+      plan.limits;
+
+    // Pages and layouts are concurrency limits — archiving a finished project
+    // gives the slot back — so they read as "active", not as a lifetime cap.
+    const features = [
       maxLayouts === -1
-        ? 'Unlimited layouts'
-        : `${maxLayouts} layout${maxLayouts !== 1 ? 's' : ''}`,
-      maxSnippets === -1 ? 'All snippets' : `Up to ${maxSnippets} snippets`,
+        ? 'Unlimited active layouts'
+        : `${maxLayouts} active layout${maxLayouts !== 1 ? 's' : ''}`,
+      maxPages === -1 ? 'Unlimited pages' : `Up to ${maxPages} pages`,
+      maxSeats === -1 ? 'Unlimited seats' : `${maxSeats} seat${maxSeats !== 1 ? 's' : ''}`,
+      `${aiDailyLimit} AI requests/day`,
     ];
+
+    // Omitted rather than shown as "0 custom domains" — an absent capability
+    // shouldn't take up a line on the tier that doesn't have it.
+    if (maxCustomDomains > 0) {
+      features.push(
+        maxCustomDomains === 1
+          ? 'Custom preview domain'
+          : `${maxCustomDomains} custom preview domains`,
+      );
+    }
+
+    return features;
   }
 
   ctaClass(plan: CatalogPlan): string {
