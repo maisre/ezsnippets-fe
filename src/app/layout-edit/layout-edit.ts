@@ -9,13 +9,52 @@ import {
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
 import { LayoutsService } from '../layouts.service';
+import { TemplatesService } from '../templates.service';
+import { TemplatePicker } from '../template-picker/template-picker';
+import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
-import { Layout, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
+import {
+  Layout,
+  SnippetOverride,
+  SnippetFilters,
+  LicensingImage,
+  Template,
+} from '../models';
+
+/**
+ * Normalize a layout's nav/footer to a snippet reference.
+ *
+ * They used to be saved as bare id strings while every other snippet position
+ * held a full abstract. Accepting both keeps pre-existing layouts working;
+ * everything written from here on is an abstract.
+ */
+function snippetRefOf(value: unknown): Partial<SnippetOverride> | null {
+  if (!value) return null;
+  if (typeof value === 'string') return { id: value };
+  if (typeof value === 'object' && (value as any).id) {
+    return value as Partial<SnippetOverride>;
+  }
+  return null;
+}
+
+/** The persisted shape of one snippet position: id plus page-scoped overrides. */
+function snippetAbstract(snippet: SnippetOverride) {
+  return {
+    id: snippet.id,
+    cssOverride: snippet.cssOverride ?? '',
+    htmlOverride: snippet.htmlOverride ?? {},
+    jsOverride: snippet.jsOverride ?? '',
+    textReplacementOverride: snippet.textReplacementOverride,
+    imageReplacementOverride: snippet.imageReplacementOverride,
+    aiCustomized: snippet.aiCustomized,
+    aiImagesPopulated: snippet.aiImagesPopulated,
+  };
+}
 
 @Component({
   selector: 'app-layout-edit',
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, TemplatePicker, SaveTemplateDialog],
   templateUrl: './layout-edit.html',
   styleUrl: './layout-edit.css',
 })
@@ -23,6 +62,7 @@ export class LayoutEdit implements OnInit {
   private route = inject(ActivatedRoute);
   router = inject(Router);
   private layoutsService = inject(LayoutsService);
+  private templatesService = inject(TemplatesService);
   private snippetsService = inject(SnippetsService);
 
   layout: Layout | null = null;
@@ -252,26 +292,98 @@ export class LayoutEdit implements OnInit {
     });
   }
 
+  // Templates. Two separate gestures in here: saving the whole layout as a
+  // site template, and dropping a partial/page template into the subpage
+  // that's currently open.
+  showTemplates = false;
+  showSaveTemplate = false;
+  templateMode: 'append' | 'replace' = 'append';
+  templateError: string | null = null;
+
+  toggleTemplates() {
+    this.showTemplates = !this.showTemplates;
+    this.templateError = null;
+  }
+
+  /** Lands in the active subpage — that's the one the user is looking at. */
+  applyTemplate(template: Template) {
+    if (!this.layoutId) return;
+    const current = this.getActiveSubPageSnippets();
+    const mode = current.length ? this.templateMode : 'replace';
+
+    this.templatesService
+      .applyToLayout(this.layoutId, template.id, {
+        mode,
+        subPageIndex: this.activeSubPageIndex,
+      })
+      .subscribe({
+        next: () => {
+          this.showTemplates = false;
+          this.loadLayout();
+        },
+        error: (err) => {
+          this.templateError =
+            err?.error?.message ?? 'Could not apply that template.';
+        },
+      });
+  }
+
+  deleteTemplate(template: Template, picker: TemplatePicker) {
+    this.templatesService.deleteTemplate(template.id).subscribe({
+      next: () => picker.load(),
+      error: () => (this.templateError = 'Could not delete that template.'),
+    });
+  }
+
+  /** Ids only — a site template is the shell, never the content in it. */
+  get templateNavId(): string | undefined {
+    return this.navbarSnippets[0]?.id;
+  }
+
+  get templateFooterId(): string | undefined {
+    return this.footerSnippets[0]?.id;
+  }
+
+  get templateSubPages(): Array<{ name: string; snippetIds: string[] }> {
+    return (this.layout?.subPages ?? []).map((sp) => ({
+      name: sp.name,
+      snippetIds: (sp.snippets ?? []).map((s) => s.id),
+    }));
+  }
+
+  openSaveTemplate() {
+    this.showSaveTemplate = true;
+  }
+
+  onTemplateSaved() {
+    this.showSaveTemplate = false;
+  }
+
   loadLayoutSnippets() {
     if (!this.layout || !this.availableSnippets.length) {
       return;
     }
 
-    // Load navbar snippet
+    // Load navbar snippet. Older layouts stored nav/footer as a bare id string;
+    // they're snippet abstracts now, like subpage snippets and page snippets
+    // have always been. Read both so a layout saved before the change still
+    // opens, and merge the ref's overrides over the library snippet so AI text
+    // and image customization on the nav/footer survives a reload.
+    const navRef = snippetRefOf(this.layout.nav);
     this.navbarSnippets = [];
-    if (this.layout.nav) {
-      const navbarSnippet = this.availableSnippets.find((s) => s.id === this.layout!.nav);
+    if (navRef) {
+      const navbarSnippet = this.availableSnippets.find((s) => s.id === navRef.id);
       if (navbarSnippet) {
-        this.navbarSnippets.push({ ...navbarSnippet });
+        this.navbarSnippets.push({ ...navbarSnippet, ...navRef });
       }
     }
 
-    // Load footer snippet
+    const footerRef = snippetRefOf(this.layout.footer);
     this.footerSnippets = [];
-    if (this.layout.footer) {
-      const footerSnippet = this.availableSnippets.find((s) => s.id === this.layout!.footer);
+    if (footerRef) {
+      const footerSnippet = this.availableSnippets.find((s) => s.id === footerRef.id);
       if (footerSnippet) {
-        this.footerSnippets.push({ ...footerSnippet });
+        this.footerSnippets.push({ ...footerSnippet, ...footerRef });
       }
     }
 
@@ -367,8 +479,11 @@ export class LayoutEdit implements OnInit {
     if (!this.layoutId || !this.layout) return;
 
     const updateData: Partial<Layout> = {
-      nav: this.navbarSnippets.length > 0 ? this.navbarSnippets[0].id : '',
-      footer: this.footerSnippets.length > 0 ? this.footerSnippets[0].id : '',
+      // Abstracts, not bare ids: the API guards every nav/footer read on
+      // `nav?.id`, so a string meant AI text customization, image population and
+      // the licensing collector all silently skipped the navbar and footer.
+      nav: this.navbarSnippets.length ? snippetAbstract(this.navbarSnippets[0]) : null,
+      footer: this.footerSnippets.length ? snippetAbstract(this.footerSnippets[0]) : null,
       subPages:
         this.layout.subPages?.map((subPage) => ({
           name: subPage.name,

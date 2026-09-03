@@ -25,6 +25,7 @@ interface CatalogPlan {
     maxLayouts: number;
     maxSeats: number;
     maxCustomDomains: number;
+    maxSavedTemplates: number;
     aiDailyLimit: number;
   };
   prices: Partial<Record<BillingInterval, CatalogPrice>>;
@@ -129,8 +130,14 @@ export class Pricing implements OnInit {
   }
 
   limitFeatures(plan: CatalogPlan): string[] {
-    const { maxPages, maxLayouts, maxSeats, maxCustomDomains, aiDailyLimit } =
-      plan.limits;
+    const {
+      maxPages,
+      maxLayouts,
+      maxSeats,
+      maxCustomDomains,
+      maxSavedTemplates,
+      aiDailyLimit,
+    } = plan.limits;
 
     // Pages and layouts are concurrency limits — archiving a finished project
     // gives the slot back — so they read as "active", not as a lifetime cap.
@@ -142,6 +149,12 @@ export class Pricing implements OnInit {
       maxSeats === -1 ? 'Unlimited seats' : `${maxSeats} seat${maxSeats !== 1 ? 's' : ''}`,
       `${aiDailyLimit} AI requests/day`,
     ];
+
+    // Saving your own templates is on or off; the number behind it is either
+    // "none" or "as many as you like", so a count would read as noise.
+    if (maxSavedTemplates !== 0) {
+      features.push('Save your own templates');
+    }
 
     // Omitted rather than shown as "0 custom domains" — an absent capability
     // shouldn't take up a line on the tier that doesn't have it.

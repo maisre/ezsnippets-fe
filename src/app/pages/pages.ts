@@ -8,11 +8,21 @@ import { PagesService } from '../pages.service';
 import { PlansService, PlanUsage } from '../plans.service';
 import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
-import { Page } from '../models';
+import { Page, Template } from '../models';
+import { TemplatePicker } from '../template-picker/template-picker';
+import { TemplatesService } from '../templates.service';
 
 @Component({
   selector: 'app-pages',
-  imports: [CommonModule, FormsModule, RouterLink, OverflowMenu, CdkMenu, CdkMenuItem],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    OverflowMenu,
+    CdkMenu,
+    CdkMenuItem,
+    TemplatePicker,
+  ],
   templateUrl: './pages.html',
   styleUrl: './pages.css',
 })
@@ -20,6 +30,7 @@ export class Pages implements OnInit {
   private pagesService = inject(PagesService);
   private plansService = inject(PlansService);
   private authService = inject(AuthService);
+  private templatesService = inject(TemplatesService);
   private router = inject(Router);
   pages: Page[] = [];
   usage: PlanUsage | null = null;
@@ -29,6 +40,54 @@ export class Pages implements OnInit {
     siteName: '',
     description: '',
   };
+
+  // Start-from-template drawer. Closed by default so the blank-page form stays
+  // the thing you land on — picking a template is a deliberate act.
+  showTemplates = false;
+  templateError: string | null = null;
+
+  toggleTemplates() {
+    this.showTemplates = !this.showTemplates;
+    this.templateError = null;
+  }
+
+  /**
+   * Create a page from a template. The name typed into the blank-page form is
+   * reused if there is one, so filling the form and then noticing the template
+   * gallery doesn't throw the name away.
+   */
+  useTemplate(template: Template) {
+    if (!this.canCreate) {
+      this.showLimitModal = true;
+      return;
+    }
+
+    this.templatesService
+      .createPageFrom(template.id, {
+        name: this.newPage.name.trim() || undefined,
+        siteName: this.newPage.siteName.trim() || undefined,
+        description: this.newPage.description.trim() || undefined,
+      })
+      .subscribe({
+        next: (page) => {
+          this.newPage = { name: '', siteName: '', description: '' };
+          this.showTemplates = false;
+          this.loadUsage();
+          this.router.navigate(['/p/edit', page.id]);
+        },
+        error: (err) => {
+          this.templateError =
+            err?.error?.message ?? 'Could not create a page from that template.';
+        },
+      });
+  }
+
+  deleteTemplate(template: Template, picker: TemplatePicker) {
+    this.templatesService.deleteTemplate(template.id).subscribe({
+      next: () => picker.load(),
+      error: () => (this.templateError = 'Could not delete that template.'),
+    });
+  }
 
   ngOnInit() {
     this.loadPages();

@@ -10,8 +10,12 @@ export interface Layout {
   name: string;
   siteName?: string;
   description?: string;
-  nav: string;
-  footer: string;
+  /**
+   * A snippet abstract, like every other snippet position. Legacy layouts hold
+   * a bare id string here — read through snippetRefOf, which accepts both.
+   */
+  nav?: SnippetOverride | string | null;
+  footer?: SnippetOverride | string | null;
   subPages: SubPage[];
   org?: string;
   createdBy?: string;
@@ -33,7 +37,7 @@ export interface CreateLayoutDto {
   name: string;
   siteName?: string;
   description?: string;
-  nav?: string;
-  footer?: string;
+  nav?: SnippetOverride | string | null;
+  footer?: SnippetOverride | string | null;
   subPages?: SubPage[];
 }

@@ -10,6 +10,26 @@
     <a *ngIf="!canCreate" routerLink="/pricing" class="upgrade-link">Upgrade</a>
   </div>
 
+  <div class="template-start">
+    <button type="button" class="template-toggle" (click)="toggleTemplates()">
+      {{ showTemplates ? 'Hide templates' : 'Start from a template' }}
+    </button>
+    <span class="template-hint" *ngIf="!showTemplates">
+      Pick a ready-made page shape instead of starting blank.
+    </span>
+  </div>
+
+  <div class="template-panel" *ngIf="showTemplates">
+    <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
+    <app-template-picker
+      #pagePicker
+      kind="page"
+      actionLabel="Use this"
+      (picked)="useTemplate($event)"
+      (deleted)="deleteTemplate($event, pagePicker)"
+    ></app-template-picker>
+  </div>
+
   <h2>Create New Page</h2>
   <form (ngSubmit)="createPage()" *ngIf="canCreate">
     <div>

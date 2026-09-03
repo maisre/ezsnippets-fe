@@ -1,0 +1,97 @@
+<div class="template-picker">
+  <div class="picker-controls" *ngIf="!loading && templates.length">
+    <input
+      class="picker-search"
+      type="text"
+      [(ngModel)]="search"
+      placeholder="Search templates"
+    />
+    <div class="picker-chips" *ngIf="types.length">
+      <button
+        type="button"
+        class="chip"
+        [class.active]="typeFilter === ''"
+        (click)="typeFilter = ''"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let type of types"
+        [class.active]="typeFilter === type"
+        (click)="typeFilter = type"
+      >
+        {{ type }}
+      </button>
+    </div>
+  </div>
+
+  <p class="picker-status" *ngIf="loading">Loading templates…</p>
+  <p class="picker-status error" *ngIf="error">{{ error }}</p>
+
+  <p class="picker-status" *ngIf="!loading && !error && !templates.length">
+    No templates yet. Build a page you like, then save it as a template to reuse
+    it here.
+  </p>
+
+  <p
+    class="picker-status"
+    *ngIf="!loading && templates.length && !visible.length"
+  >
+    No templates match that filter.
+  </p>
+
+  <div class="template-grid">
+    <div class="template-card" *ngFor="let template of visible">
+      <div class="card-preview" (click)="picked.emit(template)">
+        <img
+          *ngFor="let id of previewIds(template)"
+          [src]="snippetThumbUrl(id)"
+          [alt]="''"
+          loading="lazy"
+          (error)="onThumbError($event)"
+        />
+        <span class="preview-empty" *ngIf="!previewIds(template).length">
+          No preview
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div class="card-title-row">
+          <h4>{{ template.name }}</h4>
+          <span class="badge" *ngIf="isOwned(template)">Yours</span>
+        </div>
+        <p class="card-desc" *ngIf="template.description">
+          {{ template.description }}
+        </p>
+        <p class="card-meta">
+          <ng-container *ngIf="subPageCount(template)">
+            {{ subPageCount(template) }} page{{
+              subPageCount(template) === 1 ? '' : 's'
+            }}
+            ·
+          </ng-container>
+          {{ snippetCount(template) }} snippet{{
+            snippetCount(template) === 1 ? '' : 's'
+          }}
+        </p>
+      </div>
+
+      <div class="card-actions">
+        <button type="button" class="btn-use" (click)="picked.emit(template)">
+          {{ actionLabel }}
+        </button>
+        <button
+          type="button"
+          class="btn-delete"
+          *ngIf="isOwned(template)"
+          (click)="deleted.emit(template)"
+          title="Delete this saved template"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

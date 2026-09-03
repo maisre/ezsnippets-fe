@@ -11,11 +11,26 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
-import { Page, SnippetOverride, SnippetFilters, LicensingImage } from '../models';
+import {
+  Page,
+  SnippetOverride,
+  SnippetFilters,
+  LicensingImage,
+  Template,
+} from '../models';
+import { TemplatePicker } from '../template-picker/template-picker';
+import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
+import { TemplatesService } from '../templates.service';
 
 @Component({
   selector: 'app-page-edit',
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    TemplatePicker,
+    SaveTemplateDialog,
+  ],
   templateUrl: './page-edit.html',
   styleUrl: './page-edit.css',
 })
@@ -24,6 +39,7 @@ export class PageEdit implements OnInit {
   router = inject(Router);
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
+  private templatesService = inject(TemplatesService);
   private sanitizer = inject(DomSanitizer);
 
   page: Page | null = null;
@@ -68,6 +84,57 @@ export class PageEdit implements OnInit {
 
   // Snippet palette lives in a slide-in drawer opened by "Add snippet".
   showPalette = false;
+  // Second tab in that same drawer: templates. Partials and page templates are
+  // offered together — from the user's side both are "drop in a chunk I like".
+  paletteTab: 'snippets' | 'templates' = 'snippets';
+  // Applying to a page that already has snippets appends by default; replacing
+  // is destructive and has no undo, so it stays an explicit choice.
+  templateMode: 'append' | 'replace' = 'append';
+  templateError: string | null = null;
+
+  // Save-as-template modal.
+  showSaveTemplate = false;
+
+  setPaletteTab(tab: 'snippets' | 'templates') {
+    this.paletteTab = tab;
+    this.templateError = null;
+  }
+
+  applyTemplate(template: Template) {
+    if (!this.pageId) return;
+    const mode = this.pageSnippets.length ? this.templateMode : 'replace';
+
+    this.templatesService.applyToPage(this.pageId, template.id, mode).subscribe({
+      next: () => {
+        this.closePalette();
+        this.loadPage();
+      },
+      error: (err) => {
+        this.templateError =
+          err?.error?.message ?? 'Could not apply that template.';
+      },
+    });
+  }
+
+  deleteTemplate(template: Template, picker: TemplatePicker) {
+    this.templatesService.deleteTemplate(template.id).subscribe({
+      next: () => picker.load(),
+      error: () => (this.templateError = 'Could not delete that template.'),
+    });
+  }
+
+  /** Ids only — the dialog never sees page content, by design. */
+  get currentSnippetIds(): string[] {
+    return this.pageSnippets.map((s) => s.id);
+  }
+
+  openSaveTemplate() {
+    this.showSaveTemplate = true;
+  }
+
+  onTemplateSaved() {
+    this.showSaveTemplate = false;
+  }
 
   // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
   showFinalize = false;

@@ -10,6 +10,26 @@
     <a *ngIf="!canCreate" routerLink="/pricing" class="upgrade-link">Upgrade</a>
   </div>
 
+  <div class="template-start">
+    <button type="button" class="template-toggle" (click)="toggleTemplates()">
+      {{ showTemplates ? 'Hide templates' : 'Start from a template' }}
+    </button>
+    <span class="template-hint" *ngIf="!showTemplates">
+      Pick a ready-made site — nav, footer and pages — instead of starting blank.
+    </span>
+  </div>
+
+  <div class="template-panel" *ngIf="showTemplates">
+    <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
+    <app-template-picker
+      #layoutPicker
+      kind="layout"
+      actionLabel="Use this"
+      (picked)="useTemplate($event)"
+      (deleted)="deleteTemplate($event, layoutPicker)"
+    ></app-template-picker>
+  </div>
+
   <h2>Create New Layout</h2>
   <form (ngSubmit)="createLayout()" *ngIf="canCreate">
     <div>

@@ -1,0 +1,155 @@
+.template-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.picker-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.picker-search {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
+.picker-status {
+  color: #667085;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.picker-status.error {
+  color: #b42318;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.template-card {
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The preview is a vertical stack of the template's snippet thumbnails, which
+ * reads as a rough wireframe of the finished page. Fixed height with hidden
+ * overflow so cards stay uniform however many snippets a template has.
+ */
+.card-preview {
+  height: 150px;
+  overflow: hidden;
+  background: #f9fafb;
+  border-bottom: 1px solid #e4e7ec;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.card-preview img {
+  width: 100%;
+  display: block;
+}
+
+.preview-empty {
+  margin: auto;
+  color: #98a2b3;
+  font-size: 0.8rem;
+}
+
+.card-body {
+  padding: 0.6rem 0.75rem;
+  flex: 1;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.card-title-row h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  background: #eef2ff;
+  color: #3538cd;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  white-space: nowrap;
+}
+
+.card-desc {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #475467;
+}
+
+.card-meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: #98a2b3;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.btn-use {
+  flex: 1;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-delete {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #fda29b;
+  border-radius: 6px;
+  background: #fff;
+  color: #b42318;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

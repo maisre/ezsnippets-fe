@@ -244,6 +244,15 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Add snippet
           </button>
+          <button
+            type="button"
+            class="btn add-btn"
+            *ngIf="pageSnippets.length"
+            (click)="openSaveTemplate()"
+            title="Save this arrangement of snippets to reuse later"
+          >
+            Save as template
+          </button>
         </div>
       </section>
     </div>
@@ -294,7 +303,12 @@
     </button>
   </div>
 
-  <div class="drawer-filters" *ngIf="filters.types.length || filters.tags.length">
+  <div class="tabs">
+    <button type="button" [class.active]="paletteTab === 'snippets'" (click)="setPaletteTab('snippets')">Snippets</button>
+    <button type="button" [class.active]="paletteTab === 'templates'" (click)="setPaletteTab('templates')">Templates</button>
+  </div>
+
+  <div class="drawer-filters" *ngIf="paletteTab === 'snippets' && (filters.types.length || filters.tags.length)">
     <div class="filter-group" *ngIf="filters.types.length">
       <label>Type</label>
       <div class="filter-chips">
@@ -324,7 +338,7 @@
     >Clear filters</button>
   </div>
 
-  <div class="palette-grid">
+  <div class="palette-grid" *ngIf="paletteTab === 'snippets'">
     <button
       *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
       type="button"
@@ -345,6 +359,30 @@
       </span>
     </button>
     <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+  </div>
+
+  <div class="palette-templates" *ngIf="paletteTab === 'templates'">
+    <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
+
+    <div class="template-mode" *ngIf="pageSnippets.length">
+      <span>This page already has snippets:</span>
+      <label>
+        <input type="radio" name="templateMode" value="append" [(ngModel)]="templateMode" />
+        Add to the end
+      </label>
+      <label>
+        <input type="radio" name="templateMode" value="replace" [(ngModel)]="templateMode" />
+        Replace them
+      </label>
+    </div>
+
+    <app-template-picker
+      #palettePicker
+      [kinds]="['partial', 'page']"
+      actionLabel="Insert"
+      (picked)="applyTemplate($event)"
+      (deleted)="deleteTemplate($event, palettePicker)"
+    ></app-template-picker>
   </div>
 </aside>
 
@@ -481,3 +519,12 @@
   <p>No page ID provided</p>
   <button type="button" class="btn" (click)="router.navigate(['/pages'])">Back to Pages</button>
 </div>
+
+<app-save-template-dialog
+  *ngIf="showSaveTemplate"
+  kind="page"
+  [snippetIds]="currentSnippetIds"
+  [suggestedName]="page?.name || ''"
+  (saved)="onTemplateSaved()"
+  (closed)="showSaveTemplate = false"
+></app-save-template-dialog>

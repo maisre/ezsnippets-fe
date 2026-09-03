@@ -11,6 +11,7 @@ export interface PlanUsage {
     maxLayouts: number;
     maxSeats: number;
     maxCustomDomains: number;
+    maxSavedTemplates: number;
     aiDailyLimit: number;
   } | null;
   usage: { pages: number; layouts: number } | null;

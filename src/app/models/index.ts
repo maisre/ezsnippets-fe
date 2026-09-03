@@ -4,3 +4,4 @@ export * from './page.model';
 export * from './org.model';
 export * from './licensing.model';
 
+export * from './template.model';

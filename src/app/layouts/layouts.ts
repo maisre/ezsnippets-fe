@@ -6,17 +6,28 @@ import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { LayoutsService } from '../layouts.service';
 import { PlansService, PlanUsage } from '../plans.service';
-import { Layout } from '../models';
+import { Layout, Template } from '../models';
+import { TemplatePicker } from '../template-picker/template-picker';
+import { TemplatesService } from '../templates.service';
 
 @Component({
   selector: 'app-layouts',
-  imports: [CommonModule, FormsModule, RouterLink, OverflowMenu, CdkMenu, CdkMenuItem],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    OverflowMenu,
+    CdkMenu,
+    CdkMenuItem,
+    TemplatePicker,
+  ],
   templateUrl: './layouts.html',
   styleUrl: './layouts.css',
 })
 export class Layouts implements OnInit {
   private layoutsService = inject(LayoutsService);
   private plansService = inject(PlansService);
+  private templatesService = inject(TemplatesService);
   private router = inject(Router);
   layouts: Layout[] = [];
   usage: PlanUsage | null = null;
@@ -26,6 +37,49 @@ export class Layouts implements OnInit {
     siteName: '',
     description: '',
   };
+
+  // Site templates carry a nav, a footer and a set of named pages, so this is
+  // the fastest path from nothing to something a client can look at.
+  showTemplates = false;
+  templateError: string | null = null;
+
+  toggleTemplates() {
+    this.showTemplates = !this.showTemplates;
+    this.templateError = null;
+  }
+
+  useTemplate(template: Template) {
+    if (!this.canCreate) {
+      this.showLimitModal = true;
+      return;
+    }
+
+    this.templatesService
+      .createLayoutFrom(template.id, {
+        name: this.newLayout.name.trim() || undefined,
+        siteName: this.newLayout.siteName.trim() || undefined,
+        description: this.newLayout.description.trim() || undefined,
+      })
+      .subscribe({
+        next: (layout) => {
+          this.newLayout = { name: '', siteName: '', description: '' };
+          this.showTemplates = false;
+          this.loadUsage();
+          this.router.navigate(['/l/edit', layout.id]);
+        },
+        error: (err) => {
+          this.templateError =
+            err?.error?.message ?? 'Could not create a site from that template.';
+        },
+      });
+  }
+
+  deleteTemplate(template: Template, picker: TemplatePicker) {
+    this.templatesService.deleteTemplate(template.id).subscribe({
+      next: () => picker.load(),
+      error: () => (this.templateError = 'Could not delete that template.'),
+    });
+  }
 
   ngOnInit() {
     this.loadLayouts();

@@ -1,0 +1,63 @@
+<div class="dialog-backdrop" (click)="close()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <h3>Save as template</h3>
+
+    <p class="dialog-note">
+      Templates save the arrangement only — {{ count }} snippet{{
+        count === 1 ? '' : 's'
+      }}
+      in order. Text and images stay with this
+      {{ kind === 'layout' ? 'site' : 'page' }} and aren't copied, so anything
+      you start from this template comes in blank.
+    </p>
+
+    <label>
+      Name
+      <input
+        type="text"
+        [(ngModel)]="name"
+        placeholder="e.g. Sales pitch page"
+        autofocus
+      />
+    </label>
+
+    <label>
+      Description (optional)
+      <input
+        type="text"
+        [(ngModel)]="description"
+        placeholder="When would you reach for this?"
+      />
+    </label>
+
+    <label>
+      Category (optional)
+      <input
+        type="text"
+        [(ngModel)]="type"
+        placeholder="e.g. landing, about, restaurant"
+      />
+    </label>
+
+    <label>
+      Tags (optional, comma separated)
+      <input type="text" [(ngModel)]="tagsInput" placeholder="dark, minimal" />
+    </label>
+
+    <p class="dialog-error" *ngIf="error">{{ error }}</p>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn-secondary" (click)="close()">
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="!canSave"
+        (click)="save()"
+      >
+        {{ saving ? 'Saving…' : 'Save template' }}
+      </button>
+    </div>
+  </div>
+</div>
