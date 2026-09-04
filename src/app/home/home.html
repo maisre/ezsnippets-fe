@@ -1,10 +1,18 @@
+<!--
+  The features section renders in both states on purpose. Paddle reviews the
+  site for a clear description of what we sell *before* sign-ups open, so
+  coming-soon mode has to explain the product — it just doesn't invite anyone
+  in. Only the sign-up CTAs are gated.
+-->
 @if (comingSoon) {
 <section class="coming-soon">
   <div class="coming-soon-content">
     <h1>Something great is coming</h1>
     <p class="coming-soon-sub">
-      EZ Snippet is putting the finishing touches on things. We'll be open for
-      sign-ups very soon — check back shortly.
+      EZ Snippet is a page builder for web developers: assemble client sites
+      from a library of pre-built, customizable snippets, then export the HTML
+      and CSS and host it anywhere. We're putting the finishing touches on
+      things and will be open for sign-ups very soon — check back shortly.
     </p>
   </div>
 </section>
@@ -22,6 +30,7 @@
     </div>
   </div>
 </section>
+}
 
 <section class="features">
   <h2>Everything you need to ship faster</h2>
@@ -77,6 +86,7 @@
   </div>
 </section>
 
+@if (!comingSoon) {
 <section class="cta-section">
   <h2>Ready to build?</h2>
   <p>Start assembling your first page in minutes.</p>
