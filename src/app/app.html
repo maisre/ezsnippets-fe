@@ -10,8 +10,11 @@
       <a routerLink="/account" class="nav-link">Account</a>
       <button class="nav-link nav-button" (click)="logout()">Logout</button>
     } @else {
+      <!-- Pricing is deliberately outside the comingSoon gate: it has to be
+           reachable during Paddle's website review, which happens before we
+           open sign-ups. Sign Up stays gated. -->
+      <a routerLink="/pricing" class="nav-link">Pricing</a>
       @if (!comingSoon) {
-        <a routerLink="/pricing" class="nav-link">Pricing</a>
         <a routerLink="/signup" class="nav-link nav-cta">Sign Up</a>
       }
       <a routerLink="/login" class="nav-link">Login</a>
@@ -42,8 +45,8 @@
             <a routerLink="/layouts">Layouts</a>
             <a routerLink="/account">Account</a>
           } @else {
+            <a routerLink="/pricing">Pricing</a>
             @if (!comingSoon) {
-              <a routerLink="/pricing">Pricing</a>
               <a routerLink="/signup">Sign Up</a>
             }
             <a routerLink="/login">Login</a>
