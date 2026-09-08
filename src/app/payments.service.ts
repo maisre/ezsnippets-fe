@@ -48,6 +48,20 @@ export class PaymentsService {
     });
   }
 
+  /**
+   * Load and initialise Paddle.js without opening anything.
+   *
+   * The /pay route — Paddle's "default payment link" — needs this. Paddle
+   * appends `?_ptxn=<transaction id>` to that URL in dunning emails and
+   * update-payment-method redirects, and Paddle.js opens the checkout for that
+   * transaction by itself as soon as it initialises. All this page has to do is
+   * get the script on the page; openCheckout() would be wrong there, because we
+   * have no transaction id of our own to pass.
+   */
+  loadPaddleForPaymentLink(): Promise<void> {
+    return this.loadPaddle();
+  }
+
   private loadPaddle(): Promise<void> {
     if (this.paddleLoad) return this.paddleLoad;
 

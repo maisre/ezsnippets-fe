@@ -13,6 +13,7 @@ import { LayoutEdit } from './layout-edit/layout-edit';
 import { Account } from './account/account';
 import { Dashboard } from './dashboard/dashboard';
 import { CheckoutSuccess } from './checkout-success/checkout-success';
+import { Pay } from './pay/pay';
 import { Terms } from './legal/terms/terms';
 import { Privacy } from './legal/privacy/privacy';
 import { Refunds } from './legal/refunds/refunds';
@@ -24,6 +25,10 @@ export const routes: Routes = [
   { path: 'home', component: Home },
   { path: 'pricing', component: Pricing },
   { path: 'checkout/success', component: CheckoutSuccess },
+  // Paddle's default payment link target. Public and unguarded on purpose:
+  // Paddle sends customers here from dunning and update-payment-method emails,
+  // and they are frequently not signed in. See pay.ts.
+  { path: 'pay', component: Pay },
   // Public and deliberately outside the comingSoon gate — Paddle checks these
   // URLs during website approval, before we open sign-ups.
   { path: 'terms', component: Terms },
