@@ -22,6 +22,7 @@ export class PaymentsService {
   private http = inject(HttpClient);
   private paddleLoad?: Promise<void>;
   private initialized = false;
+  private pwCustomerId?: string;
 
   createCheckoutSession(priceId: string): Observable<{ transactionId: string }> {
     return this.http.post<{ transactionId: string }>(
@@ -46,6 +47,31 @@ export class PaymentsService {
         successUrl: `${window.location.origin}/checkout/success`,
       },
     });
+  }
+
+  /**
+   * Tell Paddle.js which customer is signed in, for Retain.
+   *
+   * Retain uses `pwCustomer` to attribute dunning and recovery to the right
+   * customer, and it must be the Paddle customer id (`ctm_...`) — not our user
+   * id and not an email. Orgs that have never bought anything don't have one
+   * yet, which is fine: Retain has nothing to attribute until there's a
+   * subscription.
+   *
+   * Paddle.js is loaded lazily, so this usually lands before Initialize() and
+   * simply gets folded into it. When it lands after — usage resolving while a
+   * checkout is already open — Initialize() won't run a second time, so
+   * Update() is the only way through. Passing an empty object clears it, which
+   * is what should happen on sign-out.
+   */
+  setPaddleCustomer(customerId: string | null | undefined): void {
+    const id = customerId || undefined;
+    if (id === this.pwCustomerId) return;
+    this.pwCustomerId = id;
+
+    if (this.initialized && window.Paddle?.Update) {
+      window.Paddle.Update({ pwCustomer: id ? { id } : {} });
+    }
   }
 
   /**
@@ -112,7 +138,10 @@ export class PaymentsService {
     if (token.startsWith('test_')) {
       window.Paddle.Environment.set('sandbox');
     }
-    window.Paddle.Initialize({ token });
+    window.Paddle.Initialize({
+      token,
+      ...(this.pwCustomerId ? { pwCustomer: { id: this.pwCustomerId } } : {}),
+    });
     this.initialized = true;
   }
 }
