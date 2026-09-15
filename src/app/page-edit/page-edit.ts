@@ -108,6 +108,9 @@ export class PageEdit implements OnInit {
       next: () => {
         this.closePalette();
         this.loadPage();
+        // loadPage() only repopulates the snippet list; the iframe keeps its
+        // old src until the version counter moves, so bump it explicitly.
+        this.refreshPreview();
       },
       error: (err) => {
         this.templateError =
@@ -248,14 +251,22 @@ export class PageEdit implements OnInit {
       // Find the corresponding snippet in availableSnippets
       const foundSnippet = this.availableSnippets.find((snippet) => snippet.id === pageSnippet.id);
 
-      if (foundSnippet) {
-        // The library summary supplies display fields (name/type/tags) for the
-        // palette; the page's stored snippet supplies the page-scoped
-        // customizations (text/image overrides, AI flags). Spread the stored
-        // snippet last so its customizations survive — otherwise editing the
-        // snippet list would round-trip a customization-free copy and wipe it.
-        this.pageSnippets.push({ ...foundSnippet, ...pageSnippet });
-      }
+      // Never drop a stored snippet just because the library lookup missed.
+      // This list is what updatePageSnippets() persists, so skipping a row
+      // would delete that snippet from the page the next time the user
+      // reordered or removed anything. Fall back to the stored snippet alone —
+      // the row renders without its library display fields, which is a far
+      // better failure than silent data loss.
+      //
+      // The library summary supplies display fields (type/tags) for the
+      // palette; the page's stored snippet supplies the page-scoped
+      // customizations (text/image overrides, AI flags). Spread the stored
+      // snippet last so its customizations survive — otherwise editing the
+      // snippet list would round-trip a customization-free copy and wipe it.
+      this.pageSnippets.push({
+        ...(foundSnippet ?? {}),
+        ...pageSnippet,
+      } as SnippetOverride);
     });
   }
 

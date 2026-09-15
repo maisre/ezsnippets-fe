@@ -372,19 +372,23 @@ export class LayoutEdit implements OnInit {
     const navRef = snippetRefOf(this.layout.nav);
     this.navbarSnippets = [];
     if (navRef) {
+      // Keep the row even if the library lookup misses — see the note on the
+      // subPage mapping below.
       const navbarSnippet = this.availableSnippets.find((s) => s.id === navRef.id);
-      if (navbarSnippet) {
-        this.navbarSnippets.push({ ...navbarSnippet, ...navRef });
-      }
+      this.navbarSnippets.push({
+        ...(navbarSnippet ?? {}),
+        ...navRef,
+      } as SnippetOverride);
     }
 
     const footerRef = snippetRefOf(this.layout.footer);
     this.footerSnippets = [];
     if (footerRef) {
       const footerSnippet = this.availableSnippets.find((s) => s.id === footerRef.id);
-      if (footerSnippet) {
-        this.footerSnippets.push({ ...footerSnippet, ...footerRef });
-      }
+      this.footerSnippets.push({
+        ...(footerSnippet ?? {}),
+        ...footerRef,
+      } as SnippetOverride);
     }
 
     // Initialize subPages if they don't exist
@@ -395,12 +399,17 @@ export class LayoutEdit implements OnInit {
     // Load subPage snippets
     this.layout.subPages = this.layout.subPages.map((subPage) => ({
       ...subPage,
-      snippets: subPage.snippets
-        .map((snippetRef) => {
-          const fullSnippet = this.availableSnippets.find((s) => s.id === snippetRef.id);
-          return fullSnippet ? { ...fullSnippet, ...snippetRef } : null;
-        })
-        .filter((s) => s !== null) as SnippetOverride[],
+      // Never drop a stored snippet because the library lookup missed: this
+      // list is what gets persisted back, so filtering a row out would delete
+      // that snippet from the layout on the next save. Fall back to the stored
+      // ref alone — a row missing its display fields beats silent data loss.
+      snippets: subPage.snippets.map(
+        (snippetRef) =>
+          ({
+            ...(this.availableSnippets.find((s) => s.id === snippetRef.id) ?? {}),
+            ...snippetRef,
+          }) as SnippetOverride,
+      ),
     }));
   }
 
