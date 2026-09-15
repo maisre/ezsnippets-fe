@@ -855,3 +855,11 @@
   gap: 0.3rem;
   cursor: pointer;
 }
+
+/* Live preview of the custom-domain URL under the slug field. */
+.detail-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+  word-break: break-all;
+}

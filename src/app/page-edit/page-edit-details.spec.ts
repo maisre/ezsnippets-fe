@@ -45,6 +45,12 @@ describe('PageEdit details form', () => {
       .expectOne((r) => r.method === 'GET' && r.url.endsWith('/pages/p1'))
       .flush(PAGE);
 
+    // ShareLinkService loads the org's custom domains to decide whether links
+    // should use one. No active domain here, so links stay on the canonical host.
+    httpMock
+      .match((r) => r.url.endsWith('/domains'))
+      .forEach((r) => r.flush([]));
+
     // The editor also loads the snippet palette on init; not under test here.
     httpMock
       .match((r) => r.url.includes('/snippets/summary'))
@@ -63,6 +69,7 @@ describe('PageEdit details form', () => {
       name: 'Landing',
       siteName: 'Acme',
       description: 'Marketing site',
+      slug: '',
     });
     expect(component.detailsDirty).toBe(false);
   });
@@ -76,7 +83,7 @@ describe('PageEdit details form', () => {
     expect(component.detailsDirty).toBe(false);
   });
 
-  it('PUTs only the three metadata fields, trimmed', () => {
+  it('PUTs only the metadata fields, trimmed', () => {
     component.details.name = '  Landing v2  ';
     component.details.description = 'Updated copy';
     component.saveDetails();
@@ -88,6 +95,7 @@ describe('PageEdit details form', () => {
       name: 'Landing v2',
       siteName: 'Acme',
       description: 'Updated copy',
+      slug: '',
     });
 
     req.flush({ ...PAGE, name: 'Landing v2', description: 'Updated copy' });
@@ -128,6 +136,38 @@ describe('PageEdit details form', () => {
     expect(component.savingDetails).toBe(false);
     // The edit survives so the user can retry rather than losing their typing.
     expect(component.details.name).toBe('Landing v2');
+    expect(component.detailsDirty).toBe(true);
+  });
+  it('sends the slug and surfaces a server rejection verbatim', () => {
+    component.details.slug = 'view';
+    component.saveDetails();
+
+    const req = httpMock.expectOne(
+      (r) => r.method === 'PUT' && r.url.endsWith('/pages/p1'),
+    );
+    expect(req.request.body.slug).toBe('view');
+
+    // Reserved words, collisions and bad characters all come back with a
+    // specific message; a generic "try again" would leave the user stuck.
+    req.flush(
+      { message: '"view" is reserved. Pick another name.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    expect(component.detailsError).toBe('"view" is reserved. Pick another name.');
+  });
+
+  it('previews the normalised slug, not the raw input', () => {
+    component.details.slug = 'Stans HVAC';
+    // Mirrors the server's slugify so the preview never disagrees with what
+    // actually gets saved.
+    expect(component.slugPreview).toContain('/stans-hvac');
+    expect(component.slugPreview).not.toContain('Stans HVAC');
+  });
+
+  it('treats a slug change as dirty', () => {
+    expect(component.detailsDirty).toBe(false);
+    component.details.slug = 'stans-hvac';
     expect(component.detailsDirty).toBe(true);
   });
 });

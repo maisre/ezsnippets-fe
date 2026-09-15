@@ -58,6 +58,13 @@
             <label for="pageDescription">Description</label>
             <input id="pageDescription" name="pageDescription" type="text" [(ngModel)]="details.description" placeholder="Optional" />
           </div>
+          <div class="detail-field" *ngIf="shareLinks.hasCustomDomain">
+            <label for="pageSlug">Custom link</label>
+            <input id="pageSlug" name="pageSlug" type="text" [(ngModel)]="details.slug" placeholder="stans-hvac" />
+            <p class="detail-hint">
+              {{ slugPreview }}
+            </p>
+          </div>
           <p class="form-error" *ngIf="detailsError">{{ detailsError }}</p>
           <div class="detail-actions" *ngIf="detailsDirty">
             <button type="button" class="btn ghost sm" (click)="resetDetails()" [disabled]="savingDetails">Cancel</button>

@@ -10,6 +10,7 @@ import { PlansService, PlanUsage } from '../plans.service';
 import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
 import { Page, Layout } from '../models';
+import { ShareLinkService } from '../share-link.service';
 
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
@@ -35,6 +36,7 @@ interface DeleteModal {
 })
 export class Dashboard implements OnInit {
   private pagesService = inject(PagesService);
+  private shareLinks = inject(ShareLinkService);
   private layoutsService = inject(LayoutsService);
   private plansService = inject(PlansService);
   private authService = inject(AuthService);
@@ -230,8 +232,8 @@ export class Dashboard implements OnInit {
     this.router.navigate(['/p/edit', pageId]);
   }
 
-  viewPage(pageId: string) {
-    window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
+  viewPage(page: Page) {
+    window.open(this.shareLinks.pageUrl(page.id, page.slug), '_blank');
   }
 
   // The duplicate button is always enabled. If the user is already at their
@@ -285,8 +287,8 @@ export class Dashboard implements OnInit {
     this.authService.refreshSessionCookie().subscribe({ next: go, error: go });
   }
 
-  viewLayout(layoutId: string) {
-    window.open(`${runtimeConfig.viewUrl}/view/layout/${layoutId}`, '_blank');
+  viewLayout(layout: Layout) {
+    window.open(this.shareLinks.layoutUrl(layout.id, layout.slug), '_blank');
   }
 
   editLayout(layoutId: string) {

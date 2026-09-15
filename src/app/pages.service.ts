@@ -39,7 +39,12 @@ export class PagesService {
    */
   updatePageDetails(
     pageId: string,
-    details: { name: string; siteName: string; description: string },
+    details: {
+      name: string;
+      siteName: string;
+      description: string;
+      slug?: string | null;
+    },
   ): Observable<Page> {
     return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}`, details);
   }

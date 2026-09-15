@@ -11,6 +11,7 @@ import { runtimeConfig } from '../runtime-config';
 import { Page, Template } from '../models';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { TemplatesService } from '../templates.service';
+import { ShareLinkService } from '../share-link.service';
 
 @Component({
   selector: 'app-pages',
@@ -28,6 +29,7 @@ import { TemplatesService } from '../templates.service';
 })
 export class Pages implements OnInit {
   private pagesService = inject(PagesService);
+  private shareLinks = inject(ShareLinkService);
   private plansService = inject(PlansService);
   private authService = inject(AuthService);
   private templatesService = inject(TemplatesService);
@@ -187,8 +189,8 @@ export class Pages implements OnInit {
     this.router.navigate(['/p/edit', pageId]);
   }
 
-  viewPage(pageId: string) {
-    window.open(`${runtimeConfig.viewUrl}/view/page/${pageId}`, '_blank');
+  viewPage(page: Page) {
+    window.open(this.shareLinks.pageUrl(page.id, page.slug), '_blank');
   }
 
   // Opens the ez-view content editor. The ez_session cookie (scoped to the

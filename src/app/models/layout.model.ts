@@ -21,6 +21,11 @@ export interface Layout {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  /**
+   * Custom URL segment on the org's custom domain
+   * (view.theirs.com/stans-hvac). Null means id-only access. Unique per org.
+   */
+  slug?: string | null;
   /** Which text variant the layout renders (defaults to 'generic' server-side). */
   textVariant?: 'lorem' | 'generic' | 'customized';
   /** URL of the ez-view preview screenshot, populated by the ez-background job. */

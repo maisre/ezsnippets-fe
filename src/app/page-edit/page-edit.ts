@@ -21,6 +21,8 @@ import {
 import { TemplatePicker } from '../template-picker/template-picker';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { TemplatesService } from '../templates.service';
+import { ShareLinkService } from '../share-link.service';
+import { slugify } from '../slugify';
 
 @Component({
   selector: 'app-page-edit',
@@ -40,6 +42,20 @@ export class PageEdit implements OnInit {
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
   private templatesService = inject(TemplatesService);
+  // Public: the template reads it to gate the slug field and preview the URL.
+  readonly shareLinks = inject(ShareLinkService);
+
+  /**
+   * The URL the customer will actually get. Mirrors the server's normalisation
+   * so the preview never disagrees with what gets saved.
+   */
+  get slugPreview(): string {
+    const slug = slugify(this.details.slug);
+    return slug
+      ? `${this.shareLinks.base}/${slug}`
+      : 'Leave blank to keep the default link.';
+  }
+
   private sanitizer = inject(DomSanitizer);
 
   page: Page | null = null;
@@ -59,7 +75,7 @@ export class PageEdit implements OnInit {
   // Editable name/siteName/description, seeded from the loaded page. Kept
   // separate from `page` so Cancel can discard edits and `detailsDirty` can
   // compare against what's actually saved.
-  details = { name: '', siteName: '', description: '' };
+  details = { name: '', siteName: '', description: '', slug: '' };
   savingDetails = false;
   detailsError = '';
 
@@ -564,6 +580,7 @@ export class PageEdit implements OnInit {
       name: this.page?.name ?? '',
       siteName: this.page?.siteName ?? '',
       description: this.page?.description ?? '',
+      slug: this.page?.slug ?? '',
     };
   }
 
@@ -572,7 +589,8 @@ export class PageEdit implements OnInit {
     return (
       this.details.name.trim() !== (this.page.name ?? '') ||
       this.details.siteName.trim() !== (this.page.siteName ?? '') ||
-      this.details.description.trim() !== (this.page.description ?? '')
+      this.details.description.trim() !== (this.page.description ?? '') ||
+      this.details.slug.trim() !== (this.page.slug ?? '')
     );
   }
 
@@ -596,6 +614,7 @@ export class PageEdit implements OnInit {
         name: this.details.name.trim(),
         siteName: this.details.siteName.trim(),
         description: this.details.description.trim(),
+        slug: this.details.slug.trim(),
       })
       .subscribe({
         next: (updated) => {
@@ -607,7 +626,11 @@ export class PageEdit implements OnInit {
         },
         error: (error) => {
           this.savingDetails = false;
-          this.detailsError = 'Could not save changes. Please try again.';
+          // Slug rejections (reserved word, already taken, bad characters) come
+          // back with a specific message worth showing — a generic "try again"
+          // would leave the customer with no idea what to change.
+          this.detailsError =
+            error?.error?.message ?? 'Could not save changes. Please try again.';
           console.error('Error updating page details:', error);
         },
       });

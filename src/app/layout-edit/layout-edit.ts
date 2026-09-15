@@ -10,6 +10,8 @@ import {
 } from '@angular/cdk/drag-drop';
 import { LayoutsService } from '../layouts.service';
 import { TemplatesService } from '../templates.service';
+import { ShareLinkService } from '../share-link.service';
+import { slugify } from '../slugify';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
@@ -63,6 +65,20 @@ export class LayoutEdit implements OnInit {
   router = inject(Router);
   private layoutsService = inject(LayoutsService);
   private templatesService = inject(TemplatesService);
+  // Public: the template reads it to gate the slug field and preview the URL.
+  readonly shareLinks = inject(ShareLinkService);
+
+  /**
+   * The URL the customer will actually get. Mirrors the server's normalisation
+   * so the preview never disagrees with what gets saved.
+   */
+  get slugPreview(): string {
+    const slug = slugify(this.details.slug);
+    return slug
+      ? `${this.shareLinks.base}/${slug}`
+      : 'Leave blank to keep the default link.';
+  }
+
   private snippetsService = inject(SnippetsService);
 
   layout: Layout | null = null;
@@ -86,7 +102,7 @@ export class LayoutEdit implements OnInit {
   // Editable name/siteName/description, seeded from the loaded layout. Kept
   // separate from `layout` so Cancel can discard edits and `detailsDirty` can
   // compare against what's actually saved.
-  details = { name: '', siteName: '', description: '' };
+  details = { name: '', siteName: '', description: '', slug: '' };
   savingDetails = false;
   detailsError = '';
 
@@ -129,7 +145,11 @@ export class LayoutEdit implements OnInit {
   // --- Action bar: preview link ---
   /** Public rendered layout in ez-view (no auth needed). */
   openPreview() {
-    if (this.layoutId) window.open(`${this.viewUrl}/view/layout/${this.layoutId}`, '_blank');
+    if (this.layoutId)
+      window.open(
+        this.shareLinks.layoutUrl(this.layoutId, this.layout?.slug),
+        '_blank',
+      );
   }
 
   // --- Readiness (over subpage snippets) ---
@@ -653,6 +673,7 @@ export class LayoutEdit implements OnInit {
       name: this.layout?.name ?? '',
       siteName: this.layout?.siteName ?? '',
       description: this.layout?.description ?? '',
+      slug: this.layout?.slug ?? '',
     };
   }
 
@@ -661,7 +682,8 @@ export class LayoutEdit implements OnInit {
     return (
       this.details.name.trim() !== (this.layout.name ?? '') ||
       this.details.siteName.trim() !== (this.layout.siteName ?? '') ||
-      this.details.description.trim() !== (this.layout.description ?? '')
+      this.details.description.trim() !== (this.layout.description ?? '') ||
+      this.details.slug.trim() !== (this.layout.slug ?? '')
     );
   }
 
@@ -685,6 +707,7 @@ export class LayoutEdit implements OnInit {
         name: this.details.name.trim(),
         siteName: this.details.siteName.trim(),
         description: this.details.description.trim(),
+        slug: this.details.slug.trim(),
       })
       .subscribe({
         next: (updated) => {
@@ -696,7 +719,9 @@ export class LayoutEdit implements OnInit {
         },
         error: (error) => {
           this.savingDetails = false;
-          this.detailsError = 'Could not save changes. Please try again.';
+          // Slug rejections carry a specific message worth showing.
+          this.detailsError =
+            error?.error?.message ?? 'Could not save changes. Please try again.';
           console.error('Error updating layout details:', error);
         },
       });

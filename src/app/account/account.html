@@ -21,6 +21,110 @@
     </div>
 
     <div class="account-section">
+      <h2>Custom domain</h2>
+      @if (maxCustomDomains === 0) {
+        <div class="info-card">
+          <p class="domain-upsell">
+            Send clients a link on your own domain instead of ours —
+            <code>view.yourdomain.com/their-name</code>. Available on Pro and
+            Agency.
+          </p>
+          <a routerLink="/pricing" class="btn btn-primary">View Plans</a>
+        </div>
+      } @else {
+        <div class="info-card">
+          @for (domain of domains; track domain.id) {
+            <div class="domain-row">
+              <div class="domain-head">
+                <span class="domain-name">{{ domain.hostname }}</span>
+                <span class="status-badge domain-{{ domain.status }}">
+                  {{ domainStatusLabel(domain) }}
+                </span>
+              </div>
+
+              @if (domain.status !== 'active') {
+                <p class="domain-hint">
+                  Add this record at whoever manages
+                  <strong>{{ domain.hostname }}</strong>'s DNS, then check again.
+                  It can take a few minutes to an hour to take effect.
+                </p>
+                <table class="dns-table">
+                  <thead>
+                    <tr><th>Type</th><th>Name</th><th>Value</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>CNAME</code></td>
+                      <td><code>{{ cnameLabel(domain.hostname) }}</code></td>
+                      <td><code>{{ domainTarget }}</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+                @if (domain.lastError) {
+                  <p class="domain-error">{{ domain.lastError }}</p>
+                }
+              } @else {
+                <p class="domain-hint">
+                  Live. Give a page or site a custom link in its editor and
+                  share <code>https://{{ domain.hostname }}/your-link</code>.
+                </p>
+              }
+
+              <div class="domain-actions">
+                <button
+                  class="btn btn-outline"
+                  (click)="verifyDomain(domain)"
+                  [disabled]="verifyingId === domain.id"
+                >
+                  {{ verifyingId === domain.id ? 'Checking...' : 'Check now' }}
+                </button>
+                <button class="btn btn-danger-outline" (click)="removeDomain(domain)">
+                  Remove
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (canAddDomain) {
+            <div class="domain-add">
+              <label for="newDomain">Add a subdomain you control</label>
+              <div class="domain-add-row">
+                <input
+                  id="newDomain"
+                  type="text"
+                  [(ngModel)]="newDomain"
+                  (keyup.enter)="addDomain()"
+                  placeholder="view.yourdomain.com"
+                  autocomplete="off"
+                />
+                <button
+                  class="btn btn-primary"
+                  (click)="addDomain()"
+                  [disabled]="addingDomain || !newDomain.trim()"
+                >
+                  {{ addingDomain ? 'Adding...' : 'Add domain' }}
+                </button>
+              </div>
+              <p class="domain-hint">
+                Use a subdomain such as <code>view.yourdomain.com</code>. A root
+                domain can't be pointed at us with a CNAME record.
+              </p>
+            </div>
+          } @else {
+            <p class="domain-hint">
+              You're using all {{ maxCustomDomains }} custom
+              {{ maxCustomDomains === 1 ? 'domain' : 'domains' }} on your plan.
+            </p>
+          }
+
+          @if (domainError) {
+            <p class="domain-error">{{ domainError }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="account-section">
       <h2>Subscription</h2>
       <div class="info-card">
         <div class="info-row">
