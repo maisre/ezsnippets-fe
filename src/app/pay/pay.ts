@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PaymentsService } from '../payments.service';
 
 type PayState = 'loading' | 'opened' | 'no-transaction' | 'error';
@@ -121,11 +121,13 @@ type PayState = 'loading' | 'opened' | 'no-transaction' | 'error';
     }
   `,
 })
-export class Pay implements OnInit {
+export class Pay implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private payments = inject(PaymentsService);
 
   state: PayState = 'loading';
+  private unsubscribeCompleted?: () => void;
 
   async ngOnInit(): Promise<void> {
     // Without a transaction id there is nothing for Paddle.js to open, so say
@@ -135,11 +137,29 @@ export class Pay implements OnInit {
       return;
     }
 
+    // Registered before the script loads, so a checkout that completes fast
+    // can't finish before anyone is listening.
+    //
+    // The pricing page gets this for free via `settings.successUrl`, but
+    // Paddle.js opens this checkout itself from `_ptxn`, so there is no
+    // settings object to put a success URL in. Without this the overlay closes
+    // and leaves the customer on "Complete your payment" — reading as though
+    // the payment they just made didn't go through.
+    this.unsubscribeCompleted = this.payments.onCheckoutCompleted(() => {
+      void this.router.navigate(['/checkout/success']);
+    });
+
     try {
       await this.payments.loadPaddleForPaymentLink();
       this.state = 'opened';
     } catch {
       this.state = 'error';
     }
+  }
+
+  ngOnDestroy(): void {
+    // The service is a singleton: a handler left behind would redirect out of
+    // whatever page the user was on the next time any checkout completed.
+    this.unsubscribeCompleted?.();
   }
 }

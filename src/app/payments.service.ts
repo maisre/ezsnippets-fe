@@ -23,6 +23,36 @@ export class PaymentsService {
   private paddleLoad?: Promise<void>;
   private initialized = false;
   private pwCustomerId?: string;
+  private checkoutCompletedHandlers = new Set<() => void>();
+
+  /**
+   * Observe `checkout.completed` from Paddle.js.
+   *
+   * The pricing page doesn't need this — it opens checkout itself and passes
+   * `settings.successUrl`, so Paddle redirects the page on completion. The
+   * /pay route can't: Paddle.js opens that checkout on its own from `_ptxn`,
+   * so there's no settings object to attach a success URL to, and without a
+   * listener the customer is left staring at "Complete your payment" after
+   * they've already paid.
+   *
+   * Returns an unsubscribe function. Callers must use it — the service is a
+   * singleton, so a handler left registered would fire again for an unrelated
+   * checkout later in the session.
+   */
+  onCheckoutCompleted(handler: () => void): () => void {
+    this.checkoutCompletedHandlers.add(handler);
+    return () => this.checkoutCompletedHandlers.delete(handler);
+  }
+
+  /**
+   * Paddle hands every checkout event through one callback, set once at
+   * Initialize(). Copy the set before dispatching so a handler that
+   * unsubscribes itself can't mutate what we're iterating.
+   */
+  private handlePaddleEvent(event: { name?: string }): void {
+    if (event?.name !== 'checkout.completed') return;
+    for (const handler of [...this.checkoutCompletedHandlers]) handler();
+  }
 
   createCheckoutSession(priceId: string): Observable<{ transactionId: string }> {
     return this.http.post<{ transactionId: string }>(
@@ -140,6 +170,7 @@ export class PaymentsService {
     }
     window.Paddle.Initialize({
       token,
+      eventCallback: (event: { name?: string }) => this.handlePaddleEvent(event),
       ...(this.pwCustomerId ? { pwCustomer: { id: this.pwCustomerId } } : {}),
     });
     this.initialized = true;
