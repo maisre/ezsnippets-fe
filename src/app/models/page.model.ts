@@ -6,6 +6,12 @@ export interface Page {
   siteName?: string;
   description?: string;
   snippets: SnippetOverride[];
+  /**
+   * Snippets parked in the editor's scratch pad while deciding on look and
+   * feel. Same shape as `snippets` — they keep their customizations, so a
+   * restore is lossless. Never rendered, never licensed, never exported.
+   */
+  scratchPad?: SnippetOverride[];
   org?: string;
   createdBy?: string;
   createdAt?: string;

@@ -177,6 +177,127 @@
 .snip-row:hover { background: var(--surface-2); }
 .snip-row:active { cursor: grabbing; }
 .grip { color: var(--ink-3); cursor: grab; font-size: 15px; line-height: 1; letter-spacing: -2px; user-select: none; }
+
+/* ===== Scratch pad ===== */
+.card-hint.full { color: var(--danger); font-weight: 700; }
+
+.scratch-error {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fdecea;
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+.scratch-list { min-height: 52px; }
+.scratch-row { gap: 8px; }
+
+/* Park reads as neutral, not destructive — unlike remove, it's reversible. */
+.snip-park {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.snip-park svg { width: 15px; height: 15px; }
+.snip-row:hover .snip-park,
+.snip-row:focus-within .snip-park { opacity: 1; }
+.snip-park:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+/* Kept visible when disabled so its tooltip can explain the limit. */
+.snip-park:disabled { cursor: not-allowed; opacity: 0.35; }
+.snip-row:hover .snip-park:disabled { opacity: 0.35; }
+
+.scratch-restore {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.scratch-restore:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+
+/* Discard. page-edit has its own copy of this — component styles are scoped,
+   so the shelf's remove button would otherwise render as a bare <button>. */
+.snip-remove {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.snip-remove svg { width: 15px; height: 15px; }
+.snip-row:hover .snip-remove,
+.snip-row:focus-within .snip-remove { opacity: 1; }
+.snip-remove:hover { background: #fdecea; color: var(--danger); border-color: #f5c6c0; }
+
+/* ===== Favorites ===== */
+/* The tile is a drag source, so the star is a nested target that stops
+   propagation in its handler. */
+.palette-item { position: relative; }
+.palette-star {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+.palette-item:hover .palette-star,
+.palette-item:focus-within .palette-star { opacity: 1; }
+/* A starred tile keeps its star visible — that's the whole signal. */
+.palette-star.on { opacity: 1; color: #ffc93c; }
+.palette-star:hover { background: rgba(0, 0, 0, 0.62); }
+
+.star-chip { display: inline-flex; align-items: center; gap: 5px; }
+.star-glyph { color: #ffc93c; font-size: 13px; line-height: 1; }
+.tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
 .snip-thumb {
   width: 54px; height: 40px; flex: none; object-fit: cover; object-position: top;
   border-radius: 6px; border: 1px solid var(--line); background: var(--surface-3);

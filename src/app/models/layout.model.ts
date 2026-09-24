@@ -17,6 +17,12 @@ export interface Layout {
   nav?: SnippetOverride | string | null;
   footer?: SnippetOverride | string | null;
   subPages: SubPage[];
+  /**
+   * Snippets parked in the editor's scratch pad. Layout-wide rather than
+   * per-subpage, so a snippet parked from one subpage can be restored onto
+   * another. Keeps its customizations; never rendered, licensed or exported.
+   */
+  scratchPad?: SnippetOverride[];
   org?: string;
   createdBy?: string;
   createdAt?: string;

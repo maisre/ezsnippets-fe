@@ -202,7 +202,7 @@
             (cdkDropListDropped)="drop($event, 'subpage')"
             class="snippet-list drop-zone"
           >
-            <div *ngFor="let snippet of subPage.snippets; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
+            <div *ngFor="let snippet of subPage.snippets; let si = index; trackBy: trackBySnippetId" cdkDrag [cdkDragStartDelay]="0" class="snip-row">
               <span class="grip" cdkDragHandle>⋮⋮</span>
               <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
               <div class="snip-meta">
@@ -215,6 +215,16 @@
                   </ng-container>
                 </div>
               </div>
+              <button
+                type="button"
+                class="snip-park"
+                (click)="parkSnippet(si)"
+                [disabled]="scratchPadFull"
+                [title]="scratchPadFull ? 'Scratch pad is full (' + scratchPadLimit + ')' : 'Move to scratch pad \u2014 keeps your edits'"
+                aria-label="Move snippet to scratch pad"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h14M5 8l1.5 11h11L19 8M5 8l2-4h10l2 4M9 12v4M15 12v4"/></svg>
+              </button>
             </div>
             <div *ngIf="subPage.snippets.length === 0" class="empty-state">Drag snippets here for {{ subPage.name }}</div>
           </div>
@@ -244,6 +254,57 @@
 
     <!-- ===== Right: available snippets (drag source) ===== -->
     <div class="edit-main">
+      <section class="card" id="scratch-pad-panel">
+        <div class="card-head">
+          <h3>Scratch pad</h3>
+          <span class="card-hint" [class.full]="scratchPadFull">
+            {{ scratchPad.length }} / {{ scratchPadLimit }}
+          </span>
+        </div>
+
+        <p class="scratch-error" *ngIf="scratchError">{{ scratchError }}</p>
+
+        <div
+          cdkDropList
+          id="scratch-pad-list"
+          [cdkDropListData]="scratchPad"
+          (cdkDropListDropped)="scratchDrop($event)"
+          class="snippet-list scratch-list"
+        >
+          <div
+            *ngFor="let snippet of scratchPad; let i = index; trackBy: trackBySnippetId"
+            cdkDrag
+            [cdkDragStartDelay]="0"
+            class="snip-row scratch-row"
+          >
+            <span class="grip" cdkDragHandle>⋮⋮</span>
+            <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <div class="snip-meta">
+              <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
+            </div>
+            <button
+              type="button"
+              class="scratch-restore"
+              (click)="restoreSnippet(i)"
+              [title]="'Put back on ' + (layout.subPages[activeSubPageIndex].name || 'this subpage')"
+            >Put back</button>
+            <button
+              type="button"
+              class="snip-remove"
+              (click)="discardScratchSnippet(i)"
+              title="Discard \u2014 customizations can't be recovered"
+              aria-label="Discard parked snippet"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div *ngIf="scratchPad.length === 0" class="empty-state">
+            Nothing parked. Use the box icon on a subpage snippet to set it
+            aside without losing your edits.
+          </div>
+        </div>
+      </section>
+
       <section class="card" id="available-panel">
         <div class="card-head">
           <h3>Available snippets</h3>
@@ -263,7 +324,22 @@
               <button *ngFor="let tag of filters.tags" class="filter-chip" [class.active]="activeTagFilter === tag" (click)="setTagFilter(tag)">{{ tag }}</button>
             </div>
           </div>
-          <button *ngIf="activeTypeFilter || activeTagFilter" class="clear-filters" (click)="clearFilters()">Clear filters</button>
+          <div class="filter-group">
+            <label>Starred</label>
+            <div class="filter-chips">
+              <button
+                class="filter-chip star-chip"
+                [class.active]="showFavoritesOnly"
+                (click)="toggleFavoritesFilter()"
+                title="Show only snippets your team has starred"
+              >
+                <span class="star-glyph">&#9733;</span>
+                Favorites
+                <span class="tab-count" *ngIf="favoriteIds.size">{{ favoriteIds.size }}</span>
+              </button>
+            </div>
+          </div>
+          <button *ngIf="activeTypeFilter || activeTagFilter || showFavoritesOnly" class="clear-filters" (click)="clearFilters()">Clear filters</button>
         </div>
 
         <div
@@ -282,8 +358,19 @@
           >
             <img [src]="snippetThumbUrl(snippet.id)" alt="" class="palette-thumb" loading="lazy" decoding="async" />
             <span class="palette-type" *ngIf="snippet.type">{{ snippet.type }}</span>
+            <span
+              class="palette-star"
+              [class.on]="isFavorite(snippet.id)"
+              (click)="toggleFavorite(snippet.id, $event)"
+              [title]="isFavorite(snippet.id) ? 'Remove from favorites' : 'Add to favorites'"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="toggleFavorite(snippet.id, $event)"
+            >{{ isFavorite(snippet.id) ? '\u2605' : '\u2606' }}</span>
           </div>
-          <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+          <div *ngIf="filteredSnippets.length === 0" class="empty-state">
+            {{ showFavoritesOnly ? 'Nothing starred yet \u2014 tap a star on any snippet.' : 'No matching snippets' }}
+          </div>
         </div>
       </section>
     </div>

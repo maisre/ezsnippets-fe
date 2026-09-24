@@ -3,6 +3,13 @@ export interface OrgMember {
   role: 'owner' | 'admin' | 'member';
 }
 
+/** A snippet the org has starred in the editor palette. Ids only. */
+export interface FavoriteSnippet {
+  snippetId: string;
+  createdBy?: string;
+  addedAt?: string;
+}
+
 export interface Org {
   id: string;
   name: string;
@@ -18,4 +25,5 @@ export interface Org {
   cardExpYear?: number;
   currentPeriodEnd?: number;
   cancelAtPeriodEnd?: boolean;
+  favoriteSnippets?: FavoriteSnippet[];
 }

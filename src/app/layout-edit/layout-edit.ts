@@ -12,6 +12,8 @@ import { LayoutsService } from '../layouts.service';
 import { TemplatesService } from '../templates.service';
 import { ShareLinkService } from '../share-link.service';
 import { slugify } from '../slugify';
+import { SCRATCH_PAD_LIMIT } from '../scratch-pad';
+import { OrgsService } from '../orgs.service';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
@@ -65,6 +67,7 @@ export class LayoutEdit implements OnInit {
   router = inject(Router);
   private layoutsService = inject(LayoutsService);
   private templatesService = inject(TemplatesService);
+  private orgsService = inject(OrgsService);
   // Public: the template reads it to gate the slug field and preview the URL.
   readonly shareLinks = inject(ShareLinkService);
 
@@ -294,6 +297,7 @@ export class LayoutEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
+    this.loadFavorites();
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
@@ -319,6 +323,150 @@ export class LayoutEdit implements OnInit {
   showSaveTemplate = false;
   templateMode: 'append' | 'replace' = 'append';
   templateError: string | null = null;
+
+  // --- Scratch pad ---------------------------------------------------------
+  //
+  // Layout-wide, not per-subpage: parking a hero off Home and restoring it
+  // onto About is the main thing the shelf buys here. Restores therefore land
+  // on whichever subpage is currently open.
+  scratchPad: SnippetOverride[] = [];
+  scratchError: string | null = null;
+  readonly scratchPadLimit = SCRATCH_PAD_LIMIT;
+
+  get scratchPadFull(): boolean {
+    return this.scratchPad.length >= this.scratchPadLimit;
+  }
+
+  /**
+   * Build shelf rows like every other snippet row: library summary first for
+   * display fields, stored abstract last so its customizations win.
+   */
+  private hydrateScratchPad() {
+    this.scratchPad = (this.layout?.scratchPad ?? []).map((parked) => {
+      const found = this.availableSnippets.find((s) => s.id === parked.id);
+      return { ...(found ?? {}), ...parked } as SnippetOverride;
+    });
+  }
+
+  /**
+   * Adopt a layout returned by a scratch pad endpoint. The server's copy is the
+   * truth about what moved; re-deriving from it keeps the subpage lists and the
+   * shelf from drifting apart.
+   */
+  private applyServerLayout(data: Layout) {
+    this.layout = data;
+    this.scratchError = null;
+    this.loadLayoutSnippets();
+  }
+
+  private scratchFailed(err: any, fallback: string) {
+    this.scratchError = err?.error?.message ?? fallback;
+  }
+
+  /** Pull a snippet off the active subpage and onto the shelf. */
+  parkSnippet(index: number) {
+    if (!this.layoutId || this.scratchPadFull) return;
+    this.layoutsService
+      .parkSnippet(this.layoutId, this.activeSubPageIndex, index)
+      .subscribe({
+        next: (data) => this.applyServerLayout(data),
+        error: (err) => this.scratchFailed(err, 'Could not park that snippet.'),
+      });
+  }
+
+  /** Put a parked snippet onto whichever subpage is open. */
+  restoreSnippet(scratchIndex: number) {
+    if (!this.layoutId) return;
+    this.layoutsService
+      .restoreSnippet(this.layoutId, scratchIndex, this.activeSubPageIndex)
+      .subscribe({
+        next: (data) => this.applyServerLayout(data),
+        error: (err) =>
+          this.scratchFailed(err, 'Could not restore that snippet.'),
+      });
+  }
+
+  /** Destructive — the parked snippet's customizations go with it. */
+  discardScratchSnippet(scratchIndex: number) {
+    if (!this.layoutId) return;
+    const name = this.scratchPad[scratchIndex]?.type || 'this snippet';
+    if (!confirm(`Discard ${name}? Its customizations can't be recovered.`)) {
+      return;
+    }
+    this.layoutsService
+      .discardScratchSnippet(this.layoutId, scratchIndex)
+      .subscribe({
+        next: (data) => this.applyServerLayout(data),
+        error: (err) =>
+          this.scratchFailed(err, 'Could not discard that snippet.'),
+      });
+  }
+
+  // --- Favorites -----------------------------------------------------------
+  //
+  // Org-wide, and a view of the library rather than a separate collection —
+  // hence a filter chip beside type and tags.
+  favoriteIds = new Set<string>();
+  showFavoritesOnly = false;
+
+  private loadFavorites() {
+    this.orgsService.listFavorites().subscribe({
+      next: ({ favorites }) => {
+        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
+        this.applyFilters();
+      },
+      error: () => {},
+    });
+  }
+
+  isFavorite(snippetId: string): boolean {
+    return this.favoriteIds.has(snippetId);
+  }
+
+  // `Event`, not `MouseEvent`: the star is keyboard-reachable too.
+  toggleFavorite(snippetId: string, event: Event) {
+    event.stopPropagation();
+    const wasFavorite = this.favoriteIds.has(snippetId);
+    if (wasFavorite) this.favoriteIds.delete(snippetId);
+    else this.favoriteIds.add(snippetId);
+    this.applyFilters();
+
+    const request = wasFavorite
+      ? this.orgsService.removeFavorite(snippetId)
+      : this.orgsService.addFavorite(snippetId);
+
+    request.subscribe({
+      next: ({ favorites }) => {
+        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
+        this.applyFilters();
+      },
+      error: (err) => {
+        if (wasFavorite) this.favoriteIds.add(snippetId);
+        else this.favoriteIds.delete(snippetId);
+        this.applyFilters();
+        this.scratchError = err?.error?.message ?? 'Could not update favorites.';
+      },
+    });
+  }
+
+  toggleFavoritesFilter() {
+    this.showFavoritesOnly = !this.showFavoritesOnly;
+    this.applyFilters();
+  }
+
+  scratchDrop(event: CdkDragDrop<SnippetOverride[]>) {
+    if (!this.layoutId || event.previousIndex === event.currentIndex) return;
+    moveItemInArray(this.scratchPad, event.previousIndex, event.currentIndex);
+    this.layoutsService
+      .reorderScratchPad(this.layoutId, event.previousIndex, event.currentIndex)
+      .subscribe({
+        next: (data) => this.applyServerLayout(data),
+        error: (err) => {
+          this.scratchFailed(err, 'Could not reorder the scratch pad.');
+          this.hydrateScratchPad();
+        },
+      });
+  }
 
   toggleTemplates() {
     this.showTemplates = !this.showTemplates;
@@ -431,6 +579,8 @@ export class LayoutEdit implements OnInit {
           }) as SnippetOverride,
       ),
     }));
+
+    this.hydrateScratchPad();
   }
 
   getActiveSubPageSnippets(): SnippetOverride[] {
@@ -547,6 +697,7 @@ export class LayoutEdit implements OnInit {
 
   applyFilters() {
     this.filteredSnippets = this.availableSnippets.filter((s) => {
+      if (this.showFavoritesOnly && !this.favoriteIds.has(s.id)) return false;
       if (this.activeTypeFilter && s.type !== this.activeTypeFilter) return false;
       if (this.activeTagFilter && !(s.tags || []).includes(this.activeTagFilter)) return false;
       return true;
@@ -566,6 +717,7 @@ export class LayoutEdit implements OnInit {
   clearFilters() {
     this.activeTypeFilter = '';
     this.activeTagFilter = '';
+    this.showFavoritesOnly = false;
     this.applyFilters();
   }
 

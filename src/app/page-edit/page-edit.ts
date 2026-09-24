@@ -23,6 +23,8 @@ import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog
 import { TemplatesService } from '../templates.service';
 import { ShareLinkService } from '../share-link.service';
 import { slugify } from '../slugify';
+import { SCRATCH_PAD_LIMIT } from '../scratch-pad';
+import { OrgsService } from '../orgs.service';
 
 @Component({
   selector: 'app-page-edit',
@@ -42,6 +44,7 @@ export class PageEdit implements OnInit {
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
   private templatesService = inject(TemplatesService);
+  private orgsService = inject(OrgsService);
   // Public: the template reads it to gate the slug field and preview the URL.
   readonly shareLinks = inject(ShareLinkService);
 
@@ -61,6 +64,14 @@ export class PageEdit implements OnInit {
   page: Page | null = null;
   pageId: string | null = null;
   pageSnippets: SnippetOverride[] = [];
+  /**
+   * Snippets parked off the page while deciding on look and feel. Hydrated the
+   * same way as pageSnippets — the stored abstract carries the customizations,
+   * the library summary supplies display fields for the thumbnail.
+   */
+  scratchPad: SnippetOverride[] = [];
+  scratchError: string | null = null;
+  readonly scratchPadLimit = SCRATCH_PAD_LIMIT;
   availableSnippets: SnippetOverride[] = [];
   filteredSnippets: SnippetOverride[] = [];
   viewUrl = runtimeConfig.viewUrl;
@@ -71,6 +82,12 @@ export class PageEdit implements OnInit {
   filters: SnippetFilters = { types: [], tags: [] };
   activeTypeFilter = '';
   activeTagFilter = '';
+  /**
+   * Starred snippets, org-wide. Held as a Set of ids because the palette asks
+   * "is this one starred?" once per tile on every render.
+   */
+  favoriteIds = new Set<string>();
+  showFavoritesOnly = false;
 
   // Editable name/siteName/description, seeded from the loaded page. Kept
   // separate from `page` so Cancel can discard edits and `detailsDirty` can
@@ -102,7 +119,7 @@ export class PageEdit implements OnInit {
   showPalette = false;
   // Second tab in that same drawer: templates. Partials and page templates are
   // offered together — from the user's side both are "drop in a chunk I like".
-  paletteTab: 'snippets' | 'templates' = 'snippets';
+  paletteTab: 'snippets' | 'templates' | 'scratchpad' = 'snippets';
   // Applying to a page that already has snippets appends by default; replacing
   // is destructive and has no undo, so it stays an explicit choice.
   templateMode: 'append' | 'replace' = 'append';
@@ -111,9 +128,10 @@ export class PageEdit implements OnInit {
   // Save-as-template modal.
   showSaveTemplate = false;
 
-  setPaletteTab(tab: 'snippets' | 'templates') {
+  setPaletteTab(tab: 'snippets' | 'templates' | 'scratchpad') {
     this.paletteTab = tab;
     this.templateError = null;
+    this.scratchError = null;
   }
 
   applyTemplate(template: Template) {
@@ -236,6 +254,7 @@ export class PageEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
+    this.loadFavorites();
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
@@ -284,6 +303,97 @@ export class PageEdit implements OnInit {
         ...pageSnippet,
       } as SnippetOverride);
     });
+
+    this.hydrateScratchPad();
+  }
+
+  /**
+   * Build the shelf rows the same way as the page rows: library summary first
+   * for display fields, stored abstract last so its customizations win. A
+   * parked snippet whose library entry has gone missing still renders, for the
+   * same reason a page one does — dropping the row would be data loss.
+   */
+  private hydrateScratchPad() {
+    this.scratchPad = (this.page?.scratchPad ?? []).map((parked) => {
+      const found = this.availableSnippets.find((s) => s.id === parked.id);
+      return { ...(found ?? {}), ...parked } as SnippetOverride;
+    });
+  }
+
+  /**
+   * Adopt a page returned by a scratch pad endpoint.
+   *
+   * The server sends the whole page back, and it — not the local arrays — is
+   * the truth about what moved where. Re-hydrating from it is what keeps a
+   * failed or racing request from leaving the two lists disagreeing.
+   */
+  private applyServerPage(data: Page, refreshPreview: boolean) {
+    this.page = data;
+    this.scratchError = null;
+    this.loadPageSnippets();
+    if (refreshPreview) this.refreshPreview();
+  }
+
+  private scratchFailed(err: any, fallback: string) {
+    this.scratchError = err?.error?.message ?? fallback;
+  }
+
+  // --- Scratch pad ---------------------------------------------------------
+
+  get scratchPadFull(): boolean {
+    return this.scratchPad.length >= this.scratchPadLimit;
+  }
+
+  /** Pull a snippet off the page and onto the shelf. */
+  parkSnippet(index: number) {
+    if (!this.pageId || this.scratchPadFull) return;
+    this.pagesService.parkSnippet(this.pageId, index).subscribe({
+      next: (data) => this.applyServerPage(data, true),
+      error: (err) => this.scratchFailed(err, 'Could not park that snippet.'),
+    });
+  }
+
+  /** Put a parked snippet back on the page (appended). */
+  restoreSnippet(scratchIndex: number) {
+    if (!this.pageId) return;
+    this.pagesService.restoreSnippet(this.pageId, scratchIndex).subscribe({
+      next: (data) => this.applyServerPage(data, true),
+      error: (err) => this.scratchFailed(err, 'Could not restore that snippet.'),
+    });
+  }
+
+  /**
+   * Throw a parked snippet away. Its text and image customizations go with it
+   * and there is nowhere to get them back from, hence the confirm.
+   */
+  discardScratchSnippet(scratchIndex: number) {
+    if (!this.pageId) return;
+    const name = this.scratchPad[scratchIndex]?.type || 'this snippet';
+    if (!confirm(`Discard ${name}? Its customizations can't be recovered.`)) {
+      return;
+    }
+    this.pagesService.discardScratchSnippet(this.pageId, scratchIndex).subscribe({
+      // Nothing rendered changed, so the preview is left alone.
+      next: (data) => this.applyServerPage(data, false),
+      error: (err) => this.scratchFailed(err, 'Could not discard that snippet.'),
+    });
+  }
+
+  /** Reorder within the shelf. */
+  scratchDrop(event: CdkDragDrop<SnippetOverride[]>) {
+    if (!this.pageId || event.previousIndex === event.currentIndex) return;
+    // Move locally first so the drag doesn't visibly snap back while the
+    // request is in flight; the server response re-hydrates either way.
+    moveItemInArray(this.scratchPad, event.previousIndex, event.currentIndex);
+    this.pagesService
+      .reorderScratchPad(this.pageId, event.previousIndex, event.currentIndex)
+      .subscribe({
+        next: (data) => this.applyServerPage(data, false),
+        error: (err) => {
+          this.scratchFailed(err, 'Could not reorder the scratch pad.');
+          this.hydrateScratchPad();
+        },
+      });
   }
 
   /** Reorder within the page structure list (adding is done via the palette). */
@@ -323,10 +433,69 @@ export class PageEdit implements OnInit {
 
   applyFilters() {
     this.filteredSnippets = this.availableSnippets.filter((s) => {
+      if (this.showFavoritesOnly && !this.favoriteIds.has(s.id)) return false;
       if (this.activeTypeFilter && s.type !== this.activeTypeFilter) return false;
       if (this.activeTagFilter && !(s.tags || []).includes(this.activeTagFilter)) return false;
       return true;
     });
+  }
+
+  // --- Favorites -----------------------------------------------------------
+  //
+  // A view of the library, not a separate collection — hence a filter toggle
+  // next to type and tags rather than another tab.
+
+  private loadFavorites() {
+    this.orgsService.listFavorites().subscribe({
+      next: ({ favorites }) => {
+        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
+        this.applyFilters();
+      },
+      // A failed star list is not worth interrupting the editor for; the
+      // palette just shows nothing starred.
+      error: () => {},
+    });
+  }
+
+  isFavorite(snippetId: string): boolean {
+    return this.favoriteIds.has(snippetId);
+  }
+
+  // `Event`, not `MouseEvent`: the star is also reachable by keyboard, and the
+  // keydown binding hands over a KeyboardEvent.
+  toggleFavorite(snippetId: string, event: Event) {
+    // The star sits on top of the tile, and the tile adds the snippet.
+    event.stopPropagation();
+
+    const wasFavorite = this.favoriteIds.has(snippetId);
+    // Flip locally first so the star responds to the click immediately; the
+    // response replaces the whole set either way.
+    if (wasFavorite) this.favoriteIds.delete(snippetId);
+    else this.favoriteIds.add(snippetId);
+    this.applyFilters();
+
+    const request = wasFavorite
+      ? this.orgsService.removeFavorite(snippetId)
+      : this.orgsService.addFavorite(snippetId);
+
+    request.subscribe({
+      next: ({ favorites }) => {
+        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
+        this.applyFilters();
+      },
+      error: (err) => {
+        // Put the star back where it was, and surface the cap message.
+        if (wasFavorite) this.favoriteIds.add(snippetId);
+        else this.favoriteIds.delete(snippetId);
+        this.applyFilters();
+        this.scratchError = err?.error?.message ?? 'Could not update favorites.';
+      },
+    });
+  }
+
+  toggleFavoritesFilter() {
+    this.showFavoritesOnly = !this.showFavoritesOnly;
+    this.applyFilters();
   }
 
   setTypeFilter(type: string) {
@@ -342,6 +511,7 @@ export class PageEdit implements OnInit {
   clearFilters() {
     this.activeTypeFilter = '';
     this.activeTagFilter = '';
+    this.showFavoritesOnly = false;
     this.applyFilters();
   }
 

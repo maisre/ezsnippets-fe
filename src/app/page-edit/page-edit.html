@@ -234,6 +234,16 @@
             </div>
             <button
               type="button"
+              class="snip-park"
+              (click)="parkSnippet(i)"
+              [disabled]="scratchPadFull"
+              [title]="scratchPadFull ? 'Scratch pad is full (' + scratchPadLimit + ')' : 'Move to scratch pad — keeps your edits'"
+              aria-label="Move snippet to scratch pad"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h14M5 8l1.5 11h11L19 8M5 8l2-4h10l2 4M9 12v4M15 12v4"/></svg>
+            </button>
+            <button
+              type="button"
               class="snip-remove"
               (click)="removeSnippet(i)"
               title="Remove from page"
@@ -313,6 +323,10 @@
   <div class="tabs">
     <button type="button" [class.active]="paletteTab === 'snippets'" (click)="setPaletteTab('snippets')">Snippets</button>
     <button type="button" [class.active]="paletteTab === 'templates'" (click)="setPaletteTab('templates')">Templates</button>
+    <button type="button" [class.active]="paletteTab === 'scratchpad'" (click)="setPaletteTab('scratchpad')">
+      Scratch pad
+      <span class="tab-count" *ngIf="scratchPad.length">{{ scratchPad.length }}</span>
+    </button>
   </div>
 
   <div class="drawer-filters" *ngIf="paletteTab === 'snippets' && (filters.types.length || filters.tags.length)">
@@ -338,8 +352,23 @@
         >{{ tag }}</button>
       </div>
     </div>
+    <div class="filter-group">
+      <label>Starred</label>
+      <div class="filter-chips">
+        <button
+          class="filter-chip star-chip"
+          [class.active]="showFavoritesOnly"
+          (click)="toggleFavoritesFilter()"
+          title="Show only snippets your team has starred"
+        >
+          <span class="star-glyph">&#9733;</span>
+          Favorites
+          <span class="tab-count" *ngIf="favoriteIds.size">{{ favoriteIds.size }}</span>
+        </button>
+      </div>
+    </div>
     <button
-      *ngIf="activeTypeFilter || activeTagFilter"
+      *ngIf="activeTypeFilter || activeTagFilter || showFavoritesOnly"
       class="clear-filters"
       (click)="clearFilters()"
     >Clear filters</button>
@@ -364,8 +393,19 @@
         {{ snippet.type }}
         <span class="palette-add">+ Add</span>
       </span>
+      <span
+        class="palette-star"
+        [class.on]="isFavorite(snippet.id)"
+        (click)="toggleFavorite(snippet.id, $event)"
+        [title]="isFavorite(snippet.id) ? 'Remove from favorites' : 'Add to favorites'"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="toggleFavorite(snippet.id, $event)"
+      >{{ isFavorite(snippet.id) ? '\u2605' : '\u2606' }}</span>
     </button>
-    <div *ngIf="filteredSnippets.length === 0" class="empty-state">No matching snippets</div>
+    <div *ngIf="filteredSnippets.length === 0" class="empty-state">
+      {{ showFavoritesOnly ? 'Nothing starred yet — tap a star on any snippet.' : 'No matching snippets' }}
+    </div>
   </div>
 
   <div class="palette-templates" *ngIf="paletteTab === 'templates'">
@@ -390,6 +430,73 @@
       (picked)="applyTemplate($event)"
       (deleted)="deleteTemplate($event, palettePicker)"
     ></app-template-picker>
+  </div>
+
+  <div class="palette-scratchpad" *ngIf="paletteTab === 'scratchpad'">
+    <p class="scratch-error" *ngIf="scratchError">{{ scratchError }}</p>
+
+    <div class="scratch-head">
+      <span class="scratch-count" [class.full]="scratchPadFull">
+        {{ scratchPad.length }} / {{ scratchPadLimit }}
+      </span>
+      <span class="scratch-hint">
+        Parked snippets keep their text and images. Drag to reorder.
+      </span>
+    </div>
+
+    <div
+      cdkDropList
+      id="scratch-pad-list"
+      [cdkDropListData]="scratchPad"
+      (cdkDropListDropped)="scratchDrop($event)"
+      class="scratch-list"
+    >
+      <div
+        *ngFor="let snippet of scratchPad; let i = index; trackBy: trackBySnippetId"
+        cdkDrag
+        [cdkDragStartDelay]="0"
+        class="snip-row scratch-row"
+      >
+        <span class="grip" cdkDragHandle>&#8942;&#8942;</span>
+        <img
+          [src]="snippetThumbUrl(snippet.id)"
+          alt=""
+          class="snip-thumb"
+          loading="lazy"
+          decoding="async"
+        />
+        <div class="snip-meta">
+          <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
+          <div class="badges">
+            <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
+            <ng-container *ngIf="!snippetReady(snippet)">
+              <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
+              <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+            </ng-container>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="scratch-restore"
+          (click)="restoreSnippet(i)"
+          title="Put back on the page"
+        >Put back</button>
+        <button
+          type="button"
+          class="snip-remove"
+          (click)="discardScratchSnippet(i)"
+          title="Discard — customizations can't be recovered"
+          aria-label="Discard parked snippet"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div *ngIf="scratchPad.length === 0" class="empty-state">
+        Nothing parked yet. Use the box icon on a snippet in the page list to
+        set it aside without losing your edits.
+      </div>
+    </div>
   </div>
 </aside>
 

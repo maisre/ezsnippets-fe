@@ -107,6 +107,59 @@ export class LayoutsService {
     );
   }
 
+  // --- Scratch pad ---------------------------------------------------------
+  //
+  // Layout-wide, so park/restore name the subpage. Only indexes cross the
+  // wire; the server moves its own stored snippet so customizations survive.
+  // The response is the whole updated layout — treat it as the new truth
+  // rather than patching local arrays.
+
+  /** Pull a snippet off a subpage and onto the scratch pad. */
+  parkSnippet(
+    layoutId: string,
+    subPageIndex: number,
+    index: number,
+  ): Observable<Layout> {
+    return this.http.post<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/scratch-pad/park`,
+      { subPageIndex, index },
+    );
+  }
+
+  /** Put a parked snippet onto a subpage. Omit toIndex to append. */
+  restoreSnippet(
+    layoutId: string,
+    scratchIndex: number,
+    subPageIndex: number,
+    toIndex?: number,
+  ): Observable<Layout> {
+    return this.http.post<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/scratch-pad/restore`,
+      { scratchIndex, subPageIndex, toIndex },
+    );
+  }
+
+  reorderScratchPad(
+    layoutId: string,
+    from: number,
+    to: number,
+  ): Observable<Layout> {
+    return this.http.post<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/scratch-pad/reorder`,
+      { from, to },
+    );
+  }
+
+  /** Destructive: the parked snippet's customizations go with it. */
+  discardScratchSnippet(
+    layoutId: string,
+    scratchIndex: number,
+  ): Observable<Layout> {
+    return this.http.delete<Layout>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/scratch-pad/${scratchIndex}`,
+    );
+  }
+
   duplicateLayout(layoutId: string): Observable<Layout> {
     return this.http.post<Layout>(`${runtimeConfig.apiUrl}/layouts/${layoutId}/duplicate`, {});
   }

@@ -103,6 +103,49 @@ export class PagesService {
     );
   }
 
+  // --- Scratch pad ---------------------------------------------------------
+  //
+  // Every call sends indexes, never snippet bodies, and the server returns the
+  // whole updated page. That is deliberate: this component holds snippet
+  // membership and order but not the page-scoped customizations (text and
+  // image overrides, shutterstockId), so posting snippets back would strip
+  // them. Take the server's page as the new truth rather than patching the
+  // local arrays.
+
+  /** Pull a snippet off the page and onto the scratch pad. */
+  parkSnippet(pageId: string, index: number): Observable<Page> {
+    return this.http.post<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/scratch-pad/park`,
+      { index },
+    );
+  }
+
+  /** Put a parked snippet back on the page. Omit toIndex to append. */
+  restoreSnippet(
+    pageId: string,
+    scratchIndex: number,
+    toIndex?: number,
+  ): Observable<Page> {
+    return this.http.post<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/scratch-pad/restore`,
+      { scratchIndex, toIndex },
+    );
+  }
+
+  reorderScratchPad(pageId: string, from: number, to: number): Observable<Page> {
+    return this.http.post<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/scratch-pad/reorder`,
+      { from, to },
+    );
+  }
+
+  /** Destructive: the parked snippet's customizations go with it. */
+  discardScratchSnippet(pageId: string, scratchIndex: number): Observable<Page> {
+    return this.http.delete<Page>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/scratch-pad/${scratchIndex}`,
+    );
+  }
+
   duplicatePage(pageId: string): Observable<Page> {
     return this.http.post<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/duplicate`, {});
   }
