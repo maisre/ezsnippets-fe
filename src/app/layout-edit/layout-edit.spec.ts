@@ -52,7 +52,11 @@ describe('LayoutEdit', () => {
     for (let i = 0; i < 10; i++) {
       const open = httpMock.match(() => true);
       if (!open.length) break;
-      open.forEach((req) => req.flush([]));
+      // Most init calls return lists, but favorites is wrapped — answering it
+      // with [] makes the component's `favorites.map` throw during teardown.
+      open.forEach((req) =>
+        req.flush(req.request.url.endsWith('/orgs/favorites') ? { favorites: [] } : []),
+      );
     }
     httpMock.verify();
   });

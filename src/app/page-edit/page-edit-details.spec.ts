@@ -58,6 +58,9 @@ describe('PageEdit details form', () => {
     httpMock
       .match((r) => r.url.includes('/snippets/filters'))
       .forEach((r) => r.flush({ types: [], tags: [] }));
+    httpMock
+      .match((r) => r.url.endsWith('/orgs/favorites'))
+      .forEach((r) => r.flush({ favorites: [] }));
 
     fixture.detectChanges();
   });
