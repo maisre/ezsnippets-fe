@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 interface LoginCredentials {
@@ -17,9 +17,15 @@ interface LoginCredentials {
 export class Login {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // Set by the invite page, so accepting picks up where signing in left off.
+  private returnUrl = this.authService.safeReturnUrl(
+    this.route.snapshot.queryParamMap.get('returnUrl'),
+  );
 
   credentials: LoginCredentials = {
-    email: '',
+    email: this.route.snapshot.queryParamMap.get('email') ?? '',
     password: '',
   };
 
@@ -35,7 +41,11 @@ export class Login {
         next: (response) => {
           this.isLoading = false;
           this.authService.setToken(response.access_token);
-          this.router.navigate(['/dashboard']);
+          if (this.returnUrl) {
+            this.router.navigateByUrl(this.returnUrl);
+          } else {
+            this.router.navigate(['/dashboard']);
+          }
         },
         error: (error) => {
           this.isLoading = false;

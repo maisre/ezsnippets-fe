@@ -54,8 +54,11 @@ export class PaymentsService {
     for (const handler of [...this.checkoutCompletedHandlers]) handler();
   }
 
-  createCheckoutSession(priceId: string): Observable<{ transactionId: string }> {
-    return this.http.post<{ transactionId: string }>(
+  /** `orgId` is the workspace the purchase will bill — a new team org for a team plan. */
+  createCheckoutSession(
+    priceId: string,
+  ): Observable<{ transactionId: string; orgId: string }> {
+    return this.http.post<{ transactionId: string; orgId: string }>(
       `${runtimeConfig.apiUrl}/payments/checkout`,
       { priceId },
     );
@@ -68,14 +71,34 @@ export class PaymentsService {
     );
   }
 
-  async openCheckout(transactionId: string): Promise<void> {
+  /**
+   * The success page gets the billed org's id so it can move the customer into
+   * a newly bought team workspace once the webhook has landed.
+   */
+  async openCheckout(transactionId: string, orgId?: string): Promise<void> {
     await this.loadPaddle();
+    const query = orgId ? `?org=${encodeURIComponent(orgId)}` : '';
     window.Paddle!.Checkout.open({
       transactionId,
       settings: {
         displayMode: 'overlay',
-        successUrl: `${window.location.origin}/checkout/success`,
+        successUrl: `${window.location.origin}/checkout/success${query}`,
       },
+    });
+  }
+
+  /** What moving an existing subscription onto a team plan charges today. */
+  previewUpgrade(priceId: string) {
+    return this.http.post<{ amountDueToday: string; currency: string; plan: string }>(
+      `${runtimeConfig.apiUrl}/payments/upgrade/preview`,
+      { priceId },
+    );
+  }
+
+  /** Moves the caller's subscription onto a new team workspace; returns its id. */
+  upgradeToTeam(priceId: string) {
+    return this.http.post<{ orgId: string }>(`${runtimeConfig.apiUrl}/payments/upgrade`, {
+      priceId,
     });
   }
 

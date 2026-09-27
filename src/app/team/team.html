@@ -1,0 +1,153 @@
+<div class="team-page">
+  @if (loading) {
+    <p class="loading">Loading...</p>
+  } @else if (personal) {
+    <h1>Team</h1>
+    <div class="info-card">
+      <p class="hint">
+        You're in your personal workspace, which is just for you. Switch to a
+        team workspace from the menu at the top to manage its members, or get
+        one with the Agency plan.
+      </p>
+      <a routerLink="/pricing" class="btn btn-primary">View Plans</a>
+    </div>
+  } @else if (team) {
+    <div class="team-header">
+      @if (editingName) {
+        <form class="rename-row" (ngSubmit)="saveName()">
+          <input name="orgName" [(ngModel)]="nameDraft" maxlength="80" aria-label="Workspace name" />
+          <button class="btn btn-primary" type="submit" [disabled]="busy === 'rename' || !nameDraft.trim()">Save</button>
+          <button class="btn btn-outline" type="button" (click)="editingName = false">Cancel</button>
+        </form>
+      } @else {
+        <h1>{{ team.org.name }}</h1>
+        @if (canManage) {
+          <button class="btn btn-link" (click)="startRename()">Rename</button>
+        }
+      }
+    </div>
+
+    <p class="seats">
+      @if (team.seats.limit === null) {
+        This workspace has no active plan, so no one new can be invited.
+      } @else if (team.seats.limit === -1) {
+        {{ team.seats.used }} seats in use
+      } @else {
+        {{ team.seats.used }} of {{ team.seats.limit }} seats in use
+        <span class="seats-note">(pending invites hold a seat)</span>
+      }
+    </p>
+
+    @if (error) {
+      <p class="team-error">{{ error }}</p>
+    }
+
+    <section class="team-section">
+      <h2>Members</h2>
+      <div class="info-card">
+        @for (member of team.members; track member.userId) {
+          <div class="member-row">
+            <div class="member-who">
+              <span class="member-email">{{ member.email ?? 'Unknown user' }}</span>
+              @if (member.userId === myId) {
+                <span class="you">you</span>
+              }
+            </div>
+            <div class="member-actions">
+              @if (isOwner && member.role !== 'owner') {
+                <select
+                  (change)="changeRole(member, $any($event.target).value)"
+                  [disabled]="busy === member.userId"
+                  [attr.aria-label]="'Role for ' + member.email"
+                >
+                  <option value="member" [selected]="member.role === 'member'">Member</option>
+                  <option value="admin" [selected]="member.role === 'admin'">Admin</option>
+                </select>
+              } @else {
+                <span class="role-badge role-{{ member.role }}">{{ roleLabel(member.role) }}</span>
+              }
+              @if (canRemove(member)) {
+                <button class="btn btn-danger-outline btn-sm" (click)="remove(member)" [disabled]="busy === member.userId">
+                  Remove
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    @if (canManage) {
+      <section class="team-section">
+        <h2>Invite someone</h2>
+        <div class="info-card">
+          @if (team.seats.limit !== null && seatsFull) {
+            <p class="hint">
+              All seats are in use. Remove a member or revoke a pending invite to
+              free one up.
+            </p>
+          } @else if (team.seats.limit !== null) {
+            <form class="invite-row" (ngSubmit)="sendInvite()">
+              <input
+                type="email"
+                name="inviteEmail"
+                [(ngModel)]="inviteEmail"
+                placeholder="teammate@studio.com"
+                autocomplete="off"
+                aria-label="Email to invite"
+              />
+              @if (isOwner) {
+                <select name="inviteRole" [(ngModel)]="inviteRole" aria-label="Role">
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              }
+              <button class="btn btn-primary" type="submit" [disabled]="inviting || !inviteEmail.trim()">
+                {{ inviting ? 'Sending...' : 'Send invite' }}
+              </button>
+            </form>
+            <p class="hint">
+              Members work on every page and layout in this workspace. Admins can
+              also invite and remove members. Billing stays with the owner.
+            </p>
+          }
+          @if (inviteNotice) {
+            <p class="notice">{{ inviteNotice }}</p>
+          }
+        </div>
+      </section>
+
+      @if (team.invites?.length) {
+        <section class="team-section">
+          <h2>Pending invites</h2>
+          <div class="info-card">
+            @for (invite of team.invites; track invite.id) {
+              <div class="member-row">
+                <div class="member-who">
+                  <span class="member-email">{{ invite.email }}</span>
+                  <span class="invite-meta">{{ roleLabel(invite.role) }} · expires {{ expiresLabel(invite) }}</span>
+                </div>
+                <div class="member-actions">
+                  <button class="btn btn-outline btn-sm" (click)="resend(invite)" [disabled]="inviting">Resend</button>
+                  <button class="btn btn-danger-outline btn-sm" (click)="revoke(invite)" [disabled]="busy === invite.id">
+                    Revoke
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    @if (!isOwner) {
+      <section class="team-section">
+        <button class="btn btn-danger-outline" (click)="leave()" [disabled]="busy === 'leave'">
+          Leave this workspace
+        </button>
+      </section>
+    }
+  } @else {
+    <p class="team-error">{{ error }}</p>
+  }
+</div>

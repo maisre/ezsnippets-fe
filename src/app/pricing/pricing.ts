@@ -61,6 +61,18 @@ export class Pricing implements OnInit {
   /** Name of the plan whose checkout is being opened, for the button state. */
   opening: string | null = null;
 
+  /**
+   * Set when an existing subscriber picks a team plan: the API refuses a
+   * second checkout and we offer to move their subscription instead.
+   */
+  upgradeOffer: {
+    priceId: string;
+    plan: string;
+    amountDueToday: string;
+    currency: string;
+  } | null = null;
+  upgrading = false;
+
   ngOnInit() {
     this.http.get<Catalog>(`${runtimeConfig.apiUrl}/plans`).subscribe({
       next: (catalog) => {
@@ -185,10 +197,11 @@ export class Pricing implements OnInit {
     this.checkoutError = '';
     this.opening = plan.name;
 
+    this.upgradeOffer = null;
     this.paymentsService.createCheckoutSession(price.id).subscribe({
       next: (res) => {
         this.paymentsService
-          .openCheckout(res.transactionId)
+          .openCheckout(res.transactionId, res.orgId)
           .catch((err) => {
             // Anything that stops the overlay opening has to be visible: a
             // checkout that fails silently reads as a dead button.
@@ -199,9 +212,52 @@ export class Pricing implements OnInit {
           .finally(() => (this.opening = null));
       },
       error: (err) => {
+        if (err?.status === 409 && err.error?.code === 'UPGRADE_AVAILABLE') {
+          this.offerUpgrade(price.id);
+          return;
+        }
         console.error('Checkout error:', err);
-        this.checkoutError = 'Could not start checkout. Please try again.';
+        // 409s carry a sentence meant for the customer ("already includes
+        // Pro", "already has a plan"); anything else gets the generic line.
+        this.checkoutError =
+          err?.status === 409 && err.error?.message
+            ? err.error.message
+            : 'Could not start checkout. Please try again.';
         this.opening = null;
+      },
+    });
+  }
+
+  private offerUpgrade(priceId: string) {
+    this.paymentsService.previewUpgrade(priceId).subscribe({
+      next: (preview) => {
+        this.upgradeOffer = { priceId, ...preview };
+        this.opening = null;
+      },
+      error: (err) => {
+        this.checkoutError =
+          err?.error?.message ?? 'Could not price the upgrade. Please try again.';
+        this.opening = null;
+      },
+    });
+  }
+
+  /** Moves the subscription onto a new team workspace and switches into it. */
+  confirmUpgrade() {
+    if (!this.upgradeOffer || this.upgrading) return;
+    this.upgrading = true;
+    this.checkoutError = '';
+    this.paymentsService.upgradeToTeam(this.upgradeOffer.priceId).subscribe({
+      next: ({ orgId }) => {
+        this.authService.switchOrg(orgId).subscribe({
+          next: (res) => this.authService.enterWorkspace(res.access_token, '/team'),
+          error: () => this.router.navigate(['/account']),
+        });
+      },
+      error: (err) => {
+        this.upgrading = false;
+        this.checkoutError =
+          err?.error?.message ?? 'The upgrade did not go through. You have not been charged.';
       },
     });
   }

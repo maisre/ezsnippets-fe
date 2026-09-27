@@ -76,6 +76,40 @@ export class AuthService {
     );
   }
 
+  /**
+   * Scope the session to another workspace. Returns the new token; callers
+   * hand it to enterWorkspace().
+   */
+  switchOrg(orgId: string) {
+    return this.http.post<{ access_token: string }>(
+      `${runtimeConfig.apiUrl}/auth/switch-org`,
+      { orgId },
+      { withCredentials: true },
+    );
+  }
+
+  /**
+   * Adopt a token for a different workspace and reload into it.
+   *
+   * A full reload rather than a router navigation: pages, layouts, favorites,
+   * usage and the editor cookie are all scoped to the active org, and several
+   * components cache them for their lifetime. Starting clean is the only way
+   * to be sure nothing from the previous workspace is still on screen.
+   */
+  enterWorkspace(token: string, path = '/dashboard'): void {
+    this.setToken(token);
+    window.location.assign(path);
+  }
+
+  /**
+   * A post-login destination from a query param — only same-app paths, so a
+   * crafted link can't bounce someone off-site after they sign in.
+   */
+  safeReturnUrl(value: string | null | undefined): string | null {
+    if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+    return value;
+  }
+
   forgotPassword(email: string) {
     return this.http.post(`${runtimeConfig.apiUrl}/auth/forgot-password`, { email });
   }

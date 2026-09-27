@@ -61,6 +61,25 @@
         </div>
       }
     </div>
+    @if (upgradeOffer) {
+      <div class="upgrade-offer" role="region" aria-label="Upgrade your plan">
+        <h2>Upgrade to {{ upgradeOffer.plan }}</h2>
+        <p>
+          Your current subscription moves to a new team workspace. You'll pay
+          <strong>{{ upgradeOffer.amountDueToday }} {{ upgradeOffer.currency }}</strong>
+          today for the rest of this billing period, and your personal workspace
+          gets Pro at no extra cost.
+        </p>
+        <div class="upgrade-actions">
+          <button class="btn btn-primary" (click)="confirmUpgrade()" [disabled]="upgrading">
+            {{ upgrading ? 'Upgrading...' : 'Upgrade now' }}
+          </button>
+          <button class="btn btn-outline" (click)="upgradeOffer = null" [disabled]="upgrading">
+            Not now
+          </button>
+        </div>
+      </div>
+    }
     @if (checkoutError) {
       <p class="checkout-error">{{ checkoutError }}</p>
     }

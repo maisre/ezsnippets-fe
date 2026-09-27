@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { runtimeConfig } from '../runtime-config';
-import { AuthService } from '../auth.service';
 import { OrgsService } from '../orgs.service';
 import { PaymentsService } from '../payments.service';
 import { Org } from '../models';
@@ -17,7 +16,6 @@ import { CustomDomain, DomainsService } from '../domains.service';
 })
 export class Account implements OnInit {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
   private orgsService = inject(OrgsService);
   private paymentsService = inject(PaymentsService);
   private domainsService = inject(DomainsService);
@@ -49,10 +47,14 @@ export class Account implements OnInit {
     );
   }
 
+  /**
+   * 'team-owner' when this personal workspace's plan is included with a team
+   * subscription the user owns — there's no billing here to manage then.
+   */
+  planSource: 'subscription' | 'team-owner' | null = null;
+
   ngOnInit() {
-    this.orgsService.getMyOrgs().subscribe((orgs) => {
-      this.org = orgs.find((o) => o.personal) || orgs[0] || null;
-    });
+    this.loadOrg();
     this.loadUsage();
     this.domainsService
       .getTarget()
@@ -64,11 +66,13 @@ export class Account implements OnInit {
       .get<{
         hasPlan: boolean;
         plan: string | null;
+        planSource?: 'subscription' | 'team-owner';
         limits: { maxCustomDomains: number } | null;
       }>(`${runtimeConfig.apiUrl}/plans/usage`)
       .subscribe({
         next: (usage) => {
           this.planName = usage.hasPlan && usage.plan ? usage.plan : 'None';
+          this.planSource = usage.planSource ?? null;
           this.maxCustomDomains = usage.limits?.maxCustomDomains ?? 0;
           if (this.maxCustomDomains !== 0) this.loadDomains();
         },
@@ -185,12 +189,18 @@ export class Account implements OnInit {
   }
 
   // Display only — the API enforces owner-only on the portal session itself.
+  // A plan included with a team subscription is billed on the team, not here.
   canManageBilling(): boolean {
-    const userId = this.authService.getUserId();
-    if (!userId || !this.org?.paddleCustomerId) return false;
-    return this.org.members.some(
-      (m) => m.user === userId && m.role === 'owner',
+    return (
+      this.org?.role === 'owner' &&
+      !!this.org.paddleCustomerId &&
+      !!this.org.subscriptionId
     );
+  }
+
+  /** Billing lives with the owner — members see the plan, not the card. */
+  get isOwner(): boolean {
+    return this.org?.role === 'owner';
   }
 
   // Cancelling goes through the portal too, so Paddle's retention flow gets a
@@ -230,8 +240,14 @@ export class Account implements OnInit {
   @HostListener('window:focus')
   refreshOrg() {
     if (!this.org) return;
+    this.loadOrg();
+  }
+
+  // The workspace the session is scoped to — which is also the one every
+  // limit and domain on this page belongs to.
+  private loadOrg() {
     this.orgsService.getMyOrgs().subscribe((orgs) => {
-      this.org = orgs.find((o) => o.personal) || orgs[0] || null;
+      this.org = orgs.find((o) => o.active) || orgs[0] || null;
     });
   }
 }

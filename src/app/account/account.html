@@ -3,7 +3,7 @@
 
   @if (org) {
     <div class="account-section">
-      <h2>Organization</h2>
+      <h2>Workspace</h2>
       <div class="info-card">
         <div class="info-row">
           <span class="info-label">Name</span>
@@ -13,10 +13,14 @@
           <span class="info-label">Type</span>
           <span class="info-value">{{ org.personal ? 'Personal' : 'Team' }}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Members</span>
-          <span class="info-value">{{ org.members.length }}</span>
-        </div>
+        @if (!org.personal) {
+          <div class="info-row">
+            <span class="info-label">Members</span>
+            <span class="info-value">
+              {{ org.members.length }} · <a routerLink="/team">Manage team</a>
+            </span>
+          </div>
+        }
       </div>
     </div>
 
@@ -131,12 +135,19 @@
           <span class="info-label">Plan</span>
           <span class="info-value">{{ planName }}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Status</span>
-          <span class="info-value">
-            <span class="status-badge {{ getStatusClass() }}">{{ getStatusLabel() }}</span>
-          </span>
-        </div>
+        @if (planSource === 'team-owner') {
+          <p class="billing-hint">
+            Included with the Agency plan on your team workspace — there's
+            nothing to pay for here. Billing is managed from that workspace.
+          </p>
+        } @else {
+          <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value">
+              <span class="status-badge {{ getStatusClass() }}">{{ getStatusLabel() }}</span>
+            </span>
+          </div>
+        }
 
         @if (org.cardLast4) {
           <div class="info-row">
@@ -174,9 +185,19 @@
           </div>
         }
 
-        @if (!org.subscriptionStatus || org.subscriptionStatus === 'canceled') {
+        @if (!isOwner) {
+          <p class="billing-hint">Billing for this workspace is handled by its owner.</p>
+        } @else if (planSource !== 'team-owner' && (!org.subscriptionStatus || org.subscriptionStatus === 'canceled')) {
           <div class="subscription-actions">
             <a routerLink="/pricing" class="btn btn-primary">View Plans</a>
+          </div>
+        } @else if (org.personal && planSource === 'subscription' && org.subscriptionStatus !== 'canceled') {
+          <div class="subscription-actions">
+            <a routerLink="/pricing" class="btn btn-outline">Add a team workspace</a>
+            <p class="billing-hint">
+              Upgrade to Agency to invite your team. You keep Pro on this
+              personal workspace at no extra cost.
+            </p>
           </div>
         }
       </div>

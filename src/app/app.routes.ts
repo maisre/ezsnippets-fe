@@ -18,6 +18,8 @@ import { Terms } from './legal/terms/terms';
 import { Privacy } from './legal/privacy/privacy';
 import { Refunds } from './legal/refunds/refunds';
 import { NotFound } from './not-found/not-found';
+import { Team } from './team/team';
+import { Invite } from './invite/invite';
 import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
@@ -47,5 +49,8 @@ export const routes: Routes = [
   { path: 'l/edit/:id', component: LayoutEdit, canActivate: [authGuard], data: { hideFooter: true } },
   { path: 'layouts', component: Layouts, canActivate: [authGuard] },
   { path: 'account', component: Account, canActivate: [authGuard] },
+  { path: 'team', component: Team, canActivate: [authGuard] },
+  // Public — invitees usually don't have an account yet. See invite.ts.
+  { path: 'invite/:token', component: Invite },
   { path: '**', component: NotFound },
 ];

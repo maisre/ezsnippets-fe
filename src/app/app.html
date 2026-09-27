@@ -4,9 +4,25 @@
   </div>
   <div class="nav-links">
     @if (isAuthenticated$ | async) {
+      @if (workspaces().length > 1) {
+        <label class="workspace-switcher">
+          <span class="visually-hidden">Workspace</span>
+          <select
+            (change)="switchWorkspace($any($event.target).value)"
+            [disabled]="switching()"
+          >
+            @for (org of workspaces(); track org.id) {
+              <option [value]="org.id" [selected]="org.active">{{ workspaceLabel(org) }}</option>
+            }
+          </select>
+        </label>
+      }
       <a routerLink="/dashboard" class="nav-link">Dashboard</a>
       <a routerLink="/pages" class="nav-link">Pages</a>
       <a routerLink="/layouts" class="nav-link">Layouts</a>
+      @if (activeWorkspace() && !activeWorkspace()!.personal) {
+        <a routerLink="/team" class="nav-link">Team</a>
+      }
       <a routerLink="/account" class="nav-link">Account</a>
       <button class="nav-link nav-button" (click)="logout()">Logout</button>
     } @else {

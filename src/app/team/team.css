@@ -1,0 +1,194 @@
+.team-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.team-page h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.team-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.rename-row,
+.invite-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.rename-row input,
+.invite-row input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+input,
+select {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.seats {
+  color: #666;
+  margin: 0 0 2rem;
+}
+
+.seats-note {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.team-section {
+  margin-bottom: 2rem;
+}
+
+.team-section h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.75rem;
+}
+
+.info-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  background: white;
+}
+
+.member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.member-row:last-child {
+  border-bottom: none;
+}
+
+.member-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.member-email {
+  font-weight: 600;
+  color: #2c3e50;
+  overflow-wrap: anywhere;
+}
+
+.you,
+.invite-meta {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #eef2f7;
+  color: #2c3e50;
+}
+
+.role-owner {
+  background: #e8f4fd;
+  color: #1f6fa8;
+}
+
+.hint {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0;
+}
+
+.info-card > .hint:first-child {
+  margin-top: 0;
+}
+
+.notice {
+  color: #27ae60;
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0;
+}
+
+.team-error {
+  color: #c0392b;
+  margin: 0 0 1rem;
+}
+
+.loading {
+  color: #666;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.btn-outline {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.btn-danger-outline {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.btn-link {
+  color: #3498db;
+  padding: 0.25rem 0.5rem;
+}

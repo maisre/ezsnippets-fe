@@ -1,0 +1,47 @@
+<div class="invite-page">
+  <div class="invite-card">
+    @if (loading) {
+      <p>Loading invite...</p>
+    } @else if (preview) {
+      <h1>Join {{ preview.orgName }}</h1>
+      <p>
+        {{ preview.inviterEmail ?? 'Someone' }} invited
+        <strong>{{ preview.email }}</strong> to join as
+        {{ preview.role === 'admin' ? 'an admin' : 'a member' }}.
+      </p>
+
+      @if (isSignedIn) {
+        <button class="btn btn-primary" (click)="accept()" [disabled]="accepting">
+          {{ accepting ? 'Joining...' : 'Accept invite' }}
+        </button>
+        <p class="hint">
+          Signed in with a different email?
+          <button class="btn-link" (click)="signOutAndSwitch()">Sign out</button>
+          and use {{ preview.email }}.
+        </p>
+      } @else {
+        <div class="actions">
+          <a
+            routerLink="/signup"
+            [queryParams]="{ email: preview.email, returnUrl: returnUrl }"
+            class="btn btn-primary"
+          >Create an account</a>
+          <a
+            routerLink="/login"
+            [queryParams]="{ email: preview.email, returnUrl: returnUrl }"
+            class="btn btn-outline"
+          >I already have one</a>
+        </div>
+        <p class="hint">Use {{ preview.email }} — the invite only works for that address.</p>
+      }
+
+      @if (error) {
+        <p class="invite-error">{{ error }}</p>
+      }
+    } @else {
+      <h1>Invite unavailable</h1>
+      <p>{{ error }}</p>
+      <a routerLink="/" class="btn btn-outline">Go home</a>
+    }
+  </div>
+</div>

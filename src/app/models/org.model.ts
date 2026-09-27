@@ -26,4 +26,35 @@ export interface Org {
   currentPeriodEnd?: number;
   cancelAtPeriodEnd?: boolean;
   favoriteSnippets?: FavoriteSnippet[];
+  /** The caller's role in this org (GET /orgs). */
+  role?: OrgMember['role'];
+  /** True for the org the caller's token is scoped to. */
+  active?: boolean;
+}
+
+/** GET /orgs/:id/members */
+export interface TeamView {
+  org: { id: string; name: string; personal: boolean };
+  myRole: OrgMember['role'];
+  members: { userId: string; email: string | null; role: OrgMember['role'] }[];
+  /** limit is null when the workspace has no active plan. */
+  seats: { used: number; limit: number | null };
+  /** Owners and admins only. */
+  invites?: TeamInvite[];
+}
+
+export interface TeamInvite {
+  id: string;
+  email: string;
+  role: 'admin' | 'member';
+  expiresAt: string;
+  createdAt?: string;
+}
+
+/** GET /invites/:token */
+export interface InvitePreview {
+  orgName: string;
+  email: string;
+  role: 'admin' | 'member';
+  inviterEmail: string | null;
 }
