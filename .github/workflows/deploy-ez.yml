@@ -65,8 +65,13 @@ jobs:
       - name: Upload source maps to Sentry
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        # The maps are built "hidden" (no sourceMappingURL in the bundles), so
+        # Sentry can only pair a bundle with its map through a debug ID. inject
+        # writes one into both — and must run before upload and before the S3
+        # sync, so the deployed bundles carry the same IDs as the uploaded maps.
         run: |
           npx sentry-cli releases new "${{ github.sha }}"
+          npx sentry-cli sourcemaps inject dist/ez-frontend/browser
           npx sentry-cli sourcemaps upload --release="${{ github.sha }}" dist/ez-frontend/browser
           npx sentry-cli releases finalize "${{ github.sha }}"
 
