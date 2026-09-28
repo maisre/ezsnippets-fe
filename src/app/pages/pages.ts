@@ -12,6 +12,7 @@ import { Page, Template } from '../models';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { TemplatesService } from '../templates.service';
 import { ShareLinkService } from '../share-link.service';
+import { CreatorLabelsService } from '../creator-labels.service';
 
 @Component({
   selector: 'app-pages',
@@ -34,6 +35,7 @@ export class Pages implements OnInit {
   private authService = inject(AuthService);
   private templatesService = inject(TemplatesService);
   private router = inject(Router);
+  readonly creators = inject(CreatorLabelsService);
   pages: Page[] = [];
   usage: PlanUsage | null = null;
 
@@ -92,6 +94,7 @@ export class Pages implements OnInit {
   }
 
   ngOnInit() {
+    this.creators.load();
     this.loadPages();
     this.loadUsage();
   }

@@ -11,6 +11,7 @@ import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
 import { Page, Layout } from '../models';
 import { ShareLinkService } from '../share-link.service';
+import { CreatorLabelsService } from '../creator-labels.service';
 
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
@@ -41,6 +42,7 @@ export class Dashboard implements OnInit {
   private plansService = inject(PlansService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  readonly creators = inject(CreatorLabelsService);
 
   readonly placeholder = PLACEHOLDER_THUMBNAIL;
 
@@ -71,6 +73,7 @@ export class Dashboard implements OnInit {
   showArchivedLayouts = false;
 
   ngOnInit() {
+    this.creators.load();
     this.loadPages();
     this.loadLayouts();
     this.loadUsage();

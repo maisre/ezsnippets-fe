@@ -54,6 +54,11 @@
   font-weight: 650; letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.crumb-by {
+  color: var(--ink-3);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
 .crumb-rename {
   display: inline-grid; place-items: center; width: 28px; height: 28px;
   border: none; border-radius: 7px; background: none; color: var(--ink-3); cursor: pointer;

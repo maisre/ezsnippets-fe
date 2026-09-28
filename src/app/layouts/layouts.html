@@ -69,7 +69,7 @@
   <h2>Layouts</h2>
   <ul>
     <li *ngFor="let layout of activeLayouts">
-      <span>{{ layout.name || layout.id }}</span>
+      <span>{{ layout.name || layout.id }}<small class="created-by" *ngIf="creators.labelFor(layout.createdBy) as by"> · by {{ by }}</small></span>
       <div class="button-group">
         <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
         <ng-template #layoutMenu>
@@ -94,7 +94,7 @@
     </p>
     <ul *ngIf="showArchived">
       <li *ngFor="let layout of archivedLayouts" class="archived">
-        <span>{{ layout.name || layout.id }}</span>
+        <span>{{ layout.name || layout.id }}<small class="created-by" *ngIf="creators.labelFor(layout.createdBy) as by"> · by {{ by }}</small></span>
         <div class="button-group">
           <button (click)="restoreLayout(layout.id)" class="edit-btn">Restore</button>
           <ng-template #archivedLayoutMenu>

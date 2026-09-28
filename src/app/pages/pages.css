@@ -139,6 +139,13 @@ li > text:first-child {
   font-weight: 500;
 }
 
+/* Who made it — team workspaces only (CreatorLabelsService) */
+.created-by {
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
 /* Button Group */
 .button-group {
   display: flex;

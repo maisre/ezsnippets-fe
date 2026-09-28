@@ -9,6 +9,7 @@ import { PlansService, PlanUsage } from '../plans.service';
 import { Layout, Template } from '../models';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { TemplatesService } from '../templates.service';
+import { CreatorLabelsService } from '../creator-labels.service';
 
 @Component({
   selector: 'app-layouts',
@@ -29,6 +30,7 @@ export class Layouts implements OnInit {
   private plansService = inject(PlansService);
   private templatesService = inject(TemplatesService);
   private router = inject(Router);
+  readonly creators = inject(CreatorLabelsService);
   layouts: Layout[] = [];
   usage: PlanUsage | null = null;
 
@@ -82,6 +84,7 @@ export class Layouts implements OnInit {
   }
 
   ngOnInit() {
+    this.creators.load();
     this.loadLayouts();
     this.loadUsage();
   }

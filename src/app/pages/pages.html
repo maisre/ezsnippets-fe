@@ -69,7 +69,7 @@
   <h2>Pages</h2>
   <ul>
     <li *ngFor="let page of activePages">
-      <span>{{ page.name || page.id }}</span>
+      <span>{{ page.name || page.id }}<small class="created-by" *ngIf="creators.labelFor(page.createdBy) as by"> · by {{ by }}</small></span>
       <div class="button-group">
         <button (click)="viewPage(page)" class="view-btn">View</button>
         <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
@@ -96,7 +96,7 @@
     </p>
     <ul *ngIf="showArchived">
       <li *ngFor="let page of archivedPages" class="archived">
-        <span>{{ page.name || page.id }}</span>
+        <span>{{ page.name || page.id }}<small class="created-by" *ngIf="creators.labelFor(page.createdBy) as by"> · by {{ by }}</small></span>
         <div class="button-group">
           <button (click)="restorePage(page.id)" class="edit-btn">Restore</button>
           <ng-template #archivedPageMenu>

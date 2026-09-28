@@ -5,6 +5,7 @@
       <button type="button" class="crumb-back" (click)="router.navigate(['/pages'])">Pages</button>
       <span class="sep">/</span>
       <span class="crumb-title">{{ page.name || page.id }}</span>
+      <span class="crumb-by" *ngIf="creators.labelFor(page.createdBy) as by">by {{ by }}</span>
       <button
         type="button"
         class="crumb-rename"

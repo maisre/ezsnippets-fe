@@ -25,6 +25,7 @@ import { ShareLinkService } from '../share-link.service';
 import { slugify } from '../slugify';
 import { SCRATCH_PAD_LIMIT } from '../scratch-pad';
 import { OrgsService } from '../orgs.service';
+import { CreatorLabelsService } from '../creator-labels.service';
 
 @Component({
   selector: 'app-page-edit',
@@ -40,6 +41,7 @@ import { OrgsService } from '../orgs.service';
 })
 export class PageEdit implements OnInit {
   private route = inject(ActivatedRoute);
+  readonly creators = inject(CreatorLabelsService);
   router = inject(Router);
   private pagesService = inject(PagesService);
   private snippetsService = inject(SnippetsService);
@@ -191,6 +193,7 @@ export class PageEdit implements OnInit {
   downloadError = '';
 
   ngOnInit() {
+    this.creators.load();
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
       this.refreshPreview();

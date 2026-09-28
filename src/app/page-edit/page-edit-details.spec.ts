@@ -61,6 +61,8 @@ describe('PageEdit details form', () => {
     httpMock
       .match((r) => r.url.endsWith('/orgs/favorites'))
       .forEach((r) => r.flush({ favorites: [] }));
+    // CreatorLabelsService — no workspaces means no "created by" label.
+    httpMock.match((r) => r.url.endsWith('/orgs')).forEach((r) => r.flush([]));
 
     fixture.detectChanges();
   });

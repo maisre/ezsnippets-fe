@@ -18,6 +18,7 @@ import { TemplatePicker } from '../template-picker/template-picker';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
+import { CreatorLabelsService } from '../creator-labels.service';
 import {
   Layout,
   SnippetOverride,
@@ -64,6 +65,7 @@ function snippetAbstract(snippet: SnippetOverride) {
 })
 export class LayoutEdit implements OnInit {
   private route = inject(ActivatedRoute);
+  readonly creators = inject(CreatorLabelsService);
   router = inject(Router);
   private layoutsService = inject(LayoutsService);
   private templatesService = inject(TemplatesService);
@@ -137,6 +139,7 @@ export class LayoutEdit implements OnInit {
   downloadError = '';
 
   ngOnInit() {
+    this.creators.load();
     this.layoutId = this.route.snapshot.paramMap.get('id');
     if (this.layoutId) {
       this.loadLayout();

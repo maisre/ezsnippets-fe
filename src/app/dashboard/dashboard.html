@@ -33,6 +33,7 @@
       <div class="card-body">
         <h3 class="card-title">{{ page.name || page.id }}</h3>
         <p class="card-sub" *ngIf="page.siteName">{{ page.siteName }}</p>
+        <p class="card-sub card-by" *ngIf="creators.labelFor(page.createdBy) as by">by {{ by }}</p>
         <div class="button-group">
           <button (click)="viewPage(page)" class="view-btn">View</button>
           <button (click)="editPage(page.id)" class="edit-btn">Edit</button>
@@ -75,6 +76,7 @@
         <div class="card-body">
           <h3 class="card-title">{{ page.name || page.id }}</h3>
           <p class="card-sub" *ngIf="page.siteName">{{ page.siteName }}</p>
+        <p class="card-sub card-by" *ngIf="creators.labelFor(page.createdBy) as by">by {{ by }}</p>
           <div class="button-group">
             <button (click)="restorePage(page.id)" class="edit-btn">Restore</button>
             <ng-template #archivedPageMenu>
@@ -122,6 +124,7 @@
       <div class="card-body">
         <h3 class="card-title">{{ layout.name || layout.id }}</h3>
         <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
+        <p class="card-sub card-by" *ngIf="creators.labelFor(layout.createdBy) as by">by {{ by }}</p>
         <div class="button-group">
           <button (click)="viewLayout(layout)" class="view-btn">View</button>
           <button (click)="editLayout(layout.id)" class="edit-btn">Edit</button>
@@ -163,6 +166,7 @@
         <div class="card-body">
           <h3 class="card-title">{{ layout.name || layout.id }}</h3>
           <p class="card-sub" *ngIf="layout.siteName">{{ layout.siteName }}</p>
+        <p class="card-sub card-by" *ngIf="creators.labelFor(layout.createdBy) as by">by {{ by }}</p>
           <div class="button-group">
             <button (click)="restoreLayout(layout.id)" class="edit-btn">Restore</button>
             <ng-template #archivedLayoutMenu>
