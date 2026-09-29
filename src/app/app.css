@@ -204,3 +204,18 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* A team workspace is scheduled to close — shown to every member, every page. */
+.workspace-closing {
+  padding: 10px 16px;
+  background: #fef9e7;
+  border-bottom: 1px solid #f5d98b;
+  color: #2c3e50;
+  font-size: 14px;
+  text-align: center;
+}
+
+.workspace-closing a {
+  margin-left: 6px;
+  color: #3498db;
+}

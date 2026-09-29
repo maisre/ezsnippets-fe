@@ -169,6 +169,30 @@
           </div>
         }
 
+        @if (closesAt) {
+          <p class="closing-warning">
+            This team workspace closes on <strong>{{ closesAt }}</strong> for
+            everyone in it, including the owner. Its pages, layouts and preview
+            links stop working then. Export anything you need before that date.
+          </p>
+        }
+
+        @if (downgradePending && isOwner) {
+          <div class="subscription-actions">
+            <p class="billing-hint">
+              Your subscription has moved to {{ org.scheduledDowngrade?.toPlan ?? 'Pro' }} on your
+              personal workspace, billed from the next renewal. The team keeps
+              Agency until it closes.
+            </p>
+            <button class="btn btn-outline" (click)="undoDowngrade()" [disabled]="downgradeBusy">
+              {{ downgradeBusy ? 'Working...' : 'Keep the Agency plan' }}
+            </button>
+            @if (downgradeError) {
+              <p class="billing-error">{{ downgradeError }}</p>
+            }
+          </div>
+        }
+
         @if (canManageBilling()) {
           <div class="subscription-actions">
             <button class="btn btn-outline" (click)="openBilling()" [disabled]="openingPortal">
@@ -187,6 +211,87 @@
             </p>
             @if (portalError) {
               <p class="billing-error">{{ portalError }}</p>
+            }
+          </div>
+        }
+
+        @if (canDowngradeTeam) {
+          <div class="subscription-actions">
+            @if (!downgradeOpen) {
+              <button class="btn btn-outline" (click)="openDowngrade()">Move to Pro</button>
+              <p class="billing-hint">
+                Drop to a single-seat plan at the end of this billing period.
+              </p>
+            } @else {
+              <div class="downgrade-panel">
+                <h3>Move to Pro</h3>
+                @if (!downgrade && !downgradeError) {
+                  <p class="billing-hint">Loading...</p>
+                }
+                @if (downgrade && !downgrade.scheduled) {
+                  <p>
+                    On <strong>{{ downgradeDate(downgrade.effectiveAt) }}</strong> your
+                    subscription becomes Pro ({{ downgrade.amount }} {{ downgrade.currency }}/{{ downgrade.interval }})
+                    on your personal workspace. Nothing is charged today, and
+                    there's no credit for the rest of this period.
+                  </p>
+                  <p class="closing-warning">
+                    That same day this team workspace closes for all
+                    {{ downgrade.memberCount }} {{ downgrade.memberCount === 1 ? 'member' : 'members' }},
+                    you included. Nobody can open it, its preview links stop
+                    working, and pending invites lapse. Nothing is moved to your
+                    personal workspace — export or rebuild anything you need
+                    before then. Buying Agency again later reopens it as it was.
+                  </p>
+
+                  @if (downgrade.teamDomains.length > 0) {
+                    <fieldset class="keep-domain">
+                      <legend>Keep a custom domain?</legend>
+                      @if (downgrade.personalDomainRoom) {
+                        <p class="billing-hint">
+                          Pro includes one custom domain. Pick one to move to your
+                          personal workspace when the team closes; it will serve
+                          pages there by their slug, and your client's DNS
+                          doesn't need to change. The rest stop working.
+                        </p>
+                        @for (d of downgrade.teamDomains; track d.id) {
+                          <label>
+                            <input type="radio" name="keepDomain" [value]="d.id" [(ngModel)]="keepDomainId" />
+                            {{ d.hostname }}
+                          </label>
+                        }
+                        <label>
+                          <input type="radio" name="keepDomain" [value]="null" [(ngModel)]="keepDomainId" />
+                          Don't keep any
+                        </label>
+                      } @else {
+                        <p class="billing-hint">
+                          Your personal workspace already uses its one custom
+                          domain, so the team's domains stop working when it
+                          closes. Remove the personal one first if you'd rather
+                          keep a team domain.
+                        </p>
+                      }
+                    </fieldset>
+                  }
+
+                  <label class="acknowledge">
+                    <input type="checkbox" [(ngModel)]="downgradeAcknowledged" />
+                    I understand the team workspace closes on {{ downgradeDate(downgrade.effectiveAt) }}.
+                  </label>
+                  <div class="downgrade-actions">
+                    <button class="btn btn-danger" (click)="confirmDowngrade()"
+                            [disabled]="!downgradeAcknowledged || downgradeBusy">
+                      {{ downgradeBusy ? 'Working...' : 'Move to Pro' }}
+                    </button>
+                    <button class="btn btn-link" (click)="closeDowngrade()" [disabled]="downgradeBusy">Not now</button>
+                  </div>
+                }
+                @if (downgradeError) {
+                  <p class="billing-error">{{ downgradeError }}</p>
+                  <button class="btn btn-link" (click)="closeDowngrade()">Close</button>
+                }
+              </div>
             }
           </div>
         }

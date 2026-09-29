@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { runtimeConfig } from '../runtime-config';
 import { OrgsService } from '../orgs.service';
-import { PaymentsService } from '../payments.service';
+import { PaymentsService, TeamDowngradePreview } from '../payments.service';
+import { formatDate, teamClosesAt } from '../workspace-status';
 import { Org } from '../models';
 import { CustomDomain, DomainsService } from '../domains.service';
 
@@ -162,13 +163,112 @@ export class Account implements OnInit {
     }
   }
 
+  // --- Team -> Pro downgrade (team owner only) ---
+  // Loaded only when the owner opens it: the preview reads the live Paddle
+  // subscription, which isn't worth doing on every account page view.
+  downgrade: TeamDowngradePreview | null = null;
+  downgradeOpen = false;
+  downgradeBusy = false;
+  downgradeError = '';
+  keepDomainId: string | null = null;
+  downgradeAcknowledged = false;
+
+  /** When this team closes, if it's scheduled to — for everyone's benefit. */
+  get closesAt(): string | null {
+    const date = teamClosesAt(this.org);
+    return date ? formatDate(date) : null;
+  }
+
+  /** A downgraded team still inside the period it paid for. */
+  get downgradePending(): boolean {
+    const until = this.org?.scheduledDowngrade?.until;
+    return !!until && Date.parse(until) > Date.now();
+  }
+
+  /** Owner of an active team plan that can still be moved down. */
+  get canDowngradeTeam(): boolean {
+    return (
+      !!this.org &&
+      !this.org.personal &&
+      this.isOwner &&
+      this.org.subscriptionStatus === 'active' &&
+      !this.org.cancelAtPeriodEnd
+    );
+  }
+
+  openDowngrade() {
+    if (!this.org) return;
+    this.downgradeOpen = true;
+    this.downgradeError = '';
+    this.downgradeAcknowledged = false;
+    this.keepDomainId = null;
+    this.loadDowngrade();
+  }
+
+  closeDowngrade() {
+    this.downgradeOpen = false;
+    this.downgradeError = '';
+  }
+
+  private loadDowngrade() {
+    if (!this.org) return;
+    this.downgrade = null;
+    this.paymentsService.previewTeamDowngrade(this.org.id).subscribe({
+      next: (preview) => (this.downgrade = preview),
+      error: (err) => {
+        this.downgradeError = err?.error?.message ?? 'Could not load your plan options. Please try again.';
+      },
+    });
+  }
+
+  downgradeDate(iso: string | undefined): string {
+    return iso ? formatDate(new Date(iso)) : '';
+  }
+
+  confirmDowngrade() {
+    if (!this.org || this.downgradeBusy || !this.downgradeAcknowledged) return;
+    this.downgradeBusy = true;
+    this.downgradeError = '';
+    this.paymentsService.scheduleTeamDowngrade(this.org.id, this.keepDomainId).subscribe({
+      next: () => {
+        this.downgradeBusy = false;
+        this.downgradeOpen = false;
+        this.loadOrg();
+        this.loadUsage();
+      },
+      error: (err) => {
+        this.downgradeBusy = false;
+        this.downgradeError = err?.error?.message ?? 'Could not change your plan. Please try again.';
+      },
+    });
+  }
+
+  undoDowngrade() {
+    if (!this.org || this.downgradeBusy) return;
+    this.downgradeBusy = true;
+    this.downgradeError = '';
+    this.paymentsService.cancelTeamDowngrade(this.org.id).subscribe({
+      next: () => {
+        this.downgradeBusy = false;
+        this.loadOrg();
+        this.loadUsage();
+      },
+      error: (err) => {
+        this.downgradeBusy = false;
+        this.downgradeError = err?.error?.message ?? 'Could not keep the team plan. Please try again.';
+      },
+    });
+  }
+
   getStatusLabel(): string {
+    if (this.downgradePending) return `Moving to ${this.org?.scheduledDowngrade?.toPlan ?? 'Pro'}`;
     if (!this.org?.subscriptionStatus) return 'No subscription';
     const s = this.org.subscriptionStatus;
     return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
   }
 
   getStatusClass(): string {
+    if (this.downgradePending) return 'status-past-due';
     switch (this.org?.subscriptionStatus) {
       case 'active':
         return 'status-active';

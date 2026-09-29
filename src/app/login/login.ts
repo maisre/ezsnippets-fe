@@ -32,6 +32,9 @@ export class Login {
   isLoading = false;
   errorMessage = '';
 
+  /** Sent here because the team workspace they were in has closed. */
+  readonly workspaceClosed = this.route.snapshot.queryParamMap.has('closed');
+
   onSubmit() {
     if (this.credentials.email && this.credentials.password) {
       this.isLoading = true;

@@ -12,7 +12,7 @@
             [disabled]="switching()"
           >
             @for (org of workspaces(); track org.id) {
-              <option [value]="org.id" [selected]="org.active">{{ workspaceLabel(org) }}</option>
+              <option [value]="org.id" [selected]="org.active" [disabled]="isClosed(org)">{{ workspaceLabel(org) }}</option>
             }
           </select>
         </label>
@@ -37,6 +37,17 @@
     }
   </div>
 </nav>
+
+@if ((isAuthenticated$ | async) && closingNotice(); as notice) {
+  <div class="workspace-closing" role="status">
+    <strong>{{ notice.name }}</strong> closes on {{ notice.date }}. After that
+    nobody can open it and its preview links stop working — export anything you
+    need before then.
+    @if (notice.owner) {
+      <a routerLink="/account">Manage the plan</a>
+    }
+  </div>
+}
 
 <main class="main-content">
   <router-outlet />

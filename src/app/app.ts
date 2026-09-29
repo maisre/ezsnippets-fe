@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { OrgsService } from './orgs.service';
 import { Org } from './models';
 import { runtimeConfig } from './runtime-config';
+import { formatDate, isTeamClosed, teamClosesAt } from './workspace-status';
 
 @Component({
   selector: 'app-root',
@@ -45,7 +46,21 @@ export class App {
   }
 
   workspaceLabel(org: Org): string {
-    return org.personal ? 'Personal' : org.name;
+    if (org.personal) return 'Personal';
+    return this.isClosed(org) ? `${org.name} (closed)` : org.name;
+  }
+
+  /** A team whose plan has ended can't be switched into — the API refuses. */
+  isClosed(org: Org): boolean {
+    return isTeamClosed(org);
+  }
+
+  /** Every member of a team on its way out sees when it goes. */
+  closingNotice(): { name: string; date: string; owner: boolean } | null {
+    const org = this.activeWorkspace();
+    const date = teamClosesAt(org);
+    if (!org || !date) return null;
+    return { name: org.name, date: formatDate(date), owner: org.role === 'owner' };
   }
 
   switchWorkspace(orgId: string) {

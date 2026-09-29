@@ -26,6 +26,11 @@ export interface Org {
   currentPeriodEnd?: number;
   cancelAtPeriodEnd?: boolean;
   favoriteSnippets?: FavoriteSnippet[];
+  /**
+   * Set on a team its owner moved down to a single-seat plan. The team keeps
+   * its plan until `until` (ISO), then closes — see workspace-status.ts.
+   */
+  scheduledDowngrade?: { until: string; toPlan?: string };
   /** The caller's role in this org (GET /orgs). */
   role?: OrgMember['role'];
   /** True for the org the caller's token is scoped to. */

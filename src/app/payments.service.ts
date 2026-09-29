@@ -15,6 +15,22 @@ export interface PortalSession {
   cancelUrl?: string;
 }
 
+/** GET /payments/teams/:orgId/downgrade */
+export interface TeamDowngradePreview {
+  memberCount: number;
+  teamDomains: { id: string; hostname: string; status: string }[];
+  /** Whether the owner's personal workspace has a free custom-domain slot. */
+  personalDomainRoom: boolean;
+  /** Null until a downgrade has been scheduled. */
+  scheduled: { effectiveAt: string; plan: string; keepHostname: string | null } | null;
+  // Present when nothing is scheduled yet:
+  plan?: string;
+  interval?: 'month' | 'year';
+  amount?: string;
+  currency?: string;
+  effectiveAt?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -100,6 +116,28 @@ export class PaymentsService {
     return this.http.post<{ orgId: string }>(`${runtimeConfig.apiUrl}/payments/upgrade`, {
       priceId,
     });
+  }
+
+  /** What moving a team down to Pro would do (owner-only). */
+  previewTeamDowngrade(orgId: string) {
+    return this.http.get<TeamDowngradePreview>(
+      `${runtimeConfig.apiUrl}/payments/teams/${orgId}/downgrade`,
+    );
+  }
+
+  /** Move a team to Pro at the end of its billing period (owner-only). */
+  scheduleTeamDowngrade(orgId: string, keepDomainId: string | null) {
+    return this.http.post<{ effectiveAt: string }>(
+      `${runtimeConfig.apiUrl}/payments/teams/${orgId}/downgrade`,
+      keepDomainId ? { keepDomainId } : {},
+    );
+  }
+
+  /** Take back a scheduled team downgrade before it lands (owner-only). */
+  cancelTeamDowngrade(orgId: string) {
+    return this.http.delete<{ orgId: string }>(
+      `${runtimeConfig.apiUrl}/payments/teams/${orgId}/downgrade`,
+    );
   }
 
   /**

@@ -1,5 +1,11 @@
 <div class="login-container">
   <h2>Login</h2>
+  @if (workspaceClosed) {
+    <p class="login-notice">
+      The team workspace you were in has closed because its plan ended. Log in
+      again to carry on in your personal workspace.
+    </p>
+  }
   <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
     <div class="form-group">
       <label for="email">Email:</label>

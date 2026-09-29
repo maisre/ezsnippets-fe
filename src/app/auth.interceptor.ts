@@ -18,7 +18,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       error: (err) => {
         if (err.status === 401) {
           authService.removeToken();
-          router.navigate(['/login']);
+          // The team workspace this session was in has closed. Logging back
+          // in lands them in their personal workspace; say why they're here.
+          const closed = err.error?.code === 'WORKSPACE_CLOSED';
+          router.navigate(['/login'], closed ? { queryParams: { closed: 1 } } : {});
         }
       },
     }),

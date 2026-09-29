@@ -299,3 +299,67 @@
   outline: none;
   border-color: #6c5ce7;
 }
+
+/* Team is on its way out: the one thing on this page nobody should miss. */
+.closing-warning {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #f39c12;
+  background: #fef9e7;
+  color: #2c3e50;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.downgrade-panel {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.downgrade-panel h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.downgrade-panel p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.keep-domain {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.keep-domain legend {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.keep-domain label,
+.acknowledge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.downgrade-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3498db;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
