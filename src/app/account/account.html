@@ -82,14 +82,20 @@
                 >
                   {{ verifyingId === domain.id ? 'Checking...' : 'Check now' }}
                 </button>
-                <button class="btn btn-danger-outline" (click)="removeDomain(domain)">
-                  Remove
-                </button>
+                @if (canManageDomains) {
+                  <button class="btn btn-danger-outline" (click)="removeDomain(domain)">
+                    Remove
+                  </button>
+                }
               </div>
             </div>
           }
 
-          @if (canAddDomain) {
+          @if (!canManageDomains) {
+            <p class="domain-hint">
+              Only the workspace owner or an admin can add or remove custom domains.
+            </p>
+          } @else if (canAddDomain) {
             <div class="domain-add">
               <label for="newDomain">Add a subdomain you control</label>
               <div class="domain-add-row">

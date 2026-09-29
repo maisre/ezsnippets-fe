@@ -188,6 +188,35 @@ select {
   color: #e74c3c;
 }
 
+.btn-danger {
+  background: #e74c3c;
+  border-color: #e74c3c;
+  color: #fff;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 360px;
+}
+
+.delete-confirm input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .btn-link {
   color: #3498db;
   padding: 0.25rem 0.5rem;

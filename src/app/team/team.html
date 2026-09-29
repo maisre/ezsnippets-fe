@@ -146,6 +146,36 @@
           Leave this workspace
         </button>
       </section>
+    } @else {
+      <section class="team-section">
+        <h2>Delete workspace</h2>
+        <div class="info-card">
+          <p class="hint">
+            Removes everyone from {{ team.org.name }} and deletes its pages, layouts,
+            templates and custom domains. A workspace with a plan can't be deleted —
+            cancel the plan first and delete it once the plan has ended.
+          </p>
+          @if (!showDelete) {
+            <button class="btn btn-danger-outline" (click)="showDelete = true">Delete this workspace</button>
+          } @else {
+            <form class="delete-confirm" (ngSubmit)="deleteWorkspace()">
+              <label for="deleteConfirm">Type <strong>{{ team.org.name }}</strong> to confirm</label>
+              <input id="deleteConfirm" name="deleteConfirm" [(ngModel)]="deleteConfirm" autocomplete="off" />
+              @if (deleteError) {
+                <p class="team-error">{{ deleteError }}</p>
+              }
+              <div class="delete-actions">
+                <button class="btn btn-outline" type="button" (click)="showDelete = false; deleteConfirm = ''; deleteError = ''">
+                  Cancel
+                </button>
+                <button class="btn btn-danger" type="submit" [disabled]="!deleteConfirmed || busy === 'delete'">
+                  {{ busy === 'delete' ? 'Deleting...' : 'Delete workspace' }}
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </section>
     }
   } @else {
     <p class="team-error">{{ error }}</p>

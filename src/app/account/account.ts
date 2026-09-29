@@ -40,6 +40,11 @@ export class Account implements OnInit {
   domainError = '';
   verifyingId: string | null = null;
 
+  /** Adding/removing domains is owner/admin only (ez-api enforces it too). */
+  get canManageDomains(): boolean {
+    return this.org?.role === 'owner' || this.org?.role === 'admin';
+  }
+
   get canAddDomain(): boolean {
     return (
       this.maxCustomDomains === -1 ||

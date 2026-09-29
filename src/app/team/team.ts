@@ -177,6 +177,28 @@ export class Team implements OnInit {
     });
   }
 
+  // Delete-workspace confirmation: the owner has to type the name.
+  showDelete = false;
+  deleteConfirm = '';
+  deleteError = '';
+
+  get deleteConfirmed(): boolean {
+    return !!this.team && this.deleteConfirm.trim() === this.team.org.name;
+  }
+
+  deleteWorkspace() {
+    if (!this.team || !this.deleteConfirmed) return;
+    this.busy = 'delete';
+    this.deleteError = '';
+    this.orgsService.deleteWorkspace(this.team.org.id, this.deleteConfirm.trim()).subscribe({
+      next: (res) => this.authService.enterWorkspace(res.access_token),
+      error: (err) => {
+        this.busy = null;
+        this.deleteError = err?.error?.message ?? 'Could not delete this workspace.';
+      },
+    });
+  }
+
   startRename() {
     this.nameDraft = this.team?.org.name ?? '';
     this.editingName = true;

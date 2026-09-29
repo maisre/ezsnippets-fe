@@ -49,6 +49,14 @@ export class OrgsService {
   }
 
   /** Returns a token for the caller's personal workspace. */
+  /** Owner only; the API refuses while the workspace still has a plan. */
+  deleteWorkspace(orgId: string, confirmName: string) {
+    return this.http.delete<{ access_token: string }>(
+      `${runtimeConfig.apiUrl}/orgs/${orgId}`,
+      { body: { confirmName }, withCredentials: true },
+    );
+  }
+
   leave(orgId: string) {
     return this.http.post<{ access_token: string }>(
       `${runtimeConfig.apiUrl}/orgs/${orgId}/leave`,
