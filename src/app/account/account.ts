@@ -192,7 +192,9 @@ export class Account implements OnInit {
       !this.org.personal &&
       this.isOwner &&
       this.org.subscriptionStatus === 'active' &&
-      !this.org.cancelAtPeriodEnd
+      !this.org.cancelAtPeriodEnd &&
+      // Paid by a previous owner: it can't become this owner's personal plan.
+      !this.org.billedToSomeoneElse
     );
   }
 

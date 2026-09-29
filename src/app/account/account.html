@@ -195,6 +195,13 @@
 
         @if (canManageBilling()) {
           <div class="subscription-actions">
+            @if (org.billedToSomeoneElse) {
+              <p class="closing-warning">
+                This plan is still billed to the previous owner's payment
+                details. Open Manage Billing to update the payment method and
+                billing details to your own.
+              </p>
+            }
             <button class="btn btn-outline" (click)="openBilling()" [disabled]="openingPortal">
               {{ openingPortal ? 'Opening...' : 'Manage Billing' }}
             </button>

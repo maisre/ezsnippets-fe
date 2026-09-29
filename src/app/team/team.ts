@@ -177,6 +177,40 @@ export class Team implements OnInit {
     });
   }
 
+  // Transfer ownership: pick a member, read what moves, tick to confirm.
+  showTransfer = false;
+  transferTo = '';
+  transferAcknowledged = false;
+  transferError = '';
+
+  get transferCandidates(): Member[] {
+    return (this.team?.members ?? []).filter((m) => m.role !== 'owner');
+  }
+
+  cancelTransfer() {
+    this.showTransfer = false;
+    this.transferTo = '';
+    this.transferAcknowledged = false;
+    this.transferError = '';
+  }
+
+  transferOwnership() {
+    if (!this.team || !this.transferTo || !this.transferAcknowledged) return;
+    this.busy = 'transfer';
+    this.transferError = '';
+    this.orgsService.transferOwnership(this.team.org.id, this.transferTo).subscribe({
+      next: () => {
+        this.busy = null;
+        this.cancelTransfer();
+        this.reload();
+      },
+      error: (err) => {
+        this.busy = null;
+        this.transferError = err?.error?.message ?? 'Could not transfer ownership.';
+      },
+    });
+  }
+
   // Delete-workspace confirmation: the owner has to type the name.
   showDelete = false;
   deleteConfirm = '';

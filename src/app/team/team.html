@@ -148,6 +148,63 @@
       </section>
     } @else {
       <section class="team-section">
+        <h2>Transfer ownership</h2>
+        <div class="info-card">
+          @if (transferCandidates.length === 0) {
+            <p class="hint">Invite someone first — ownership can only go to a member of this workspace.</p>
+          } @else if (!showTransfer) {
+            <p class="hint">
+              Make another member the owner. You'll stay on as an admin and can
+              leave afterwards.
+            </p>
+            <button class="btn btn-outline" (click)="showTransfer = true">Transfer ownership</button>
+          } @else {
+            <form class="delete-confirm transfer-form" (ngSubmit)="transferOwnership()">
+              <label for="transferTo">New owner</label>
+              <select id="transferTo" name="transferTo" [(ngModel)]="transferTo">
+                <option value="" disabled>Choose a member</option>
+                @for (m of transferCandidates; track m.userId) {
+                  <option [value]="m.userId">{{ m.email ?? 'Unknown user' }} ({{ roleLabel(m.role) }})</option>
+                }
+              </select>
+              <ul class="transfer-consequences">
+                <li>
+                  <strong>Billing stays with whoever pays now.</strong> The team's plan
+                  keeps charging the current payment method, and the new owner can
+                  open Manage Billing for it — they'll see the card's last four
+                  digits, the invoices and the billing address until they change
+                  those details.
+                </li>
+                <li>
+                  They take over billing, the plan, custom domains and everyone's
+                  roles. You become an admin.
+                </li>
+                <li>
+                  On the Agency plan, the Pro plan included with your personal
+                  workspace moves to them too.
+                </li>
+                <li>Only the new owner can give ownership back.</li>
+              </ul>
+              <label class="acknowledge">
+                <input type="checkbox" name="transferAck" [(ngModel)]="transferAcknowledged" />
+                I understand — make them the owner.
+              </label>
+              @if (transferError) {
+                <p class="team-error">{{ transferError }}</p>
+              }
+              <div class="delete-actions">
+                <button class="btn btn-outline" type="button" (click)="cancelTransfer()">Cancel</button>
+                <button class="btn btn-danger" type="submit"
+                        [disabled]="!transferTo || !transferAcknowledged || busy === 'transfer'">
+                  {{ busy === 'transfer' ? 'Transferring...' : 'Transfer ownership' }}
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </section>
+
+      <section class="team-section">
         <h2>Delete workspace</h2>
         <div class="info-card">
           <p class="hint">

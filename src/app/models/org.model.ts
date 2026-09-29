@@ -31,6 +31,8 @@ export interface Org {
    * its plan until `until` (ISO), then closes — see workspace-status.ts.
    */
   scheduledDowngrade?: { until: string; toPlan?: string };
+  /** Owner only: the plan is still paid by a previous owner (after a transfer). */
+  billedToSomeoneElse?: boolean;
   /** The caller's role in this org (GET /orgs). */
   role?: OrgMember['role'];
   /** True for the org the caller's token is scoped to. */

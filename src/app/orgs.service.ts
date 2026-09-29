@@ -57,6 +57,11 @@ export class OrgsService {
     );
   }
 
+  /** Make an existing member the owner; the caller becomes an admin. */
+  transferOwnership(orgId: string, userId: string) {
+    return this.http.post<void>(`${runtimeConfig.apiUrl}/orgs/${orgId}/transfer`, { userId });
+  }
+
   leave(orgId: string) {
     return this.http.post<{ access_token: string }>(
       `${runtimeConfig.apiUrl}/orgs/${orgId}/leave`,

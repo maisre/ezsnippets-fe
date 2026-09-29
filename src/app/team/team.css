@@ -221,3 +221,32 @@ select {
   color: #3498db;
   padding: 0.25rem 0.5rem;
 }
+
+.transfer-consequences {
+  margin: 12px 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #2c3e50;
+}
+
+.transfer-consequences li + li {
+  margin-top: 6px;
+}
+
+.acknowledge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.transfer-form {
+  max-width: 560px;
+}
+
+.transfer-form select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
