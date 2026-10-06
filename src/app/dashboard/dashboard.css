@@ -26,6 +26,61 @@
   font-size: 1rem;
 }
 
+/* Search / filter bar — narrows both sections at once. */
+.dashboard-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -1rem 0 2.5rem;
+}
+
+.search-input,
+.creator-select {
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #ffffff;
+  color: #2c3e50;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.search-input {
+  flex: 1 1 280px;
+  max-width: 420px;
+}
+
+.search-input:focus,
+.creator-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.clear-filters {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #868e96;
+  cursor: pointer;
+}
+
+.clear-filters:hover {
+  color: #495057;
+  text-decoration: underline;
+}
+
+.no-match {
+  color: #6c757d;
+  font-size: 0.95rem;
+  margin: 0 0 1rem;
+}
+
 /* Sections */
 .dashboard-section {
   margin-bottom: 3rem;

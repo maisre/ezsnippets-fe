@@ -72,6 +72,13 @@ export class Dashboard implements OnInit {
   showArchivedPages = false;
   showArchivedLayouts = false;
 
+  // Search box + creator filter. These only narrow what the grids show — the
+  // count badges and plan-limit checks keep using activePages/activeLayouts.
+  // creatorFilter holds a creator label ('you', an email, 'a former member')
+  // rather than a user id, so all former members collapse into one option.
+  query = '';
+  creatorFilter = '';
+
   ngOnInit() {
     this.creators.load();
     this.loadPages();
@@ -117,6 +124,59 @@ export class Dashboard implements OnInit {
 
   get archivedLayouts(): Layout[] {
     return this.layouts.filter((l) => l.status === 'archived');
+  }
+
+  get filtering(): boolean {
+    return !!this.query.trim() || !!this.creatorFilter;
+  }
+
+  get shownActivePages(): Page[] {
+    return this.activePages.filter((p) => this.matches(p));
+  }
+
+  get shownArchivedPages(): Page[] {
+    return this.archivedPages.filter((p) => this.matches(p));
+  }
+
+  get shownActiveLayouts(): Layout[] {
+    return this.activeLayouts.filter((l) => this.matches(l));
+  }
+
+  get shownArchivedLayouts(): Layout[] {
+    return this.archivedLayouts.filter((l) => this.matches(l));
+  }
+
+  // Creators that actually own something here, "you" first. Empty outside team
+  // workspaces (labelFor returns null there), which hides the dropdown.
+  get creatorOptions(): string[] {
+    const labels = new Set<string>();
+    for (const item of [...this.pages, ...this.layouts]) {
+      const label = this.creators.labelFor(item.createdBy);
+      if (label) labels.add(label);
+    }
+    return [...labels].sort((a, b) =>
+      a === 'you' ? -1 : b === 'you' ? 1 : a.localeCompare(b),
+    );
+  }
+
+  clearFilters() {
+    this.query = '';
+    this.creatorFilter = '';
+  }
+
+  // Every whitespace-separated term must appear somewhere in the item's text
+  // fields, case-insensitively — "harbor menu" finds "Harbor & Pine — Menu".
+  private matches(item: Page | Layout): boolean {
+    if (this.creatorFilter && this.creators.labelFor(item.createdBy) !== this.creatorFilter) {
+      return false;
+    }
+    const terms = this.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return true;
+    const text = [item.name, item.siteName, item.description, item.slug]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return terms.every((t) => text.includes(t));
   }
 
   // -1 (or a missing limit) means unlimited. Returns null when there's no plan

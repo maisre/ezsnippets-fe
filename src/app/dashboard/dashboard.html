@@ -3,6 +3,28 @@
   <p class="subtitle">Your layouts and pages at a glance.</p>
 </header>
 
+<div class="dashboard-toolbar" *ngIf="pages.length || layouts.length">
+  <input
+    type="search"
+    class="search-input"
+    placeholder="Search layouts and pages"
+    aria-label="Search layouts and pages"
+    [(ngModel)]="query"
+  />
+  <select
+    class="creator-select"
+    *ngIf="creatorOptions.length > 1"
+    aria-label="Filter by creator"
+    [(ngModel)]="creatorFilter"
+  >
+    <option value="">Created by anyone</option>
+    <option *ngFor="let label of creatorOptions" [value]="label">
+      {{ label === 'you' ? 'Created by you' : label }}
+    </option>
+  </select>
+  <button class="clear-filters" *ngIf="filtering" (click)="clearFilters()">Clear</button>
+</div>
+
 <section class="dashboard-section">
   <div class="section-head">
     <h2>Layouts</h2>
@@ -11,7 +33,7 @@
     </span>
     <button
       class="archived-link"
-      *ngIf="archivedLayouts.length"
+      *ngIf="archivedLayouts.length && !filtering"
       [attr.aria-expanded]="showArchivedLayouts"
       (click)="showArchivedLayouts = !showArchivedLayouts"
     >
@@ -20,8 +42,12 @@
     <button class="new-btn" (click)="openCreate('layout')">+ New Layout</button>
   </div>
 
+  <p class="no-match" *ngIf="filtering && !shownActiveLayouts.length">
+    No active layouts match.
+  </p>
+
   <div class="card-grid">
-    <article class="card" *ngFor="let layout of activeLayouts">
+    <article class="card" *ngFor="let layout of shownActiveLayouts">
       <div class="thumb">
         <img
           [src]="layout.thumbnailUrl || placeholder"
@@ -52,18 +78,18 @@
       </div>
     </article>
 
-    <button class="card create-card" (click)="openCreate('layout')">
+    <button class="card create-card" *ngIf="!filtering" (click)="openCreate('layout')">
       <span class="create-plus">+</span>
       <span class="create-label">New Layout</span>
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="showArchivedLayouts && archivedLayouts.length">
+  <div class="archived-block" *ngIf="(showArchivedLayouts || filtering) && shownArchivedLayouts.length">
     <p class="archived-hint">
       Archived layouts don't count toward your plan. Restore one to bring it back.
     </p>
     <div class="card-grid">
-      <article class="card archived" *ngFor="let layout of archivedLayouts">
+      <article class="card archived" *ngFor="let layout of shownArchivedLayouts">
         <div class="thumb">
           <img
             [src]="layout.thumbnailUrl || placeholder"
@@ -101,7 +127,7 @@
     </span>
     <button
       class="archived-link"
-      *ngIf="archivedPages.length"
+      *ngIf="archivedPages.length && !filtering"
       [attr.aria-expanded]="showArchivedPages"
       (click)="showArchivedPages = !showArchivedPages"
     >
@@ -110,8 +136,12 @@
     <button class="new-btn" (click)="openCreate('page')">+ New Page</button>
   </div>
 
+  <p class="no-match" *ngIf="filtering && !shownActivePages.length">
+    No active pages match.
+  </p>
+
   <div class="card-grid">
-    <article class="card" *ngFor="let page of activePages">
+    <article class="card" *ngFor="let page of shownActivePages">
       <div class="thumb">
         <img
           [src]="page.thumbnailUrl || placeholder"
@@ -143,18 +173,18 @@
       </div>
     </article>
 
-    <button class="card create-card" (click)="openCreate('page')">
+    <button class="card create-card" *ngIf="!filtering" (click)="openCreate('page')">
       <span class="create-plus">+</span>
       <span class="create-label">New Page</span>
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="showArchivedPages && archivedPages.length">
+  <div class="archived-block" *ngIf="(showArchivedPages || filtering) && shownArchivedPages.length">
     <p class="archived-hint">
       Archived pages don't count toward your plan and are offline. Restore one to bring it back.
     </p>
     <div class="card-grid">
-      <article class="card archived" *ngFor="let page of archivedPages">
+      <article class="card archived" *ngFor="let page of shownArchivedPages">
         <div class="thumb">
           <img
             [src]="page.thumbnailUrl || placeholder"
