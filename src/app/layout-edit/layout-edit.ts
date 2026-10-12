@@ -1,13 +1,17 @@
-import { Component, inject, OnInit, HostListener } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  HostListener,
+  inject,
+  Injector,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  DragDropModule,
-  CdkDragDrop,
-  moveItemInArray,
-  transferArrayItem,
-} from '@angular/cdk/drag-drop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { concat, defer } from 'rxjs';
 import { LayoutsService } from '../layouts.service';
 import { TemplatesService } from '../templates.service';
 import { ShareLinkService } from '../share-link.service';
@@ -15,6 +19,8 @@ import { slugify } from '../slugify';
 import { SCRATCH_PAD_LIMIT } from '../scratch-pad';
 import { OrgsService } from '../orgs.service';
 import { TemplatePicker } from '../template-picker/template-picker';
+import { OverflowMenu } from '../overflow-menu/overflow-menu';
+import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
@@ -43,6 +49,13 @@ function snippetRefOf(value: unknown): Partial<SnippetOverride> | null {
   return null;
 }
 
+/** What the add-snippet drawer is adding to. */
+type DrawerTarget = 'nav' | 'footer' | 'page';
+
+// Library snippet types, as stored. Nav slots take `header` snippets.
+const NAV_TYPE = 'header';
+const FOOTER_TYPE = 'footer';
+
 /** The persisted shape of one snippet position: id plus page-scoped overrides. */
 function snippetAbstract(snippet: SnippetOverride) {
   return {
@@ -59,9 +72,20 @@ function snippetAbstract(snippet: SnippetOverride) {
 
 @Component({
   selector: 'app-layout-edit',
-  imports: [CommonModule, FormsModule, DragDropModule, TemplatePicker, SaveTemplateDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    TemplatePicker,
+    SaveTemplateDialog,
+    OverflowMenu,
+    CdkMenu,
+    CdkMenuItem,
+  ],
   templateUrl: './layout-edit.html',
-  styleUrl: './layout-edit.css',
+  // The editor chrome (top bar, cards, preview, drawers) mirrors the page
+  // editor's stylesheet; the site-structure rail is layout-only.
+  styleUrls: ['./layout-edit.css', './layout-edit-structure.css'],
 })
 export class LayoutEdit implements OnInit {
   private route = inject(ActivatedRoute);
@@ -85,6 +109,8 @@ export class LayoutEdit implements OnInit {
   }
 
   private snippetsService = inject(SnippetsService);
+  private sanitizer = inject(DomSanitizer);
+  private injector = inject(Injector);
 
   layout: Layout | null = null;
   layoutId: string | null = null;
@@ -122,6 +148,26 @@ export class LayoutEdit implements OnInit {
   // Layout settings live in a collapsible card opened from the action bar.
   showDetails = false;
 
+  // Live preview (right pane) — an iframe of the public rendered layout, opened
+  // on the subpage that's open in the rail, with ez-view's own page switcher
+  // hidden (the rail does that job). The version counter forces a reload after
+  // every edit without touching the cross-origin frame.
+  safePreviewUrl: SafeResourceUrl | null = null;
+  previewDevice: 'desktop' | 'mobile' = 'desktop';
+  private previewVersion = 0;
+
+  // Add-snippet drawer: snippets / templates / scratch pad, like the page
+  // editor. `drawerTarget` says where a picked snippet lands — the navbar and
+  // footer slots replace, a subpage appends.
+  showPalette = false;
+  paletteTab: 'snippets' | 'templates' | 'scratchpad' = 'snippets';
+  drawerTarget: DrawerTarget = 'page';
+
+  // Inline subpage rename. Null when no row is being renamed.
+  renamingIndex: number | null = null;
+  renameValue = '';
+  subPageError: string | null = null;
+
   // Finalize drawer (readiness checklist + Shutterstock licensing hand-off).
   showFinalize = false;
   finalizeTab: 'checklist' | 'licensing' = 'checklist';
@@ -146,6 +192,20 @@ export class LayoutEdit implements OnInit {
     } else {
       this.errorMessage = 'No layout ID provided';
     }
+  }
+
+  // --- Live preview ---
+  refreshPreview() {
+    if (!this.layoutId) return;
+    this.previewVersion += 1;
+    this.safePreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `${this.viewUrl}/view/layout/${this.layoutId}` +
+        `?chrome=false&subpage=${this.activeSubPageIndex}&_=${this.previewVersion}`,
+    );
+  }
+
+  setDevice(device: 'desktop' | 'mobile') {
+    this.previewDevice = device;
   }
 
   // --- Action bar: preview link ---
@@ -194,7 +254,89 @@ export class LayoutEdit implements OnInit {
   }
   @HostListener('document:keydown.escape')
   onEscape() {
+    if (this.showPalette) this.closePalette();
     if (this.showFinalize) this.closeFinalize();
+  }
+
+  // --- Add-snippet drawer ---
+  /**
+   * Open the drawer aimed at a slot. The navbar and footer pre-filter the
+   * library to their type; a subpage clears a type filter left over from them
+   * but keeps anything else the user picked.
+   */
+  openPalette(target: DrawerTarget, tab: 'snippets' | 'templates' | 'scratchpad' = 'snippets') {
+    this.drawerTarget = target;
+    this.paletteTab = target === 'page' ? tab : 'snippets';
+    this.templateError = null;
+    this.scratchError = null;
+    if (target === 'nav') this.activeTypeFilter = NAV_TYPE;
+    else if (target === 'footer') this.activeTypeFilter = FOOTER_TYPE;
+    else if (this.activeTypeFilter === NAV_TYPE || this.activeTypeFilter === FOOTER_TYPE) {
+      this.activeTypeFilter = '';
+    }
+    this.applyFilters();
+    this.showPalette = true;
+  }
+
+  closePalette() {
+    this.showPalette = false;
+  }
+
+  setPaletteTab(tab: 'snippets' | 'templates' | 'scratchpad') {
+    this.paletteTab = tab;
+    this.templateError = null;
+    this.scratchError = null;
+  }
+
+  get drawerTitle(): string {
+    switch (this.drawerTarget) {
+      case 'nav':
+        return this.navbarSnippets.length ? 'Change navbar' : 'Choose a navbar';
+      case 'footer':
+        return this.footerSnippets.length ? 'Change footer' : 'Choose a footer';
+      default:
+        return 'Add to ' + (this.activeSubPage?.name || 'this page');
+    }
+  }
+
+  get drawerSub(): string {
+    return this.drawerTarget === 'page'
+      ? 'Click a snippet to add it to the end of the page'
+      : 'Click a snippet to use it on every page';
+  }
+
+  /** A palette click: replace the nav/footer, or append to the open subpage. */
+  pickSnippet(snippet: SnippetOverride) {
+    if (this.drawerTarget === 'nav') {
+      this.navbarSnippets = [{ ...snippet }];
+      this.closePalette();
+    } else if (this.drawerTarget === 'footer') {
+      this.footerSnippets = [{ ...snippet }];
+      this.closePalette();
+    } else {
+      const page = this.activeSubPage;
+      if (!page) return;
+      page.snippets.push({ ...snippet });
+    }
+    this.updateLayout();
+  }
+
+  removeNav() {
+    this.navbarSnippets = [];
+    this.updateLayout();
+  }
+
+  removeFooter() {
+    this.footerSnippets = [];
+    this.updateLayout();
+  }
+
+  /** Remove a snippet from the open subpage. Use park to keep its edits. */
+  removeSnippet(index: number) {
+    const page = this.activeSubPage;
+    if (!page) return;
+    page.snippets.splice(index, 1);
+    this.updateLayout();
   }
 
   loadLicensing() {
@@ -288,8 +430,13 @@ export class LayoutEdit implements OnInit {
       next: (data) => {
         this.layout = data;
         this.errorMessage = null;
+        this.activeSubPageIndex = Math.min(
+          this.activeSubPageIndex,
+          Math.max((data.subPages?.length ?? 1) - 1, 0),
+        );
         this.seedDetails();
         this.loadAvailableSnippets();
+        if (!this.safePreviewUrl) this.refreshPreview();
       },
       error: (error) => {
         console.error('Error loading layout:', error);
@@ -320,9 +467,8 @@ export class LayoutEdit implements OnInit {
   }
 
   // Templates. Two separate gestures in here: saving the whole layout as a
-  // site template, and dropping a partial/page template into the subpage
-  // that's currently open.
-  showTemplates = false;
+  // site template, and dropping a partial/page template (from the drawer's
+  // Templates tab) into the subpage that's currently open.
   showSaveTemplate = false;
   templateMode: 'append' | 'replace' = 'append';
   templateError: string | null = null;
@@ -360,6 +506,7 @@ export class LayoutEdit implements OnInit {
     this.layout = data;
     this.scratchError = null;
     this.loadLayoutSnippets();
+    this.refreshPreview();
   }
 
   private scratchFailed(err: any, fallback: string) {
@@ -471,11 +618,6 @@ export class LayoutEdit implements OnInit {
       });
   }
 
-  toggleTemplates() {
-    this.showTemplates = !this.showTemplates;
-    this.templateError = null;
-  }
-
   /** Lands in the active subpage — that's the one the user is looking at. */
   applyTemplate(template: Template) {
     if (!this.layoutId) return;
@@ -489,8 +631,9 @@ export class LayoutEdit implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.showTemplates = false;
+          this.closePalette();
           this.loadLayout();
+          this.refreshPreview();
         },
         error: (err) => {
           this.templateError =
@@ -562,9 +705,14 @@ export class LayoutEdit implements OnInit {
       } as SnippetOverride);
     }
 
-    // Initialize subPages if they don't exist
+    // Layouts created before the server started seeding a Home subpage can
+    // have none. Save one rather than showing an unsaved placeholder — every
+    // subpage endpoint addresses subpages by position, so a placeholder the
+    // server doesn't have makes the first template insert or restore fail.
+    let seededHome = false;
     if (!this.layout.subPages || this.layout.subPages.length === 0) {
-      this.layout.subPages = [{ name: 'Default', snippets: [] }];
+      this.layout.subPages = [{ name: 'Home', snippets: [] }];
+      seededHome = true;
     }
 
     // Load subPage snippets
@@ -584,6 +732,11 @@ export class LayoutEdit implements OnInit {
     }));
 
     this.hydrateScratchPad();
+    if (seededHome) this.updateLayout();
+  }
+
+  get activeSubPage() {
+    return this.layout?.subPages?.[this.activeSubPageIndex] ?? null;
   }
 
   getActiveSubPageSnippets(): SnippetOverride[] {
@@ -594,67 +747,118 @@ export class LayoutEdit implements OnInit {
   }
 
   setActiveSubPage(index: number) {
+    if (index === this.activeSubPageIndex) return;
     this.activeSubPageIndex = index;
+    this.cancelRename();
+    this.refreshPreview();
   }
 
-  getConnectedDropLists(): string[] {
-    const lists = ['available-snippets', 'navbar-snippets', 'footer-snippets'];
-    if (this.layout?.subPages) {
-      this.layout.subPages.forEach((_, index) => {
-        lists.push(`subpage-${index}`);
-      });
-    }
-    return lists;
+  /** Reorder within the open subpage. Moving between pages goes via the scratch pad. */
+  drop(event: CdkDragDrop<SnippetOverride[]>) {
+    if (event.previousIndex === event.currentIndex) return;
+    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    this.updateLayout();
   }
 
-  drop(event: CdkDragDrop<SnippetOverride[]>, target: 'navbar' | 'footer' | 'subpage') {
-    if (event.previousContainer === event.container) {
-      // Reordering within the same list
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+  // --- Subpage management ---------------------------------------------------
 
-      if (target === 'subpage') {
+  /** Add a subpage, open it, and drop straight into naming it. */
+  addSubPage() {
+    if (!this.layout) return;
+    const names = new Set(this.layout.subPages.map((sp) => sp.name));
+    let name = 'New page';
+    for (let n = 2; names.has(name); n++) name = `New page ${n}`;
+    this.layout.subPages.push({ name, snippets: [] });
+    this.activeSubPageIndex = this.layout.subPages.length - 1;
+    this.updateLayout();
+    this.startRename(this.activeSubPageIndex);
+  }
+
+  startRename(index: number) {
+    this.renamingIndex = index;
+    this.renameValue = this.layout?.subPages[index]?.name ?? '';
+    // The input doesn't exist until the next render (change detection is
+    // coalesced to the next frame, so a setTimeout would run too early).
+    afterNextRender(
+      () => {
+        const input = document.getElementById(`subpage-rename-${index}`) as HTMLInputElement | null;
+        input?.focus();
+        input?.select();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  commitRename() {
+    if (this.renamingIndex === null || !this.layout) return;
+    const page = this.layout.subPages[this.renamingIndex];
+    const name = this.renameValue.trim();
+    this.renamingIndex = null;
+    if (!page || !name || name === page.name) return;
+    page.name = name;
+    this.updateLayout();
+  }
+
+  cancelRename() {
+    this.renamingIndex = null;
+  }
+
+  moveSubPage(index: number, delta: -1 | 1) {
+    if (!this.layout) return;
+    const to = index + delta;
+    if (to < 0 || to >= this.layout.subPages.length) return;
+    moveItemInArray(this.layout.subPages, index, to);
+    // Keep the same page open wherever it moved to.
+    if (this.activeSubPageIndex === index) this.activeSubPageIndex = to;
+    else if (this.activeSubPageIndex === to) this.activeSubPageIndex = index;
+    this.updateLayout();
+  }
+
+  /**
+   * Delete a subpage. Its snippets go to the scratch pad when there's room —
+   * parking keeps their AI text and images — otherwise they're deleted with
+   * it, and the confirm says which. The last subpage can't be deleted.
+   */
+  deleteSubPage(index: number) {
+    if (!this.layout || !this.layoutId || this.layout.subPages.length <= 1) return;
+    const page = this.layout.subPages[index];
+    const count = page.snippets.length;
+    const room = this.scratchPadLimit - this.scratchPad.length;
+    const park = count > 0 && count <= room;
+
+    const plural = count === 1 ? 'snippet' : 'snippets';
+    const message = !count
+      ? `Delete “${page.name}”?`
+      : park
+        ? `Delete “${page.name}”? Its ${count} ${plural} will move to the scratch pad.`
+        : `Delete “${page.name}” and its ${count} ${plural}? The scratch pad doesn't have room for them, so their customizations will be lost.`;
+    if (!confirm(message)) return;
+
+    const layoutId = this.layoutId;
+    // Park from the front, one at a time: each park shifts the rest up, and
+    // the server is the source of truth for both lists between calls.
+    const parks = park
+      ? Array.from({ length: count }, () =>
+          defer(() => this.layoutsService.parkSnippet(layoutId, index, 0)),
+        )
+      : [];
+
+    this.subPageError = null;
+    concat(...parks).subscribe({
+      next: (data) => this.applyServerLayout(data),
+      error: (err) =>
+        (this.subPageError = err?.error?.message ?? 'Could not move those snippets.'),
+      complete: () => {
+        if (!this.layout) return;
+        this.layout.subPages.splice(index, 1);
+        if (this.activeSubPageIndex >= this.layout.subPages.length) {
+          this.activeSubPageIndex = this.layout.subPages.length - 1;
+        } else if (this.activeSubPageIndex > index) {
+          this.activeSubPageIndex -= 1;
+        }
         this.updateLayout();
-      }
-    } else {
-      // Handle single-snippet areas (navbar and footer)
-      if (target === 'navbar' || target === 'footer') {
-        // These areas can only hold one snippet, so replace if needed
-        if (event.container.data.length > 0) {
-          // Return the existing snippet back to available
-          const existingSnippet = event.container.data[0];
-          this.availableSnippets.push(existingSnippet);
-        }
-
-        // Clear the target area
-        event.container.data.length = 0;
-
-        // Add the new snippet
-        const movedSnippet = event.previousContainer.data[event.previousIndex];
-        event.container.data.push({ ...movedSnippet });
-
-        // Remove from source if it's not available snippets (which acts as a copy source)
-        if (event.previousContainer.id !== 'available-snippets') {
-          event.previousContainer.data.splice(event.previousIndex, 1);
-        }
-      } else {
-        // Multiple snippet areas (subpages)
-        if (event.previousContainer.id === 'available-snippets') {
-          // Copy from available snippets
-          const snippet = event.previousContainer.data[event.previousIndex];
-          event.container.data.splice(event.currentIndex, 0, { ...snippet });
-        } else {
-          // Move between snippet areas
-          transferArrayItem(
-            event.previousContainer.data,
-            event.container.data,
-            event.previousIndex,
-            event.currentIndex
-          );
-        }
-      }
-
-      this.updateLayout();
-    }
+      },
+    });
   }
 
   updateLayout() {
@@ -687,13 +891,12 @@ export class LayoutEdit implements OnInit {
     };
 
     this.layoutsService.updateLayout(this.layoutId, updateData).subscribe({
-      next: (data) => {
-        // Update local layout object with server response
-        this.layout = data;
-      },
+      // The response holds bare abstracts; re-hydrate so rows keep their
+      // display fields, then reload the preview.
+      next: (data) => this.applyServerLayout(data),
       error: (error) => {
         console.error('Error updating layout:', error);
-        console.error('Error details:', error.error);
+        this.subPageError = 'Could not save that change. Please refresh and try again.';
       },
     });
   }
