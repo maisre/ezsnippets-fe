@@ -1,8 +1,14 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
+import {
+  CdkMenu,
+  CdkMenuGroup,
+  CdkMenuItem,
+  CdkMenuItemRadio,
+  CdkMenuTrigger,
+} from '@angular/cdk/menu';
 import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { PagesService } from '../pages.service';
 import { LayoutsService } from '../layouts.service';
@@ -16,6 +22,29 @@ import { CreatorLabelsService } from '../creator-labels.service';
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
 type ResourceKind = 'page' | 'layout';
+
+type SortKey = 'updated' | 'created' | 'name';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  updated: 'Recently edited',
+  created: 'Recently created',
+  name: 'Name A–Z',
+};
+
+// Per-viewer convenience only — losing it just falls back to the default.
+const SORT_STORAGE_KEY = 'ez.dashboard.sort';
+
+// Each section has its own search, sort and creator filter. These only narrow
+// or reorder what its grid shows — count badges and plan-limit checks keep
+// using activePages/activeLayouts. `creator` holds a creator label ('you', an
+// email, 'a former member') rather than a user id, so all former members
+// collapse into one option.
+interface SectionView {
+  query: string;
+  searchOpen: boolean;
+  sort: SortKey;
+  creator: string;
+}
 
 interface LimitModal {
   kind: ResourceKind;
@@ -31,7 +60,17 @@ interface DeleteModal {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, RouterLink, OverflowMenu, CdkMenu, CdkMenuItem],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    OverflowMenu,
+    CdkMenu,
+    CdkMenuGroup,
+    CdkMenuItem,
+    CdkMenuItemRadio,
+    CdkMenuTrigger,
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -72,14 +111,16 @@ export class Dashboard implements OnInit {
   showArchivedPages = false;
   showArchivedLayouts = false;
 
-  // Search box + creator filter. These only narrow what the grids show — the
-  // count badges and plan-limit checks keep using activePages/activeLayouts.
-  // creatorFilter holds a creator label ('you', an email, 'a former member')
-  // rather than a user id, so all former members collapse into one option.
-  query = '';
-  creatorFilter = '';
+  readonly sortKeys = Object.keys(SORT_LABELS) as SortKey[];
+  readonly sortLabels = SORT_LABELS;
+
+  view: Record<ResourceKind, SectionView> = {
+    layout: { query: '', searchOpen: false, sort: 'updated', creator: '' },
+    page: { query: '', searchOpen: false, sort: 'updated', creator: '' },
+  };
 
   ngOnInit() {
+    this.restoreSorts();
     this.creators.load();
     this.loadPages();
     this.loadLayouts();
@@ -126,31 +167,39 @@ export class Dashboard implements OnInit {
     return this.layouts.filter((l) => l.status === 'archived');
   }
 
-  get filtering(): boolean {
-    return !!this.query.trim() || !!this.creatorFilter;
-  }
-
   get shownActivePages(): Page[] {
-    return this.activePages.filter((p) => this.matches(p));
+    return this.shown(this.activePages, 'page');
   }
 
   get shownArchivedPages(): Page[] {
-    return this.archivedPages.filter((p) => this.matches(p));
+    return this.shown(this.archivedPages, 'page');
   }
 
   get shownActiveLayouts(): Layout[] {
-    return this.activeLayouts.filter((l) => this.matches(l));
+    return this.shown(this.activeLayouts, 'layout');
   }
 
   get shownArchivedLayouts(): Layout[] {
-    return this.archivedLayouts.filter((l) => this.matches(l));
+    return this.shown(this.archivedLayouts, 'layout');
   }
 
-  // Creators that actually own something here, "you" first. Empty outside team
-  // workspaces (labelFor returns null there), which hides the dropdown.
-  get creatorOptions(): string[] {
+  filtering(kind: ResourceKind): boolean {
+    const v = this.view[kind];
+    return !!v.query.trim() || !!v.creator;
+  }
+
+  clearFilters(kind: ResourceKind) {
+    this.view[kind].query = '';
+    this.view[kind].creator = '';
+    this.view[kind].searchOpen = false;
+  }
+
+  // Creators that own something in this section, "you" first. Empty outside
+  // team workspaces (labelFor returns null there), which hides that menu group.
+  creatorOptions(kind: ResourceKind): string[] {
+    const items: (Page | Layout)[] = kind === 'page' ? this.pages : this.layouts;
     const labels = new Set<string>();
-    for (const item of [...this.pages, ...this.layouts]) {
+    for (const item of items) {
       const label = this.creators.labelFor(item.createdBy);
       if (label) labels.add(label);
     }
@@ -159,24 +208,110 @@ export class Dashboard implements OnInit {
     );
   }
 
-  clearFilters() {
-    this.query = '';
-    this.creatorFilter = '';
+  creatorLabel(label: string): string {
+    return label === 'you' ? 'You' : label;
+  }
+
+  setSort(kind: ResourceKind, sort: SortKey) {
+    this.view[kind].sort = sort;
+    try {
+      localStorage.setItem(
+        SORT_STORAGE_KEY,
+        JSON.stringify({ layout: this.view.layout.sort, page: this.view.page.sort }),
+      );
+    } catch {
+      // Storage blocked (private window etc.) — the choice just won't stick.
+    }
+  }
+
+  private restoreSorts() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SORT_STORAGE_KEY) ?? '{}');
+      for (const kind of ['layout', 'page'] as ResourceKind[]) {
+        if (saved[kind] in SORT_LABELS) this.view[kind].sort = saved[kind];
+      }
+    } catch {
+      // Missing or unreadable — keep the defaults.
+    }
+  }
+
+  // The search box sits collapsed behind its icon. The icon's mousedown is
+  // prevented in the template so clicking it doesn't blur (and so close) the
+  // input first.
+  toggleSearch(kind: ResourceKind, input: HTMLInputElement) {
+    const v = this.view[kind];
+    if (v.searchOpen && !v.query) {
+      v.searchOpen = false;
+      return;
+    }
+    v.searchOpen = true;
+    // Zero width doesn't stop focus, so this works before .open is applied.
+    input.focus();
+  }
+
+  // Click away with an empty box collapses it; with text it stays open so the
+  // active filter stays visible.
+  onSearchBlur(kind: ResourceKind) {
+    if (!this.view[kind].query) this.view[kind].searchOpen = false;
+  }
+
+  closeSearch(kind: ResourceKind, input: HTMLInputElement) {
+    this.view[kind].query = '';
+    this.view[kind].searchOpen = false;
+    input.blur();
+  }
+
+  // "/" jumps to the pages search — the section most likely to be long —
+  // unless the user is already typing somewhere or a modal is open.
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (this.createModal || this.limitModal || this.deleteModal) return;
+    const input = document.querySelector<HTMLInputElement>('#page-search');
+    if (!input) return;
+    event.preventDefault();
+    this.view.page.searchOpen = true;
+    input.focus();
+  }
+
+  private shown<T extends Page | Layout>(items: T[], kind: ResourceKind): T[] {
+    const v = this.view[kind];
+    const terms = v.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return items
+      .filter((item) => this.matches(item, terms, v.creator))
+      .sort(this.comparator(v.sort));
   }
 
   // Every whitespace-separated term must appear somewhere in the item's text
   // fields, case-insensitively — "harbor menu" finds "Harbor & Pine — Menu".
-  private matches(item: Page | Layout): boolean {
-    if (this.creatorFilter && this.creators.labelFor(item.createdBy) !== this.creatorFilter) {
-      return false;
-    }
-    const terms = this.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  private matches(item: Page | Layout, terms: string[], creator: string): boolean {
+    if (creator && this.creators.labelFor(item.createdBy) !== creator) return false;
     if (!terms.length) return true;
     const text = [item.name, item.siteName, item.description, item.slug]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
     return terms.every((t) => text.includes(t));
+  }
+
+  // Dates are ISO strings, so they compare correctly as strings. Newest first;
+  // an item missing updatedAt falls back to createdAt.
+  private comparator(sort: SortKey): (a: Page | Layout, b: Page | Layout) => number {
+    switch (sort) {
+      case 'name':
+        return (a, b) =>
+          (a.name ?? '').localeCompare(b.name ?? '', undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          });
+      case 'created':
+        return (a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
+      case 'updated':
+        return (a, b) =>
+          (b.updatedAt ?? b.createdAt ?? '').localeCompare(a.updatedAt ?? a.createdAt ?? '');
+    }
   }
 
   // -1 (or a missing limit) means unlimited. Returns null when there's no plan

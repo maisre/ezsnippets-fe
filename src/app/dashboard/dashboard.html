@@ -3,28 +3,6 @@
   <p class="subtitle">Your layouts and pages at a glance.</p>
 </header>
 
-<div class="dashboard-toolbar" *ngIf="pages.length || layouts.length">
-  <input
-    type="search"
-    class="search-input"
-    placeholder="Search layouts and pages"
-    aria-label="Search layouts and pages"
-    [(ngModel)]="query"
-  />
-  <select
-    class="creator-select"
-    *ngIf="creatorOptions.length > 1"
-    aria-label="Filter by creator"
-    [(ngModel)]="creatorFilter"
-  >
-    <option value="">Created by anyone</option>
-    <option *ngFor="let label of creatorOptions" [value]="label">
-      {{ label === 'you' ? 'Created by you' : label }}
-    </option>
-  </select>
-  <button class="clear-filters" *ngIf="filtering" (click)="clearFilters()">Clear</button>
-</div>
-
 <section class="dashboard-section">
   <div class="section-head">
     <h2>Layouts</h2>
@@ -33,17 +11,93 @@
     </span>
     <button
       class="archived-link"
-      *ngIf="archivedLayouts.length && !filtering"
+      *ngIf="archivedLayouts.length && !filtering('layout')"
       [attr.aria-expanded]="showArchivedLayouts"
       (click)="showArchivedLayouts = !showArchivedLayouts"
     >
       {{ archivedLayouts.length }} archived
     </button>
-    <button class="new-btn" (click)="openCreate('layout')">+ New Layout</button>
+    <div class="section-tools">
+      <div class="search" [class.open]="view.layout.searchOpen">
+        <input
+          #layoutSearch
+          id="layout-search"
+          type="search"
+          class="search-input"
+          placeholder="Search layouts"
+          aria-label="Search layouts"
+          [tabindex]="view.layout.searchOpen ? 0 : -1"
+          [(ngModel)]="view.layout.query"
+          (blur)="onSearchBlur('layout')"
+          (keydown.escape)="closeSearch('layout', layoutSearch)"
+        />
+        <button
+          class="icon-btn"
+          [class.active]="view.layout.query"
+          aria-label="Search layouts"
+          [attr.aria-expanded]="view.layout.searchOpen"
+          (mousedown)="$event.preventDefault()"
+          (click)="toggleSearch('layout', layoutSearch)"
+        >
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      <button
+        class="sort-btn"
+        [class.active]="view.layout.creator"
+        [cdkMenuTriggerFor]="layoutSortMenu"
+        aria-label="Sort and filter layouts"
+      >
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <path d="M6 4v12M3 13l3 3 3-3M14 16V4M11 7l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>{{ sortLabels[view.layout.sort] }}</span>
+        <span *ngIf="view.layout.creator">· {{ creatorLabel(view.layout.creator) }}</span>
+      </button>
+      <ng-template #layoutSortMenu>
+        <div class="overflow-menu sort-menu" cdkMenu>
+          <div class="menu-heading">Sort by</div>
+          <div cdkMenuGroup>
+            <button
+              *ngFor="let key of sortKeys"
+              cdkMenuItemRadio
+              [cdkMenuItemChecked]="view.layout.sort === key"
+              (cdkMenuItemTriggered)="setSort('layout', key)"
+            >
+              {{ sortLabels[key] }}
+            </button>
+          </div>
+          <ng-container *ngIf="creatorOptions('layout').length > 1">
+            <div class="menu-separator"></div>
+            <div class="menu-heading">Created by</div>
+            <div cdkMenuGroup>
+              <button cdkMenuItemRadio [cdkMenuItemChecked]="!view.layout.creator" (cdkMenuItemTriggered)="view.layout.creator = ''">
+                Anyone
+              </button>
+              <button
+                *ngFor="let label of creatorOptions('layout')"
+                cdkMenuItemRadio
+                [cdkMenuItemChecked]="view.layout.creator === label"
+                (cdkMenuItemTriggered)="view.layout.creator = label"
+              >
+                {{ creatorLabel(label) }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </ng-template>
+
+      <button class="new-btn" (click)="openCreate('layout')">+ New Layout</button>
+    </div>
   </div>
 
-  <p class="no-match" *ngIf="filtering && !shownActiveLayouts.length">
+  <p class="no-match" *ngIf="filtering('layout') && !shownActiveLayouts.length">
     No active layouts match.
+    <button class="link-btn" (click)="clearFilters('layout')">Clear filters</button>
   </p>
 
   <div class="card-grid">
@@ -78,13 +132,13 @@
       </div>
     </article>
 
-    <button class="card create-card" *ngIf="!filtering" (click)="openCreate('layout')">
+    <button class="card create-card" *ngIf="!filtering('layout')" (click)="openCreate('layout')">
       <span class="create-plus">+</span>
       <span class="create-label">New Layout</span>
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="(showArchivedLayouts || filtering) && shownArchivedLayouts.length">
+  <div class="archived-block" *ngIf="(showArchivedLayouts || filtering('layout')) && shownArchivedLayouts.length">
     <p class="archived-hint">
       Archived layouts don't count toward your plan. Restore one to bring it back.
     </p>
@@ -127,17 +181,93 @@
     </span>
     <button
       class="archived-link"
-      *ngIf="archivedPages.length && !filtering"
+      *ngIf="archivedPages.length && !filtering('page')"
       [attr.aria-expanded]="showArchivedPages"
       (click)="showArchivedPages = !showArchivedPages"
     >
       {{ archivedPages.length }} archived
     </button>
-    <button class="new-btn" (click)="openCreate('page')">+ New Page</button>
+    <div class="section-tools">
+      <div class="search" [class.open]="view.page.searchOpen">
+        <input
+          #pageSearch
+          id="page-search"
+          type="search"
+          class="search-input"
+          placeholder="Search pages"
+          aria-label="Search pages"
+          [tabindex]="view.page.searchOpen ? 0 : -1"
+          [(ngModel)]="view.page.query"
+          (blur)="onSearchBlur('page')"
+          (keydown.escape)="closeSearch('page', pageSearch)"
+        />
+        <button
+          class="icon-btn"
+          [class.active]="view.page.query"
+          aria-label="Search pages"
+          [attr.aria-expanded]="view.page.searchOpen"
+          (mousedown)="$event.preventDefault()"
+          (click)="toggleSearch('page', pageSearch)"
+        >
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      <button
+        class="sort-btn"
+        [class.active]="view.page.creator"
+        [cdkMenuTriggerFor]="pageSortMenu"
+        aria-label="Sort and filter pages"
+      >
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <path d="M6 4v12M3 13l3 3 3-3M14 16V4M11 7l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>{{ sortLabels[view.page.sort] }}</span>
+        <span *ngIf="view.page.creator">· {{ creatorLabel(view.page.creator) }}</span>
+      </button>
+      <ng-template #pageSortMenu>
+        <div class="overflow-menu sort-menu" cdkMenu>
+          <div class="menu-heading">Sort by</div>
+          <div cdkMenuGroup>
+            <button
+              *ngFor="let key of sortKeys"
+              cdkMenuItemRadio
+              [cdkMenuItemChecked]="view.page.sort === key"
+              (cdkMenuItemTriggered)="setSort('page', key)"
+            >
+              {{ sortLabels[key] }}
+            </button>
+          </div>
+          <ng-container *ngIf="creatorOptions('page').length > 1">
+            <div class="menu-separator"></div>
+            <div class="menu-heading">Created by</div>
+            <div cdkMenuGroup>
+              <button cdkMenuItemRadio [cdkMenuItemChecked]="!view.page.creator" (cdkMenuItemTriggered)="view.page.creator = ''">
+                Anyone
+              </button>
+              <button
+                *ngFor="let label of creatorOptions('page')"
+                cdkMenuItemRadio
+                [cdkMenuItemChecked]="view.page.creator === label"
+                (cdkMenuItemTriggered)="view.page.creator = label"
+              >
+                {{ creatorLabel(label) }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </ng-template>
+
+      <button class="new-btn" (click)="openCreate('page')">+ New Page</button>
+    </div>
   </div>
 
-  <p class="no-match" *ngIf="filtering && !shownActivePages.length">
+  <p class="no-match" *ngIf="filtering('page') && !shownActivePages.length">
     No active pages match.
+    <button class="link-btn" (click)="clearFilters('page')">Clear filters</button>
   </p>
 
   <div class="card-grid">
@@ -173,13 +303,13 @@
       </div>
     </article>
 
-    <button class="card create-card" *ngIf="!filtering" (click)="openCreate('page')">
+    <button class="card create-card" *ngIf="!filtering('page')" (click)="openCreate('page')">
       <span class="create-plus">+</span>
       <span class="create-label">New Page</span>
     </button>
   </div>
 
-  <div class="archived-block" *ngIf="(showArchivedPages || filtering) && shownArchivedPages.length">
+  <div class="archived-block" *ngIf="(showArchivedPages || filtering('page')) && shownArchivedPages.length">
     <p class="archived-hint">
       Archived pages don't count toward your plan and are offline. Restore one to bring it back.
     </p>
