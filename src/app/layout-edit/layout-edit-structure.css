@@ -136,3 +136,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ===== Drop targets =====
+   While a snippet is being dragged, every place it can go gets a quiet dashed
+   outline (CDK's -receiving class); the one under the cursor fills in
+   (-dragging). Slots and page rows take a snippet whole — no gap opens. */
+.slot.cdk-drop-list-receiving,
+.page-head.cdk-drop-list-receiving {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+}
+.slot.cdk-drop-list-dragging,
+.page-head.cdk-drop-list-dragging {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+.page-head.cdk-drop-list-dragging .page-name { color: var(--accent); }
+
+/* Wide view (preview popped out): the navbar and footer show as large
+   screenshots too, so the whole site reads top to bottom. */
+.edit-body.wide .slot { flex-wrap: wrap; }
+.edit-body.wide .slot .snip-thumb {
+  order: 10;
+  flex: 1 0 100%;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  margin-top: 8px;
+}
+.edit-body.wide .slot .snip-remove { opacity: 1; }

@@ -68,3 +68,63 @@ body {
   margin: 0.25rem 0;
   background: #e6e8ec;
 }
+
+/* ===== Editor drag and drop =====
+   Global on purpose: CDK renders the drag preview in <body> and moves the
+   placeholder into whichever list the cursor is over, so these elements cross
+   component boundaries and no component's encapsulated styles can follow. */
+
+/* While anything is being dragged, iframes (the editors' live preview) must
+   not swallow the pointer — over an iframe the drag would freeze. */
+body:has(.cdk-drag-preview) iframe { pointer-events: none; }
+
+/* The ghost under the cursor when dragging from the snippet library: a compact
+   row, the shape the snippet takes once dropped into a list. */
+.ez-drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 240px;
+  padding: 7px 12px 7px 7px;
+  background: #fff;
+  border: 1px solid #dce1ea;
+  border-radius: 8px;
+  box-shadow: 0 14px 30px -10px rgba(20, 26, 40, 0.4);
+  font: 600 13px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #161a22;
+  text-transform: capitalize;
+}
+.ez-drag-preview img {
+  width: 54px;
+  height: 40px;
+  flex: none;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 6px;
+  border: 1px solid #dce1ea;
+  background: #eaeef4;
+}
+
+/* Where a library snippet will land inside a list... */
+.ez-drag-placeholder {
+  height: 48px;
+  margin: 3px 0;
+  border: 2px dashed #2f5cff;
+  border-radius: 8px;
+  background: #e6ecff;
+}
+.ez-drag-placeholder img { display: none; }
+/* ...and, while still over the library, a faded copy of the tile (dragging
+   from the library copies; it never empties a slot there). */
+.palette-grid > .ez-drag-placeholder {
+  height: auto;
+  margin: 0;
+  border: 1px dashed #dce1ea;
+  background: #fff;
+  opacity: 0.5;
+}
+.palette-grid > .ez-drag-placeholder img { display: block; width: 100%; height: auto; }
+/* Single-snippet targets (navbar/footer slots, page rows) highlight as a whole
+   instead of opening a gap. */
+.drop-only .ez-drag-placeholder,
+.drop-only > .cdk-drag-placeholder { display: none; }

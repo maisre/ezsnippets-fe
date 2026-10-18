@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, HostListener } from '@angular/core';
+import { Component, inject, OnInit, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,7 +7,6 @@ import {
   CdkDragDrop,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PagesService } from '../pages.service';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
@@ -26,6 +25,8 @@ import { slugify } from '../slugify';
 import { SCRATCH_PAD_LIMIT } from '../scratch-pad';
 import { OrgsService } from '../orgs.service';
 import { CreatorLabelsService } from '../creator-labels.service';
+import { SnippetDrawer, PALETTE_LIST_ID } from '../editor/snippet-drawer';
+import { EditorPreview } from '../editor/editor-preview';
 
 @Component({
   selector: 'app-page-edit',
@@ -35,9 +36,12 @@ import { CreatorLabelsService } from '../creator-labels.service';
     DragDropModule,
     TemplatePicker,
     SaveTemplateDialog,
+    SnippetDrawer,
+    EditorPreview,
   ],
   templateUrl: './page-edit.html',
-  styleUrl: './page-edit.css',
+  // Everything is shared with the layout editor; see src/app/editor/.
+  styleUrls: ['../editor/editor-tokens.css', '../editor/editor-base.css', '../editor/editor-layout.css'],
 })
 export class PageEdit implements OnInit {
   private route = inject(ActivatedRoute);
@@ -61,7 +65,6 @@ export class PageEdit implements OnInit {
       : 'Leave blank to keep the default link.';
   }
 
-  private sanitizer = inject(DomSanitizer);
 
   page: Page | null = null;
   pageId: string | null = null;
@@ -75,21 +78,14 @@ export class PageEdit implements OnInit {
   scratchError: string | null = null;
   readonly scratchPadLimit = SCRATCH_PAD_LIMIT;
   availableSnippets: SnippetOverride[] = [];
-  filteredSnippets: SnippetOverride[] = [];
   viewUrl = runtimeConfig.viewUrl;
   // Bound in the template for every snippet thumbnail.
   snippetThumbUrl = snippetThumbUrl;
   customizing = false;
 
+  // Library filter options, loaded here and handed to the snippet drawer
+  // (which owns the filtering and starring).
   filters: SnippetFilters = { types: [], tags: [] };
-  activeTypeFilter = '';
-  activeTagFilter = '';
-  /**
-   * Starred snippets, org-wide. Held as a Set of ids because the palette asks
-   * "is this one starred?" once per tile on every render.
-   */
-  favoriteIds = new Set<string>();
-  showFavoritesOnly = false;
 
   // Editable name/siteName/description, seeded from the loaded page. Kept
   // separate from `page` so Cancel can discard edits and `detailsDirty` can
@@ -110,18 +106,19 @@ export class PageEdit implements OnInit {
   imageDirection = '';
   showImageDirection = false;
 
-  // Live preview (right pane) — an iframe of the public rendered page. The
-  // src carries a version counter so we can force a reload after every edit
-  // without touching the cross-origin frame directly.
-  safePreviewUrl: SafeResourceUrl | null = null;
-  previewDevice: 'desktop' | 'mobile' = 'desktop';
-  private previewVersion = 0;
+  // Live preview (right pane): the shared preview component reloads whenever
+  // this version moves, which every edit does via refreshPreview().
+  previewVersion = 0;
 
-  // Snippet palette lives in a slide-in drawer opened by "Add snippet".
-  showPalette = false;
-  // Second tab in that same drawer: templates. Partials and page templates are
-  // offered together — from the user's side both are "drop in a chunk I like".
-  paletteTab: 'snippets' | 'templates' | 'scratchpad' = 'snippets';
+  // The snippet library (snippets / templates / scratch pad) lives in the
+  // shared drawer: an edge tab that slides in on hover, or pinned beside the
+  // preview. Templates: partials and page templates together — from the
+  // user's side both are "drop in a chunk I like".
+  @ViewChild(SnippetDrawer) drawer?: SnippetDrawer;
+  drawerPinned = false;
+  readonly paletteTargets = ['page-snippets'];
+  // The preview is in its own window, so the structure gets the room.
+  previewPoppedOut = false;
   // Applying to a page that already has snippets appends by default; replacing
   // is destructive and has no undo, so it stays an explicit choice.
   templateMode: 'append' | 'replace' = 'append';
@@ -130,19 +127,13 @@ export class PageEdit implements OnInit {
   // Save-as-template modal.
   showSaveTemplate = false;
 
-  setPaletteTab(tab: 'snippets' | 'templates' | 'scratchpad') {
-    this.paletteTab = tab;
-    this.templateError = null;
-    this.scratchError = null;
-  }
-
   applyTemplate(template: Template) {
     if (!this.pageId) return;
     const mode = this.pageSnippets.length ? this.templateMode : 'replace';
 
     this.templatesService.applyToPage(this.pageId, template.id, mode).subscribe({
       next: () => {
-        this.closePalette();
+        this.drawer?.close();
         this.loadPage();
         // loadPage() only repopulates the snippet list; the iframe keeps its
         // old src until the version counter moves, so bump it explicitly.
@@ -196,33 +187,29 @@ export class PageEdit implements OnInit {
     this.creators.load();
     this.pageId = this.route.snapshot.paramMap.get('id');
     if (this.pageId) {
-      this.refreshPreview();
       this.loadPage();
     }
   }
 
-  /** Rebuild the preview iframe URL, bumping the version to force a reload. */
+  /** The public render the preview shows. */
+  get previewSrc(): string {
+    return `${this.viewUrl}/view/page/${this.pageId}`;
+  }
+
+  /** Reload the preview (after any edit that changes what renders). */
   refreshPreview() {
-    if (!this.pageId) return;
     this.previewVersion += 1;
-    this.safePreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `${this.viewUrl}/view/page/${this.pageId}?_=${this.previewVersion}`,
-    );
   }
 
-  setDevice(device: 'desktop' | 'mobile') {
-    this.previewDevice = device;
-  }
-
+  /** Open the library from the "Add snippet" button. */
   openPalette() {
-    this.showPalette = true;
+    this.templateError = null;
+    this.scratchError = null;
+    this.drawer?.open({ tab: 'snippets' });
   }
-  closePalette() {
-    this.showPalette = false;
-  }
+
   @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.showPalette) this.closePalette();
     if (this.showFinalize) this.closeFinalize();
   }
 
@@ -257,11 +244,9 @@ export class PageEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
-    this.loadFavorites();
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
-        this.applyFilters();
         this.loadPageSnippets();
       },
       error: (error) => {
@@ -399,10 +384,18 @@ export class PageEdit implements OnInit {
       });
   }
 
-  /** Reorder within the page structure list (adding is done via the palette). */
+  /**
+   * A drop on the page structure list: a snippet dragged in from the library
+   * is inserted (as a copy — the library keeps it) where it was dropped;
+   * otherwise it's a reorder within the list.
+   */
   drop(event: CdkDragDrop<SnippetOverride[]>) {
-    if (event.previousIndex === event.currentIndex) return;
-    moveItemInArray(this.pageSnippets, event.previousIndex, event.currentIndex);
+    if (event.previousContainer.id === PALETTE_LIST_ID) {
+      this.pageSnippets.splice(event.currentIndex, 0, { ...(event.item.data as SnippetOverride) });
+    } else {
+      if (event.previousIndex === event.currentIndex) return;
+      moveItemInArray(this.pageSnippets, event.previousIndex, event.currentIndex);
+    }
     this.updatePageSnippets();
   }
 
@@ -432,90 +425,6 @@ export class PageEdit implements OnInit {
         // Optionally revert the UI changes if the server update fails
       },
     });
-  }
-
-  applyFilters() {
-    this.filteredSnippets = this.availableSnippets.filter((s) => {
-      if (this.showFavoritesOnly && !this.favoriteIds.has(s.id)) return false;
-      if (this.activeTypeFilter && s.type !== this.activeTypeFilter) return false;
-      if (this.activeTagFilter && !(s.tags || []).includes(this.activeTagFilter)) return false;
-      return true;
-    });
-  }
-
-  // --- Favorites -----------------------------------------------------------
-  //
-  // A view of the library, not a separate collection — hence a filter toggle
-  // next to type and tags rather than another tab.
-
-  private loadFavorites() {
-    this.orgsService.listFavorites().subscribe({
-      next: ({ favorites }) => {
-        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
-        this.applyFilters();
-      },
-      // A failed star list is not worth interrupting the editor for; the
-      // palette just shows nothing starred.
-      error: () => {},
-    });
-  }
-
-  isFavorite(snippetId: string): boolean {
-    return this.favoriteIds.has(snippetId);
-  }
-
-  // `Event`, not `MouseEvent`: the star is also reachable by keyboard, and the
-  // keydown binding hands over a KeyboardEvent.
-  toggleFavorite(snippetId: string, event: Event) {
-    // The star sits on top of the tile, and the tile adds the snippet.
-    event.stopPropagation();
-
-    const wasFavorite = this.favoriteIds.has(snippetId);
-    // Flip locally first so the star responds to the click immediately; the
-    // response replaces the whole set either way.
-    if (wasFavorite) this.favoriteIds.delete(snippetId);
-    else this.favoriteIds.add(snippetId);
-    this.applyFilters();
-
-    const request = wasFavorite
-      ? this.orgsService.removeFavorite(snippetId)
-      : this.orgsService.addFavorite(snippetId);
-
-    request.subscribe({
-      next: ({ favorites }) => {
-        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
-        this.applyFilters();
-      },
-      error: (err) => {
-        // Put the star back where it was, and surface the cap message.
-        if (wasFavorite) this.favoriteIds.add(snippetId);
-        else this.favoriteIds.delete(snippetId);
-        this.applyFilters();
-        this.scratchError = err?.error?.message ?? 'Could not update favorites.';
-      },
-    });
-  }
-
-  toggleFavoritesFilter() {
-    this.showFavoritesOnly = !this.showFavoritesOnly;
-    this.applyFilters();
-  }
-
-  setTypeFilter(type: string) {
-    this.activeTypeFilter = this.activeTypeFilter === type ? '' : type;
-    this.applyFilters();
-  }
-
-  setTagFilter(tag: string) {
-    this.activeTagFilter = this.activeTagFilter === tag ? '' : tag;
-    this.applyFilters();
-  }
-
-  clearFilters() {
-    this.activeTypeFilter = '';
-    this.activeTagFilter = '';
-    this.showFavoritesOnly = false;
-    this.applyFilters();
   }
 
   // --- Text customization status (per snippet, via the aiCustomized flag) ---
@@ -664,13 +573,6 @@ export class PageEdit implements OnInit {
     a.download = `${this.page?.name || 'page'}-image-licenses.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }
-
-  /** Bring the snippet palette into view (matters when the layout stacks). */
-  scrollToPalette() {
-    document
-      .getElementById('available-panel')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /**

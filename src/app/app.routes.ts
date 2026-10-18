@@ -7,9 +7,7 @@ import { ResetPassword } from './reset-password/reset-password';
 import { Pricing } from './pricing/pricing';
 import { Snippets } from './snippets/snippets';
 import { Pages } from './pages/pages';
-import { PageEdit } from './page-edit/page-edit';
 import { Layouts } from './layouts/layouts';
-import { LayoutEdit } from './layout-edit/layout-edit';
 import { Account } from './account/account';
 import { Dashboard } from './dashboard/dashboard';
 import { CheckoutSuccess } from './checkout-success/checkout-success';
@@ -44,9 +42,11 @@ export const routes: Routes = [
   { path: 'snippets', component: Snippets, canActivate: [authGuard] },
   // hideFooter: the builders are full-viewport (100vh) editors with live
   // previews — a site footer underneath breaks the layout.
-  { path: 'p/edit/:id', component: PageEdit, canActivate: [authGuard], data: { hideFooter: true } },
+  // The editors are the heaviest screens (drag and drop, preview, snippet
+  // library) and only signed-in users reach them, so they load on demand.
+  { path: 'p/edit/:id', loadComponent: () => import('./page-edit/page-edit').then((m) => m.PageEdit), canActivate: [authGuard], data: { hideFooter: true } },
   { path: 'pages', component: Pages, canActivate: [authGuard] },
-  { path: 'l/edit/:id', component: LayoutEdit, canActivate: [authGuard], data: { hideFooter: true } },
+  { path: 'l/edit/:id', loadComponent: () => import('./layout-edit/layout-edit').then((m) => m.LayoutEdit), canActivate: [authGuard], data: { hideFooter: true } },
   { path: 'layouts', component: Layouts, canActivate: [authGuard] },
   { path: 'account', component: Account, canActivate: [authGuard] },
   { path: 'team', component: Team, canActivate: [authGuard] },

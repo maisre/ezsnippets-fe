@@ -58,13 +58,16 @@ describe('PageEdit details form', () => {
     httpMock
       .match((r) => r.url.includes('/snippets/filters'))
       .forEach((r) => r.flush({ types: [], tags: [] }));
-    httpMock
-      .match((r) => r.url.endsWith('/orgs/favorites'))
-      .forEach((r) => r.flush({ favorites: [] }));
     // CreatorLabelsService — no workspaces means no "created by" label.
     httpMock.match((r) => r.url.endsWith('/orgs')).forEach((r) => r.flush([]));
 
     fixture.detectChanges();
+
+    // The snippet drawer renders with the loaded page and fetches the team's
+    // starred snippets then.
+    httpMock
+      .match((r) => r.url.endsWith('/orgs/favorites'))
+      .forEach((r) => r.flush({ favorites: [] }));
   });
 
   afterEach(() => httpMock.verify());

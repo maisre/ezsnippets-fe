@@ -1,0 +1,197 @@
+/* Shared by the page and layout editors (on top of editor-tokens.css):
+   snippet rows, scratch pad, templates tab. */
+
+/* ===== Page structure list ===== */
+.rail-list {
+  min-height: 56px;
+  padding: 4px;
+}
+.snip-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 9px;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+.snip-row:hover { background: var(--surface-2); }
+.grip {
+  color: var(--ink-3);
+  cursor: grab;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: -2px;
+  user-select: none;
+}
+.grip:active { cursor: grabbing; }
+.snip-thumb {
+  width: 54px;
+  height: 40px;
+  flex: none;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+}
+.snip-meta { min-width: 0; flex: 1; }
+.snip-name {
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  text-transform: capitalize;
+}
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.badge .d { width: 6px; height: 6px; border-radius: 50%; }
+.badge.ok { color: var(--good); background: var(--good-soft); }
+.badge.ok .d { background: var(--good); }
+.badge.need { color: var(--warn); background: var(--warn-soft); }
+.badge.need .d { background: var(--warn); }
+
+.add-row { padding: 8px 12px 12px; }
+.add-btn {
+  width: 100%;
+  justify-content: center;
+  border-style: dashed;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: transparent;
+}
+.add-btn svg { width: 15px; height: 15px; }
+.add-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+/* ===== Page-structure row remove ===== */
+.snip-remove {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.snip-remove svg { width: 15px; height: 15px; }
+.snip-row:hover .snip-remove,
+.snip-row:focus-within .snip-remove { opacity: 1; }
+.snip-remove:hover { background: #fdecea; color: var(--danger); border-color: #f5c6c0; }
+
+/* Park: sits beside Remove and mirrors its reveal-on-hover behaviour, but
+   reads as neutral rather than destructive — parking is reversible. */
+.snip-park {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.snip-park svg { width: 15px; height: 15px; }
+.snip-row:hover .snip-park,
+.snip-row:focus-within .snip-park { opacity: 1; }
+.snip-park:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+/* Stays visible when disabled so the tooltip explains why it won't work,
+   rather than the control simply vanishing at the limit. */
+.snip-park:disabled { cursor: not-allowed; opacity: 0.35; }
+.snip-row:hover .snip-park:disabled { opacity: 0.35; }
+
+/* ===== Scratch pad tab ===== */
+.palette-scratchpad { padding: 12px 14px 20px; }
+
+.scratch-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.scratch-count {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.scratch-count.full { color: var(--danger); background: #fdecea; }
+.scratch-hint { font-size: 12px; color: var(--ink-3); line-height: 1.35; }
+
+.scratch-list { display: flex; flex-direction: column; gap: 6px; }
+
+.scratch-restore {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.scratch-restore:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+
+/* --- Templates tab in the snippet palette --- */
+.palette-templates {
+  padding: 0.75rem 1rem 1.5rem;
+  overflow-y: auto;
+}
+
+.palette-templates .template-error {
+  margin: 0 0 0.75rem;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+/*
+ * Append vs replace. Only shown when the page already has snippets — on an
+ * empty page there's nothing to lose, so the choice would be noise.
+ */
+.template-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #475467;
+  background: #f9fafb;
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.template-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}

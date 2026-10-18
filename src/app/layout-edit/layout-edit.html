@@ -1,4 +1,4 @@
-<div *ngIf="layout" class="layout-edit-container">
+<div *ngIf="layout" class="layout-edit-container" [class.drawer-pinned]="drawerPinned">
   <!-- ===== Action bar ===== -->
   <header class="edit-topbar">
     <div class="crumb">
@@ -35,7 +35,7 @@
     </div>
   </header>
 
-  <div class="edit-body">
+  <div class="edit-body" [class.wide]="previewPoppedOut">
     <!-- ===== Left rail ===== -->
     <div class="edit-rail">
       <!-- Layout settings (collapsible) -->
@@ -140,18 +140,26 @@
         <p class="scratch-error inset" *ngIf="subPageError">{{ subPageError }}</p>
 
         <!-- Navbar -->
-        <div class="slot">
+        <div
+          class="slot drop-only"
+          cdkDropList
+          id="navbar-slot"
+          [cdkDropListData]="navbarSnippets"
+          [cdkDropListEnterPredicate]="navAccepts"
+          cdkDropListSortingDisabled
+          (cdkDropListDropped)="dropOnSlot($event, 'nav')"
+        >
           <span class="slot-label">Navbar</span>
           <ng-container *ngIf="navbarSnippets[0] as nav; else noNav">
             <img [src]="snippetThumbUrl(nav.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <span class="slot-name">{{ nav.type || 'Navbar' }}</span>
-            <button type="button" class="btn ghost sm" (click)="openPalette('nav')">Change</button>
+            <button type="button" class="btn ghost sm" (click)="openPalette('nav')" data-drawer-trigger>Change</button>
             <button type="button" class="snip-remove" (click)="removeNav()" title="Remove navbar" aria-label="Remove navbar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </ng-container>
           <ng-template #noNav>
-            <button type="button" class="btn add-btn slot-add" (click)="openPalette('nav')">
+            <button type="button" class="btn add-btn slot-add" (click)="openPalette('nav')" data-drawer-trigger>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Choose navbar
             </button>
@@ -165,7 +173,14 @@
             class="page"
             [class.open]="activeSubPageIndex === i"
           >
-            <div class="page-head">
+            <div
+              class="page-head drop-only"
+              cdkDropList
+              [id]="pageDropId(i)"
+              [cdkDropListData]="noSnippets"
+              cdkDropListSortingDisabled
+              (cdkDropListDropped)="dropOnPageRow($event, i)"
+            >
               <ng-container *ngIf="renamingIndex !== i; else renaming">
                 <button
                   type="button"
@@ -209,15 +224,16 @@
             <div class="page-body" *ngIf="activeSubPageIndex === i">
               <div
                 cdkDropList
+                [id]="openListId"
                 [cdkDropListData]="subPage.snippets"
-                (cdkDropListDropped)="drop($event)"
+                [cdkDropListConnectedTo]="otherPageTargets"
+                (cdkDropListDropped)="dropOnOpenPage($event)"
                 class="snippet-list rail-list"
               >
                 <div
                   *ngFor="let snippet of subPage.snippets; let si = index; trackBy: trackBySnippetId"
                   cdkDrag
                   [cdkDragStartDelay]="0"
-                  cdkDragLockAxis="y"
                   class="snip-row"
                 >
                   <span class="grip" cdkDragHandle>⋮⋮</span>
@@ -251,7 +267,7 @@
                 </div>
               </div>
               <div class="add-row">
-                <button type="button" class="btn add-btn" (click)="openPalette('page')">
+                <button type="button" class="btn add-btn" (click)="openPalette('page')" data-drawer-trigger>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                   Add snippet
                 </button>
@@ -266,18 +282,26 @@
         </div>
 
         <!-- Footer -->
-        <div class="slot slot-footer">
+        <div
+          class="slot slot-footer drop-only"
+          cdkDropList
+          id="footer-slot"
+          [cdkDropListData]="footerSnippets"
+          [cdkDropListEnterPredicate]="footerAccepts"
+          cdkDropListSortingDisabled
+          (cdkDropListDropped)="dropOnSlot($event, 'footer')"
+        >
           <span class="slot-label">Footer</span>
           <ng-container *ngIf="footerSnippets[0] as footer; else noFooter">
             <img [src]="snippetThumbUrl(footer.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <span class="slot-name">{{ footer.type || 'Footer' }}</span>
-            <button type="button" class="btn ghost sm" (click)="openPalette('footer')">Change</button>
+            <button type="button" class="btn ghost sm" (click)="openPalette('footer')" data-drawer-trigger>Change</button>
             <button type="button" class="snip-remove" (click)="removeFooter()" title="Remove footer" aria-label="Remove footer">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </ng-container>
           <ng-template #noFooter>
-            <button type="button" class="btn add-btn slot-add" (click)="openPalette('footer')">
+            <button type="button" class="btn add-btn slot-add" (click)="openPalette('footer')" data-drawer-trigger>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Choose footer
             </button>
@@ -288,33 +312,117 @@
 
     <!-- ===== Right: live preview ===== -->
     <div class="edit-main">
-      <section class="card preview-card">
-        <div class="preview-head">
-          <h3>Live preview</h3>
-          <span class="preview-page">· {{ activeSubPage?.name }}</span>
-          <span class="preview-spacer"></span>
-          <div class="seg" role="tablist" aria-label="Preview device">
-            <button type="button" [class.active]="previewDevice === 'desktop'" (click)="setDevice('desktop')">Desktop</button>
-            <button type="button" [class.active]="previewDevice === 'mobile'" (click)="setDevice('mobile')">Mobile</button>
-          </div>
-          <button type="button" class="btn ghost sm" (click)="refreshPreview()" title="Refresh preview" aria-label="Refresh preview">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4h-4"/></svg>
-          </button>
-          <button type="button" class="btn ghost sm" (click)="openPreview()" title="Open in new tab" aria-label="Open in new tab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
-          </button>
-        </div>
-        <div class="stage">
-          <iframe
-            *ngIf="safePreviewUrl"
-            [src]="safePreviewUrl"
-            class="preview-frame"
-            [class.mobile]="previewDevice === 'mobile'"
-            title="Layout preview"
-          ></iframe>
-        </div>
-      </section>
+      <app-editor-preview
+        class="card preview-card"
+        [src]="previewSrc"
+        [version]="previewVersion"
+        [label]="activeSubPage?.name ?? ''"
+        frameTitle="Layout preview"
+        (poppedOutChange)="previewPoppedOut = $event"
+      />
     </div>
+
+    <!-- ===== Snippet library: edge tab / hover drawer / pinned column ===== -->
+    <app-snippet-drawer
+      [snippets]="availableSnippets"
+      [filters]="filters"
+      [title]="drawerTitle"
+      [subtitle]="drawerSub"
+      [showTabs]="drawerTarget === 'page'"
+      [lockedType]="drawerLockedType"
+      [addLabel]="drawerTarget === 'page' ? '+ Add' : 'Use'"
+      [scratchCount]="scratchPad.length"
+      [connectedTo]="paletteTargets"
+      (picked)="pickSnippet($event)"
+      (pinnedChange)="drawerPinned = $event"
+      (closed)="onDrawerClosed()"
+    >
+      <div drawerTemplates class="palette-templates">
+        <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
+
+        <div class="template-mode" *ngIf="getActiveSubPageSnippets().length">
+          <span>{{ activeSubPage?.name }} already has snippets:</span>
+          <label>
+            <input type="radio" name="layoutTemplateMode" value="append" [(ngModel)]="templateMode" />
+            Add to the end
+          </label>
+          <label>
+            <input type="radio" name="layoutTemplateMode" value="replace" [(ngModel)]="templateMode" />
+            Replace them
+          </label>
+        </div>
+
+        <!-- Only while its tab is open, so templates load on demand. -->
+        <app-template-picker
+          *ngIf="drawer?.tab === 'templates'"
+          #palettePicker
+          [kinds]="['partial', 'page']"
+          actionLabel="Insert"
+          (picked)="applyTemplate($event)"
+          (deleted)="deleteTemplate($event, palettePicker)"
+        ></app-template-picker>
+      </div>
+      <div drawerScratch class="palette-scratchpad">
+        <p class="scratch-error" *ngIf="scratchError">{{ scratchError }}</p>
+
+        <div class="scratch-head">
+          <span class="scratch-count" [class.full]="scratchPadFull">
+            {{ scratchPad.length }} / {{ scratchPadLimit }}
+          </span>
+          <span class="scratch-hint">
+            Shared by every page. Put back lands on {{ activeSubPage?.name }}. Drag to reorder.
+          </span>
+        </div>
+
+        <div
+          cdkDropList
+          id="scratch-pad-list"
+          [cdkDropListData]="scratchPad"
+          (cdkDropListDropped)="scratchDrop($event)"
+          class="scratch-list"
+        >
+          <div
+            *ngFor="let snippet of scratchPad; let i = index; trackBy: trackBySnippetId"
+            cdkDrag
+            [cdkDragStartDelay]="0"
+            class="snip-row scratch-row"
+          >
+            <span class="grip" cdkDragHandle>&#8942;&#8942;</span>
+            <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
+            <div class="snip-meta">
+              <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
+              <div class="badges">
+                <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
+                <ng-container *ngIf="!snippetReady(snippet)">
+                  <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
+                  <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                </ng-container>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="scratch-restore"
+              (click)="restoreSnippet(i)"
+              [title]="'Put back on ' + (activeSubPage?.name || 'this page')"
+            >Put back</button>
+            <button
+              type="button"
+              class="snip-remove"
+              (click)="discardScratchSnippet(i)"
+              title="Discard — customizations can't be recovered"
+              aria-label="Discard parked snippet"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div *ngIf="scratchPad.length === 0" class="empty-state">
+            Nothing parked yet. Use the box icon on a snippet in the page list to
+            set it aside without losing your edits.
+          </div>
+        </div>
+      </div>
+    </app-snippet-drawer>
   </div>
 </div>
 
@@ -328,188 +436,7 @@
 </div>
 
 <!-- ===== Drawers ===== -->
-<div class="scrim" [class.show]="showPalette || showFinalize" (click)="closePalette(); closeFinalize()"></div>
-
-<!-- Add-snippet drawer -->
-<aside class="drawer palette-drawer" [class.show]="showPalette" [attr.aria-hidden]="!showPalette" [attr.aria-label]="drawerTitle">
-  <div class="drawer-head">
-    <div class="drawer-titles">
-      <h3>{{ drawerTitle }}</h3>
-      <span class="drawer-sub">{{ drawerSub }}</span>
-    </div>
-    <button type="button" class="close" (click)="closePalette()" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-  </div>
-
-  <!-- Templates and the scratch pad only make sense for a subpage. -->
-  <div class="tabs" *ngIf="drawerTarget === 'page'">
-    <button type="button" [class.active]="paletteTab === 'snippets'" (click)="setPaletteTab('snippets')">Snippets</button>
-    <button type="button" [class.active]="paletteTab === 'templates'" (click)="setPaletteTab('templates')">Templates</button>
-    <button type="button" [class.active]="paletteTab === 'scratchpad'" (click)="setPaletteTab('scratchpad')">
-      Scratch pad
-      <span class="tab-count" *ngIf="scratchPad.length">{{ scratchPad.length }}</span>
-    </button>
-  </div>
-
-  <div class="drawer-filters" *ngIf="paletteTab === 'snippets' && (filters.types.length || filters.tags.length)">
-    <div class="filter-group" *ngIf="filters.types.length">
-      <label>Type</label>
-      <div class="filter-chips">
-        <button
-          *ngFor="let type of filters.types"
-          class="filter-chip"
-          [class.active]="activeTypeFilter === type"
-          (click)="setTypeFilter(type)"
-        >{{ type }}</button>
-      </div>
-    </div>
-    <div class="filter-group" *ngIf="filters.tags.length">
-      <label>Tags</label>
-      <div class="filter-chips">
-        <button
-          *ngFor="let tag of filters.tags"
-          class="filter-chip"
-          [class.active]="activeTagFilter === tag"
-          (click)="setTagFilter(tag)"
-        >{{ tag }}</button>
-      </div>
-    </div>
-    <div class="filter-group">
-      <label>Starred</label>
-      <div class="filter-chips">
-        <button
-          class="filter-chip star-chip"
-          [class.active]="showFavoritesOnly"
-          (click)="toggleFavoritesFilter()"
-          title="Show only snippets your team has starred"
-        >
-          <span class="star-glyph">&#9733;</span>
-          Favorites
-          <span class="tab-count" *ngIf="favoriteIds.size">{{ favoriteIds.size }}</span>
-        </button>
-      </div>
-    </div>
-    <button
-      *ngIf="activeTypeFilter || activeTagFilter || showFavoritesOnly"
-      class="clear-filters"
-      (click)="clearFilters()"
-    >Clear filters</button>
-  </div>
-
-  <div class="palette-grid" *ngIf="paletteTab === 'snippets'">
-    <button
-      *ngFor="let snippet of filteredSnippets; trackBy: trackBySnippetId"
-      type="button"
-      class="palette-item"
-      (click)="pickSnippet(snippet)"
-      [title]="drawerTarget === 'page' ? 'Add to ' + (activeSubPage?.name || 'page') : 'Use this ' + (drawerTarget === 'nav' ? 'navbar' : 'footer')"
-    >
-      <img [src]="snippetThumbUrl(snippet.id)" alt="" class="palette-thumb" loading="lazy" decoding="async" />
-      <span class="palette-type" *ngIf="snippet.type">
-        {{ snippet.type }}
-        <span class="palette-add">{{ drawerTarget === 'page' ? '+ Add' : 'Use' }}</span>
-      </span>
-      <span
-        class="palette-star"
-        [class.on]="isFavorite(snippet.id)"
-        (click)="toggleFavorite(snippet.id, $event)"
-        [title]="isFavorite(snippet.id) ? 'Remove from favorites' : 'Add to favorites'"
-        role="button"
-        tabindex="0"
-        (keydown.enter)="toggleFavorite(snippet.id, $event)"
-      >{{ isFavorite(snippet.id) ? '\u2605' : '\u2606' }}</span>
-    </button>
-    <div *ngIf="filteredSnippets.length === 0" class="empty-state">
-      {{ showFavoritesOnly ? 'Nothing starred yet — tap a star on any snippet.' : 'No matching snippets' }}
-    </div>
-  </div>
-
-  <div class="palette-templates" *ngIf="paletteTab === 'templates'">
-    <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
-
-    <div class="template-mode" *ngIf="getActiveSubPageSnippets().length">
-      <span>{{ activeSubPage?.name }} already has snippets:</span>
-      <label>
-        <input type="radio" name="layoutTemplateMode" value="append" [(ngModel)]="templateMode" />
-        Add to the end
-      </label>
-      <label>
-        <input type="radio" name="layoutTemplateMode" value="replace" [(ngModel)]="templateMode" />
-        Replace them
-      </label>
-    </div>
-
-    <app-template-picker
-      #palettePicker
-      [kinds]="['partial', 'page']"
-      actionLabel="Insert"
-      (picked)="applyTemplate($event)"
-      (deleted)="deleteTemplate($event, palettePicker)"
-    ></app-template-picker>
-  </div>
-
-  <div class="palette-scratchpad" *ngIf="paletteTab === 'scratchpad'">
-    <p class="scratch-error" *ngIf="scratchError">{{ scratchError }}</p>
-
-    <div class="scratch-head">
-      <span class="scratch-count" [class.full]="scratchPadFull">
-        {{ scratchPad.length }} / {{ scratchPadLimit }}
-      </span>
-      <span class="scratch-hint">
-        Shared by every page. Put back lands on {{ activeSubPage?.name }}. Drag to reorder.
-      </span>
-    </div>
-
-    <div
-      cdkDropList
-      id="scratch-pad-list"
-      [cdkDropListData]="scratchPad"
-      (cdkDropListDropped)="scratchDrop($event)"
-      class="scratch-list"
-    >
-      <div
-        *ngFor="let snippet of scratchPad; let i = index; trackBy: trackBySnippetId"
-        cdkDrag
-        [cdkDragStartDelay]="0"
-        class="snip-row scratch-row"
-      >
-        <span class="grip" cdkDragHandle>&#8942;&#8942;</span>
-        <img [src]="snippetThumbUrl(snippet.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
-        <div class="snip-meta">
-          <div class="snip-name">{{ snippet.type || 'Snippet' }}</div>
-          <div class="badges">
-            <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
-            <ng-container *ngIf="!snippetReady(snippet)">
-              <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
-              <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
-            </ng-container>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="scratch-restore"
-          (click)="restoreSnippet(i)"
-          [title]="'Put back on ' + (activeSubPage?.name || 'this page')"
-        >Put back</button>
-        <button
-          type="button"
-          class="snip-remove"
-          (click)="discardScratchSnippet(i)"
-          title="Discard — customizations can't be recovered"
-          aria-label="Discard parked snippet"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-
-      <div *ngIf="scratchPad.length === 0" class="empty-state">
-        Nothing parked yet. Use the box icon on a snippet in the page list to
-        set it aside without losing your edits.
-      </div>
-    </div>
-  </div>
-</aside>
+<div class="scrim" [class.show]="showFinalize" (click)="closeFinalize()"></div>
 
 <!-- Finalize drawer -->
 <aside class="drawer finalize-drawer" [class.show]="showFinalize" [attr.aria-hidden]="!showFinalize" aria-label="Finalize and hand off">

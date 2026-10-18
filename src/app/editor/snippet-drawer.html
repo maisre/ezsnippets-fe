@@ -1,0 +1,162 @@
+<!-- Edge tab: the way in when the drawer is neither open nor pinned. -->
+<button
+  type="button"
+  class="edge-tab"
+  *ngIf="!pinned"
+  [class.away]="visible"
+  (mouseenter)="onEdgeEnter()"
+  (mouseleave)="onEdgeLeave()"
+  (click)="onEdgeClick()"
+  aria-label="Open the snippet library"
+  [attr.aria-expanded]="visible"
+  data-drawer-trigger
+>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+  <span>Snippets</span>
+</button>
+
+<aside
+  class="drawer palette-drawer"
+  [class.show]="visible"
+  [class.pinned]="pinned"
+  [attr.aria-hidden]="!visible"
+  [attr.aria-label]="title"
+  (mouseenter)="onDrawerEnter()"
+  (mouseleave)="onDrawerLeave()"
+>
+  <div class="drawer-head">
+    <div class="drawer-titles">
+      <h3>{{ title }}</h3>
+      <span class="drawer-sub">{{ subtitle }}</span>
+    </div>
+    <button
+      type="button"
+      class="pin"
+      [class.on]="pinned"
+      (click)="togglePin()"
+      [title]="pinned ? 'Unpin — slide away when not in use' : 'Pin open beside the preview'"
+      [attr.aria-pressed]="pinned"
+      aria-label="Pin the snippet library"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z"/></svg>
+    </button>
+    <button type="button" class="close" *ngIf="!pinned" (click)="close()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="tabs" *ngIf="showTabs">
+    <button type="button" [class.active]="tab === 'snippets'" (click)="setTab('snippets')">Snippets</button>
+    <button type="button" [class.active]="tab === 'templates'" (click)="setTab('templates')">Templates</button>
+    <button type="button" [class.active]="tab === 'scratchpad'" (click)="setTab('scratchpad')">
+      Scratch pad
+      <span class="tab-count" *ngIf="scratchCount">{{ scratchCount }}</span>
+    </button>
+  </div>
+
+  <ng-container *ngIf="tab === 'snippets' || !showTabs">
+    <div class="drawer-filters" *ngIf="filters.types.length || filters.tags.length">
+      <div class="filter-group" *ngIf="filters.types.length && !lockedType">
+        <label>Type</label>
+        <div class="filter-chips">
+          <button
+            *ngFor="let type of filters.types"
+            class="filter-chip"
+            [class.active]="activeTypeFilter === type"
+            (click)="setTypeFilter(type)"
+          >{{ type }}</button>
+        </div>
+      </div>
+      <div class="filter-group" *ngIf="filters.tags.length">
+        <label>Tags</label>
+        <div class="filter-chips">
+          <button
+            *ngFor="let tag of filters.tags"
+            class="filter-chip"
+            [class.active]="activeTagFilter === tag"
+            (click)="setTagFilter(tag)"
+          >{{ tag }}</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Starred</label>
+        <div class="filter-chips">
+          <button
+            class="filter-chip star-chip"
+            [class.active]="showFavoritesOnly"
+            (click)="toggleFavoritesFilter()"
+            title="Show only snippets your team has starred"
+          >
+            <span class="star-glyph">&#9733;</span>
+            Favorites
+            <span class="tab-count" *ngIf="favoriteIds.size">{{ favoriteIds.size }}</span>
+          </button>
+        </div>
+      </div>
+      <button
+        *ngIf="(activeTypeFilter && !lockedType) || activeTagFilter || showFavoritesOnly"
+        class="clear-filters"
+        (click)="clearFilters()"
+      >Clear filters</button>
+    </div>
+
+    <p class="scratch-error drawer-error" *ngIf="favoritesError">{{ favoritesError }}</p>
+
+    <div
+      class="palette-grid"
+      cdkDropList
+      [id]="paletteId"
+      [cdkDropListData]="filtered"
+      [cdkDropListConnectedTo]="connectedTo"
+      [cdkDropListEnterPredicate]="noEntry"
+      cdkDropListSortingDisabled
+    >
+      <button
+        *ngFor="let snippet of filtered; trackBy: trackById"
+        type="button"
+        class="palette-item"
+        cdkDrag
+        [cdkDragData]="snippet"
+        (cdkDragStarted)="onDragStarted()"
+        (cdkDragEnded)="onDragEnded()"
+        (click)="picked.emit(snippet)"
+      >
+        <img [src]="snippetThumbUrl(snippet.id)" alt="" class="palette-thumb" loading="lazy" decoding="async" />
+        <span class="palette-type" *ngIf="snippet.type">
+          {{ snippet.type }}
+          <span class="palette-add">{{ addLabel }}</span>
+        </span>
+        <span
+          class="palette-star"
+          [class.on]="isFavorite(snippet.id)"
+          (click)="toggleFavorite(snippet.id, $event)"
+          [title]="isFavorite(snippet.id) ? 'Remove from favorites' : 'Add to favorites'"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="toggleFavorite(snippet.id, $event)"
+        >{{ isFavorite(snippet.id) ? '★' : '☆' }}</span>
+
+        <!-- What follows the cursor: a compact row, the shape it takes once dropped. -->
+        <div *cdkDragPreview class="ez-drag-preview">
+          <img [src]="snippetThumbUrl(snippet.id)" alt="" />
+          <span>{{ snippet.type || 'Snippet' }}</span>
+        </div>
+        <!-- Stays in the tile's place in the library (a copy, not a move), and
+             becomes the "drops here" marker inside a target list. -->
+        <div *cdkDragPlaceholder class="ez-drag-placeholder">
+          <img [src]="snippetThumbUrl(snippet.id)" alt="" />
+        </div>
+      </button>
+      <div *ngIf="filtered.length === 0" class="empty-state">
+        {{ showFavoritesOnly ? 'Nothing starred yet — tap a star on any snippet.' : 'No matching snippets' }}
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="drawer-pane" [hidden]="!showTabs || tab !== 'templates'">
+    <ng-content select="[drawerTemplates]"></ng-content>
+  </div>
+  <div class="drawer-pane" [hidden]="!showTabs || tab !== 'scratchpad'">
+    <ng-content select="[drawerScratch]"></ng-content>
+  </div>
+</aside>

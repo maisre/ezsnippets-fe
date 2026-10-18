@@ -5,12 +5,12 @@ import {
   inject,
   Injector,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DragDropModule, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { concat, defer } from 'rxjs';
 import { LayoutsService } from '../layouts.service';
 import { TemplatesService } from '../templates.service';
@@ -21,6 +21,8 @@ import { OrgsService } from '../orgs.service';
 import { TemplatePicker } from '../template-picker/template-picker';
 import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
+import { SnippetDrawer, PALETTE_LIST_ID } from '../editor/snippet-drawer';
+import { EditorPreview } from '../editor/editor-preview';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
@@ -81,11 +83,18 @@ function snippetAbstract(snippet: SnippetOverride) {
     OverflowMenu,
     CdkMenu,
     CdkMenuItem,
+    SnippetDrawer,
+    EditorPreview,
   ],
   templateUrl: './layout-edit.html',
-  // The editor chrome (top bar, cards, preview, drawers) mirrors the page
-  // editor's stylesheet; the site-structure rail is layout-only.
-  styleUrls: ['./layout-edit.css', './layout-edit-structure.css'],
+  // Shared with the page editor (src/app/editor/); the site-structure rail is
+  // layout-only.
+  styleUrls: [
+    '../editor/editor-tokens.css',
+    '../editor/editor-base.css',
+    '../editor/editor-layout.css',
+    './layout-edit-structure.css',
+  ],
 })
 export class LayoutEdit implements OnInit {
   private route = inject(ActivatedRoute);
@@ -109,7 +118,6 @@ export class LayoutEdit implements OnInit {
   }
 
   private snippetsService = inject(SnippetsService);
-  private sanitizer = inject(DomSanitizer);
   private injector = inject(Injector);
 
   layout: Layout | null = null;
@@ -119,16 +127,15 @@ export class LayoutEdit implements OnInit {
   navbarSnippets: SnippetOverride[] = [];
   footerSnippets: SnippetOverride[] = [];
   availableSnippets: SnippetOverride[] = [];
-  filteredSnippets: SnippetOverride[] = [];
   activeSubPageIndex = 0;
   viewUrl = runtimeConfig.viewUrl;
   // Bound in the template for every snippet thumbnail.
   snippetThumbUrl = snippetThumbUrl;
   customizing = false;
 
+  // Library filter options, handed to the snippet drawer (which owns the
+  // filtering and starring).
   filters: SnippetFilters = { types: [], tags: [] };
-  activeTypeFilter = '';
-  activeTagFilter = '';
 
   // Editable name/siteName/description, seeded from the loaded layout. Kept
   // separate from `layout` so Cancel can discard edits and `detailsDirty` can
@@ -148,20 +155,21 @@ export class LayoutEdit implements OnInit {
   // Layout settings live in a collapsible card opened from the action bar.
   showDetails = false;
 
-  // Live preview (right pane) — an iframe of the public rendered layout, opened
-  // on the subpage that's open in the rail, with ez-view's own page switcher
-  // hidden (the rail does that job). The version counter forces a reload after
-  // every edit without touching the cross-origin frame.
-  safePreviewUrl: SafeResourceUrl | null = null;
-  previewDevice: 'desktop' | 'mobile' = 'desktop';
-  private previewVersion = 0;
+  // Live preview (right pane): the public rendered layout, opened on the
+  // subpage that's open in the rail, with ez-view's own page switcher hidden
+  // (the rail does that job). Bumping the version reloads it.
+  previewVersion = 0;
 
-  // Add-snippet drawer: snippets / templates / scratch pad, like the page
-  // editor. `drawerTarget` says where a picked snippet lands — the navbar and
-  // footer slots replace, a subpage appends.
-  showPalette = false;
-  paletteTab: 'snippets' | 'templates' | 'scratchpad' = 'snippets';
+  // The snippet library (snippets / templates / scratch pad) in the shared
+  // drawer: an edge tab that slides in on hover, or pinned beside the preview.
+  // `drawerTarget` says where a clicked snippet lands — the navbar and footer
+  // slots replace, the open subpage appends. Dragging goes wherever it's
+  // dropped.
+  @ViewChild(SnippetDrawer) drawer?: SnippetDrawer;
+  drawerPinned = false;
   drawerTarget: DrawerTarget = 'page';
+  // The preview is in its own window, so the structure gets the room.
+  previewPoppedOut = false;
 
   // Inline subpage rename. Null when no row is being renamed.
   renamingIndex: number | null = null;
@@ -195,17 +203,15 @@ export class LayoutEdit implements OnInit {
   }
 
   // --- Live preview ---
-  refreshPreview() {
-    if (!this.layoutId) return;
-    this.previewVersion += 1;
-    this.safePreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+  get previewSrc(): string {
+    return (
       `${this.viewUrl}/view/layout/${this.layoutId}` +
-        `?chrome=false&subpage=${this.activeSubPageIndex}&_=${this.previewVersion}`,
+      `?chrome=false&subpage=${this.activeSubPageIndex}`
     );
   }
 
-  setDevice(device: 'desktop' | 'mobile') {
-    this.previewDevice = device;
+  refreshPreview() {
+    this.previewVersion += 1;
   }
 
   // --- Action bar: preview link ---
@@ -254,38 +260,29 @@ export class LayoutEdit implements OnInit {
   }
   @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.showPalette) this.closePalette();
     if (this.showFinalize) this.closeFinalize();
   }
 
-  // --- Add-snippet drawer ---
+  // --- Snippet library drawer ---
   /**
-   * Open the drawer aimed at a slot. The navbar and footer pre-filter the
-   * library to their type; a subpage clears a type filter left over from them
-   * but keeps anything else the user picked.
+   * Open the drawer aimed at a slot. For the navbar and footer it shows only
+   * their snippet type (see drawerLockedType).
    */
   openPalette(target: DrawerTarget, tab: 'snippets' | 'templates' | 'scratchpad' = 'snippets') {
     this.drawerTarget = target;
-    this.paletteTab = target === 'page' ? tab : 'snippets';
     this.templateError = null;
     this.scratchError = null;
-    if (target === 'nav') this.activeTypeFilter = NAV_TYPE;
-    else if (target === 'footer') this.activeTypeFilter = FOOTER_TYPE;
-    else if (this.activeTypeFilter === NAV_TYPE || this.activeTypeFilter === FOOTER_TYPE) {
-      this.activeTypeFilter = '';
-    }
-    this.applyFilters();
-    this.showPalette = true;
+    this.drawer?.open({ tab: target === 'page' ? tab : 'snippets' });
   }
 
-  closePalette() {
-    this.showPalette = false;
+  /** The navbar takes header snippets and the footer footer snippets, only. */
+  get drawerLockedType(): string | null {
+    return this.drawerTarget === 'nav' ? NAV_TYPE : this.drawerTarget === 'footer' ? FOOTER_TYPE : null;
   }
 
-  setPaletteTab(tab: 'snippets' | 'templates' | 'scratchpad') {
-    this.paletteTab = tab;
-    this.templateError = null;
-    this.scratchError = null;
+  /** Any close (or a hover-opened drawer sliding away) re-aims it at the page. */
+  onDrawerClosed() {
+    this.drawerTarget = 'page';
   }
 
   get drawerTitle(): string {
@@ -301,7 +298,7 @@ export class LayoutEdit implements OnInit {
 
   get drawerSub(): string {
     return this.drawerTarget === 'page'
-      ? 'Click a snippet to add it to the end of the page'
+      ? 'Click to add to the end, or drag onto any page'
       : 'Click a snippet to use it on every page';
   }
 
@@ -309,10 +306,10 @@ export class LayoutEdit implements OnInit {
   pickSnippet(snippet: SnippetOverride) {
     if (this.drawerTarget === 'nav') {
       this.navbarSnippets = [{ ...snippet }];
-      this.closePalette();
+      this.drawer?.close();
     } else if (this.drawerTarget === 'footer') {
       this.footerSnippets = [{ ...snippet }];
-      this.closePalette();
+      this.drawer?.close();
     } else {
       const page = this.activeSubPage;
       if (!page) return;
@@ -436,7 +433,6 @@ export class LayoutEdit implements OnInit {
         );
         this.seedDetails();
         this.loadAvailableSnippets();
-        if (!this.safePreviewUrl) this.refreshPreview();
       },
       error: (error) => {
         console.error('Error loading layout:', error);
@@ -447,11 +443,9 @@ export class LayoutEdit implements OnInit {
   }
 
   loadAvailableSnippets() {
-    this.loadFavorites();
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
-        this.applyFilters();
         this.loadLayoutSnippets();
       },
       error: (error) => {
@@ -552,58 +546,6 @@ export class LayoutEdit implements OnInit {
       });
   }
 
-  // --- Favorites -----------------------------------------------------------
-  //
-  // Org-wide, and a view of the library rather than a separate collection —
-  // hence a filter chip beside type and tags.
-  favoriteIds = new Set<string>();
-  showFavoritesOnly = false;
-
-  private loadFavorites() {
-    this.orgsService.listFavorites().subscribe({
-      next: ({ favorites }) => {
-        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
-        this.applyFilters();
-      },
-      error: () => {},
-    });
-  }
-
-  isFavorite(snippetId: string): boolean {
-    return this.favoriteIds.has(snippetId);
-  }
-
-  // `Event`, not `MouseEvent`: the star is keyboard-reachable too.
-  toggleFavorite(snippetId: string, event: Event) {
-    event.stopPropagation();
-    const wasFavorite = this.favoriteIds.has(snippetId);
-    if (wasFavorite) this.favoriteIds.delete(snippetId);
-    else this.favoriteIds.add(snippetId);
-    this.applyFilters();
-
-    const request = wasFavorite
-      ? this.orgsService.removeFavorite(snippetId)
-      : this.orgsService.addFavorite(snippetId);
-
-    request.subscribe({
-      next: ({ favorites }) => {
-        this.favoriteIds = new Set(favorites.map((f) => f.snippetId));
-        this.applyFilters();
-      },
-      error: (err) => {
-        if (wasFavorite) this.favoriteIds.add(snippetId);
-        else this.favoriteIds.delete(snippetId);
-        this.applyFilters();
-        this.scratchError = err?.error?.message ?? 'Could not update favorites.';
-      },
-    });
-  }
-
-  toggleFavoritesFilter() {
-    this.showFavoritesOnly = !this.showFavoritesOnly;
-    this.applyFilters();
-  }
-
   scratchDrop(event: CdkDragDrop<SnippetOverride[]>) {
     if (!this.layoutId || event.previousIndex === event.currentIndex) return;
     moveItemInArray(this.scratchPad, event.previousIndex, event.currentIndex);
@@ -631,7 +573,7 @@ export class LayoutEdit implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.closePalette();
+          this.drawer?.close();
           this.loadLayout();
           this.refreshPreview();
         },
@@ -750,13 +692,91 @@ export class LayoutEdit implements OnInit {
     if (index === this.activeSubPageIndex) return;
     this.activeSubPageIndex = index;
     this.cancelRename();
-    this.refreshPreview();
+    // previewSrc carries the subpage index, so the preview follows on its own.
   }
 
-  /** Reorder within the open subpage. Moving between pages goes via the scratch pad. */
-  drop(event: CdkDragDrop<SnippetOverride[]>) {
-    if (event.previousIndex === event.currentIndex) return;
-    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+  // --- Drag and drop -------------------------------------------------------
+  //
+  // Targets: the navbar and footer slots (library snippets only), the open
+  // subpage's list (insert from the library, or reorder), and every page row
+  // (drop a library snippet or one from the open page to append it there).
+
+  readonly openListId = 'subpage-list';
+  // Page rows are drop targets only; nothing is ever listed in them.
+  readonly noSnippets: SnippetOverride[] = [];
+
+  pageDropId(index: number): string {
+    return `page-drop-${index}`;
+  }
+
+  /** Where library tiles can go. */
+  get paletteTargets(): string[] {
+    return [
+      'navbar-slot',
+      'footer-slot',
+      this.openListId,
+      ...(this.layout?.subPages ?? []).map((_, i) => this.pageDropId(i)),
+    ];
+  }
+
+  /** Where the open page's snippets can go besides reordering: other pages. */
+  get otherPageTargets(): string[] {
+    return (this.layout?.subPages ?? [])
+      .map((_, i) => i)
+      .filter((i) => i !== this.activeSubPageIndex)
+      .map((i) => this.pageDropId(i));
+  }
+
+  // The navbar and footer slots take only library snippets of their own type.
+  // A wrong-type drag doesn't highlight the slot and won't drop there.
+  readonly navAccepts = (drag: CdkDrag<SnippetOverride>) =>
+    drag.dropContainer.id === PALETTE_LIST_ID && drag.data?.type === NAV_TYPE;
+  readonly footerAccepts = (drag: CdkDrag<SnippetOverride>) =>
+    drag.dropContainer.id === PALETTE_LIST_ID && drag.data?.type === FOOTER_TYPE;
+
+  /** The open subpage's list: insert from the library, or reorder. */
+  dropOnOpenPage(event: CdkDragDrop<SnippetOverride[]>) {
+    const page = this.activeSubPage;
+    if (!page) return;
+    if (event.previousContainer.id === PALETTE_LIST_ID) {
+      page.snippets.splice(event.currentIndex, 0, { ...(event.item.data as SnippetOverride) });
+    } else {
+      if (event.previousIndex === event.currentIndex) return;
+      moveItemInArray(page.snippets, event.previousIndex, event.currentIndex);
+    }
+    this.updateLayout();
+  }
+
+  /**
+   * A page row: append there. From the library that's a copy; from the open
+   * page it's a move, and the snippet keeps its AI text and images (the server
+   * merges customizations by snippet id).
+   */
+  dropOnPageRow(event: CdkDragDrop<SnippetOverride[]>, index: number) {
+    const target = this.layout?.subPages[index];
+    if (!target) return;
+    if (event.previousContainer.id === PALETTE_LIST_ID) {
+      target.snippets.push({ ...(event.item.data as SnippetOverride) });
+    } else if (event.previousContainer.id === this.openListId && index !== this.activeSubPageIndex) {
+      const source = this.activeSubPage;
+      if (!source) return;
+      const [moved] = source.snippets.splice(event.previousIndex, 1);
+      if (!moved) return;
+      target.snippets.push(moved);
+    } else {
+      return;
+    }
+    this.updateLayout();
+  }
+
+  /** Navbar/footer slot: a library snippet of its type replaces what's there. */
+  dropOnSlot(event: CdkDragDrop<SnippetOverride[]>, slot: 'nav' | 'footer') {
+    if (event.previousContainer.id !== PALETTE_LIST_ID) return;
+    const snippet = { ...(event.item.data as SnippetOverride) };
+    // The enter predicates already refuse other types; this is the backstop.
+    if (snippet.type !== (slot === 'nav' ? NAV_TYPE : FOOTER_TYPE)) return;
+    if (slot === 'nav') this.navbarSnippets = [snippet];
+    else this.footerSnippets = [snippet];
     this.updateLayout();
   }
 
@@ -899,32 +919,6 @@ export class LayoutEdit implements OnInit {
         this.subPageError = 'Could not save that change. Please refresh and try again.';
       },
     });
-  }
-
-  applyFilters() {
-    this.filteredSnippets = this.availableSnippets.filter((s) => {
-      if (this.showFavoritesOnly && !this.favoriteIds.has(s.id)) return false;
-      if (this.activeTypeFilter && s.type !== this.activeTypeFilter) return false;
-      if (this.activeTagFilter && !(s.tags || []).includes(this.activeTagFilter)) return false;
-      return true;
-    });
-  }
-
-  setTypeFilter(type: string) {
-    this.activeTypeFilter = this.activeTypeFilter === type ? '' : type;
-    this.applyFilters();
-  }
-
-  setTagFilter(tag: string) {
-    this.activeTagFilter = this.activeTagFilter === tag ? '' : tag;
-    this.applyFilters();
-  }
-
-  clearFilters() {
-    this.activeTypeFilter = '';
-    this.activeTagFilter = '';
-    this.showFavoritesOnly = false;
-    this.applyFilters();
   }
 
   // The customizable snippets in a layout are the subpage snippets (across all

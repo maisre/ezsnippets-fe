@@ -1,0 +1,441 @@
+/* Editor page layout shared by the page and layout editors: action bar,
+   two-column body, cards, settings, AI content, finalize drawer content. */
+
+.page-edit-container,
+.layout-edit-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px 32px;
+  color: var(--ink);
+}
+
+/* ===== Action bar ===== */
+.edit-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 4px;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: saturate(1.3) blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.crumb-back {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.crumb-back:hover { color: var(--accent); }
+.crumb .sep { color: var(--ink-3); }
+.crumb-title {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crumb-by {
+  color: var(--ink-3);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.crumb-rename {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.crumb-rename svg { width: 15px; height: 15px; }
+.crumb-rename:hover,
+.crumb-rename.active { background: var(--surface-3); color: var(--accent); }
+
+.topbar-spacer { flex: 1; }
+
+.ready-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+}
+.ready-pill .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.ready-pill.attention {
+  color: var(--warn);
+  background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 22%, transparent);
+}
+.ready-pill.attention .dot { background: var(--warn); }
+.ready-pill.ready {
+  color: var(--good);
+  background: var(--good-soft);
+  border-color: color-mix(in srgb, var(--good) 22%, transparent);
+}
+.ready-pill.ready .dot { background: var(--good); }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+
+/* ===== Layout ===== */
+.edit-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 16px;
+}
+.edit-rail { display: flex; flex-direction: column; gap: 14px; }
+.edit-main { position: sticky; top: 66px; }
+
+/* ===== Cards ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 0;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-2);
+}
+.card-head h3 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.card-tag {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.card-count,
+.card-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.card-pad { padding: 14px; }
+
+/* ===== Settings form ===== */
+.page-info,
+.layout-info { background: var(--surface); padding: 0; }
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
+}
+.detail-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.detail-field input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.detail-field input:focus,
+.direction-field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* ===== AI content ===== */
+.detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 13px 14px;
+}
+.ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.ai-status { font-size: 0.9rem; }
+.ai-status strong { font-weight: 650; }
+.ai-missing { color: var(--warn); font-weight: 600; }
+.ai-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.customize-button {
+  padding: 7px 13px;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.customize-button:hover:not(:disabled) { background: var(--accent-press); border-color: var(--accent-press); }
+.customize-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.customize-button.images { background: var(--img); border-color: var(--img); }
+.customize-button.images:hover:not(:disabled) { background: var(--img-press); border-color: var(--img-press); }
+.customize-button.secondary {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.customize-button.secondary:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+
+.image-direction { padding: 0 14px 13px; }
+.direction-toggle {
+  background: none;
+  border: none;
+  padding: 0.15rem 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.direction-toggle:hover { color: var(--ink-2); }
+.direction-field { margin-top: 0.4rem; }
+.direction-field input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.direction-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+.form-error.inset { padding: 0 14px 12px; margin: 0; }
+
+
+.edit-loading {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 18px;
+  color: var(--ink-2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+
+.drawer-body { padding: 16px 17px; overflow: auto; flex: 1; }
+
+/* Checklist */
+.check {
+  display: flex;
+  gap: 11px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--line-2);
+  align-items: flex-start;
+}
+.check:last-of-type { border-bottom: none; }
+.ck-ic {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 1px;
+}
+.ck-ic.ok { background: var(--good-soft); color: var(--good); }
+.ck-ic.warn { background: var(--warn-soft); color: var(--warn); }
+.ck-body { flex: 1; }
+.ck-body .t { font-weight: 640; }
+.ck-body .d { color: var(--ink-2); font-size: 12.5px; margin-top: 1px; }
+.check .btn { margin-top: 1px; }
+
+.finalize-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line-2);
+}
+.finalize-note { font-size: 12.5px; color: var(--warn); font-weight: 600; }
+.finalize-note.ok { color: var(--good); }
+.finalize-foot .btn.primary { justify-content: center; padding: 11px; }
+
+/* Licensing */
+.lic-intro { color: var(--ink-2); font-size: 13px; margin: 0 0 15px; }
+.lic-intro b { color: var(--ink); }
+.lic-loading { color: var(--ink-2); font-size: 13px; padding: 8px 0; }
+.lic-collection {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-3);
+}
+.lic-all { display: inline-flex; margin-bottom: 6px; }
+.lic-hint { color: var(--ink-3); font-size: 12px; margin: 8px 0 0; }
+.lic {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.lic-thumb {
+  width: 66px;
+  height: 48px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+}
+.lic-meta { flex: 1; min-width: 0; }
+.lic-id { font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.lic-uses { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.lic-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-2);
+}
+.lic-total { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+
+
+/* ===== Snippet library pinned =====
+   The drawer docks as a third column, so the editor widens to make room and
+   the preview (scaled from desktop width) takes what's left. */
+.page-edit-container.drawer-pinned,
+.layout-edit-container.drawer-pinned { max-width: 1680px; }
+.drawer-pinned .edit-body {
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(300px, 380px);
+}
+
+/* ===== Wide view (preview popped out) =====
+   The structure takes the main column; settings, AI content and the
+   "preview is in its own window" note stack in a side column. The rail's
+   cards become grid items directly (display: contents) so they can be split
+   across the two columns. */
+.edit-body.wide {
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr;
+}
+.drawer-pinned .edit-body.wide {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr) minmax(300px, 380px);
+}
+.edit-body.wide .edit-rail { display: contents; }
+.edit-body.wide .edit-rail > *,
+.edit-body.wide .edit-main { grid-column: 1; }
+.edit-body.wide .edit-main { position: static; }
+/* Same shape as the rule above (Angular scopes every compound selector, so
+   specificity has to match part for part) — and later, so it wins. */
+.edit-body.wide .edit-rail > .structure { grid-column: 2; grid-row: 1 / -1; align-self: start; }
+
+/* Each snippet shows as a large screenshot under its name, so the structure
+   reads as a rough wireframe of the page — easier to aim a drop at. */
+.edit-body.wide .structure .snip-row {
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line-2);
+  margin-bottom: 8px;
+  background: var(--surface);
+}
+.edit-body.wide .structure .snip-row .snip-thumb {
+  order: 10;
+  flex: 1 0 100%;
+  width: 100%;
+  height: auto;
+  max-height: 340px;
+  margin-top: 8px;
+}
+.edit-body.wide .structure .snip-row .badges { display: inline-flex; margin: 0 0 0 10px; }
+.edit-body.wide .structure .snip-row .snip-meta { display: flex; align-items: center; flex-wrap: wrap; }
+.edit-body.wide .structure .snip-row .snip-remove,
+.edit-body.wide .structure .snip-row .snip-park { opacity: 1; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .edit-body,
+  .drawer-pinned .edit-body,
+  .edit-body.wide,
+  .drawer-pinned .edit-body.wide { grid-template-columns: 1fr; grid-template-rows: none; }
+  .edit-body.wide .edit-rail > *,
+  .edit-body.wide .edit-main,
+  .edit-body.wide .edit-rail > .structure { grid-column: auto; grid-row: auto; }
+  .edit-main { position: static; }
+}
+
+/* Live preview of the custom-domain URL under the slug field. */
+.detail-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+  word-break: break-all;
+}

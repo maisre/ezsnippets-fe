@@ -1,0 +1,59 @@
+<!-- Popped out: a one-line note in place of the frame. -->
+<div class="popped-note" *ngIf="poppedOut">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="13" height="11" rx="1.5"/><path d="M8 19h12a1 1 0 0 0 1-1V9"/></svg>
+  <div class="popped-text">
+    <strong>{{ windowLive ? 'Preview is in its own window' : 'Preview window is closed' }}</strong>
+    <span>{{ windowLive ? 'It follows your edits' + (label ? ' · ' + label : '') : 'Open it to keep it beside the editor' }}</span>
+  </div>
+  <div class="popped-actions">
+    <button type="button" class="btn sm" *ngIf="!windowLive" (click)="popOut()">Open window</button>
+    <button type="button" class="btn sm" *ngIf="windowLive" (click)="focusWindow()">Show window</button>
+    <button type="button" class="btn ghost sm" (click)="bringBack()">Show here</button>
+  </div>
+</div>
+
+<div class="preview-head" [hidden]="poppedOut">
+  <h3>Live preview</h3>
+  <span class="preview-label" *ngIf="label">· {{ label }}</span>
+  <span class="preview-zoom" *ngIf="scale < 1" title="Shown at desktop width, scaled to fit">{{ scalePercent }}%</span>
+  <span class="preview-spacer"></span>
+  <div class="seg" role="tablist" aria-label="Preview device">
+    <button type="button" [class.active]="device === 'desktop'" (click)="setDevice('desktop')">Desktop</button>
+    <button type="button" [class.active]="device === 'mobile'" (click)="setDevice('mobile')">Mobile</button>
+  </div>
+  <button type="button" class="btn ghost sm" (click)="refresh()" title="Refresh preview" aria-label="Refresh preview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4h-4"/></svg>
+  </button>
+  <button type="button" class="btn ghost sm" (click)="popOut()" title="Pop out into its own window — for a second screen" aria-label="Pop out preview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="13" height="11" rx="1.5"/><path d="M8 19h12a1 1 0 0 0 1-1V9"/></svg>
+  </button>
+  <button type="button" class="btn ghost sm" (click)="openInNewTab()" title="Open in new tab" aria-label="Open in new tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+  </button>
+</div>
+
+<p class="popup-blocked" *ngIf="popupBlocked">
+  Your browser blocked the preview window. Allow pop-ups for this site, then try again.
+  <button type="button" class="btn ghost sm" (click)="popupBlocked = false" aria-label="Dismiss">✕</button>
+</p>
+
+<div class="stage" #stage [hidden]="poppedOut">
+  <!-- The box takes the frame's scaled size; the frame inside is laid out at
+       full width and scaled down from its top-left corner. -->
+  <div
+    class="frame-box"
+    [class.mobile]="device === 'mobile'"
+    [style.width.px]="frameWidth * scale"
+    [style.height.px]="stageHeight"
+  >
+    <iframe
+      *ngIf="safeUrl && !poppedOut"
+      [src]="safeUrl"
+      class="preview-frame"
+      [title]="frameTitle"
+      [style.width.px]="frameWidth"
+      [style.height.px]="scale ? stageHeight / scale : stageHeight"
+      [style.transform]="'scale(' + scale + ')'"
+    ></iframe>
+  </div>
+</div>
