@@ -18,6 +18,7 @@ import { runtimeConfig } from '../runtime-config';
 import { Page, Layout } from '../models';
 import { ShareLinkService } from '../share-link.service';
 import { CreatorLabelsService } from '../creator-labels.service';
+import { NewLayoutDialog } from '../new-layout-dialog/new-layout-dialog';
 
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
@@ -70,6 +71,7 @@ interface DeleteModal {
     CdkMenuItem,
     CdkMenuItemRadio,
     CdkMenuTrigger,
+    NewLayoutDialog,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -96,6 +98,9 @@ export class Dashboard implements OnInit {
   // Set when the create modal is open; null when hidden. Backing fields for its
   // form live below.
   createModal: { kind: ResourceKind } | null = null;
+  // Layouts are created through the shared "New layout" chooser (blank or a
+  // template), same as the Layouts page. The name-only modal is for pages.
+  showNewLayout = false;
   newName = '';
   newSiteName = '';
   newDescription = '';
@@ -268,7 +273,7 @@ export class Dashboard implements OnInit {
     if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (this.createModal || this.limitModal || this.deleteModal) return;
+    if (this.createModal || this.showNewLayout || this.limitModal || this.deleteModal) return;
     const input = document.querySelector<HTMLInputElement>('#page-search');
     if (!input) return;
     event.preventDefault();
@@ -353,6 +358,10 @@ export class Dashboard implements OnInit {
   openCreate(kind: ResourceKind) {
     if (this.atLimit(kind)) {
       this.showLimitModal(kind);
+      return;
+    }
+    if (kind === 'layout') {
+      this.showNewLayout = true;
       return;
     }
     this.newName = '';
