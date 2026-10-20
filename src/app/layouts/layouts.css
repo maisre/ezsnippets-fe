@@ -19,86 +19,40 @@ h2 {
   border-bottom: 2px solid #e9ecef;
 }
 
-/* Form Styling */
-form {
-  background: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-  margin-bottom: 3rem;
-  border: 1px solid #e9ecef;
+/* Heading row: title and the "New layout" button */
+.layouts-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 2rem 0 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
-form div {
-  margin-bottom: 1.5rem;
-}
-
-form div:last-of-type {
-  margin-bottom: 0;
-}
-
-/* Labels */
-label {
-  display: block;
-  font-weight: 500;
-  color: #495057;
-  margin-bottom: 0.5rem;
-  font-size: 0.95rem;
-}
-
-/* Input Fields */
-input[type='text'] {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background-color: #ffffff;
-  box-sizing: border-box;
-}
-
-input[type='text']:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
-input[type='text']::placeholder {
-  color: #6c757d;
-  font-style: italic;
-}
-
-/* Submit Button */
-button[type='submit'] {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
+.layouts-heading h2 {
+  margin: 0;
+  padding: 0;
   border: none;
-  padding: 0.875rem 2rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
 }
 
-button[type='submit']:hover:not(:disabled) {
+.new-layout-btn {
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.new-layout-btn:hover {
   background: linear-gradient(135deg, #0056b3, #004085);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-}
-
-button[type='submit']:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Layouts List Section */
-h2:last-of-type {
-  margin-top: 2rem;
 }
 
 /* List Styling */
@@ -192,7 +146,7 @@ li > text:first-child {
 
 /* Empty State */
 ul:empty::after {
-  content: 'No layouts created yet. Create your first layout above!';
+  content: 'No layouts yet. Use New layout to start your first site.';
   display: block;
   padding: 3rem 2rem;
   text-align: center;
@@ -205,10 +159,6 @@ ul:empty::after {
 @media (max-width: 768px) {
   :host {
     padding: 1rem;
-  }
-
-  form {
-    padding: 1.5rem;
   }
 
   h2 {
@@ -414,41 +364,4 @@ li {
 
 li.archived > span:first-child {
   color: #6c757d;
-}
-
-/* --- Start from a template --- */
-.template-start {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin: 1rem 0 0.5rem;
-}
-
-.template-toggle {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.template-hint {
-  font-size: 0.85rem;
-  color: #667085;
-}
-
-.template-panel {
-  border: 1px solid #e4e7ec;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  background: #fcfcfd;
-}
-
-.template-error {
-  margin: 0 0 0.75rem;
-  color: #b42318;
-  font-size: 0.9rem;
 }

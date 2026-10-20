@@ -1,0 +1,521 @@
+.nl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(16, 22, 30, 0.55);
+}
+
+.nl-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, 100%);
+  height: min(860px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(16, 22, 30, 0.28);
+  overflow: hidden;
+  outline: none;
+  animation: nl-in 0.18s ease-out;
+}
+
+@keyframes nl-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ----- header ----- */
+
+.nl-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e6e8ec;
+}
+
+.nl-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.nl-back,
+.nl-close {
+  border: none;
+  background: none;
+  font: inherit;
+  color: #475467;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.nl-back {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.nl-close {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.nl-back:hover:not(:disabled),
+.nl-close:hover {
+  background: #f1f3f5;
+  color: #1f2937;
+}
+
+.nl-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ----- step one ----- */
+
+.nl-choose {
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.nl-lede {
+  margin: 0 0 1rem;
+  color: #475467;
+  font-size: 0.95rem;
+}
+
+.nl-section-title {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.nl-status {
+  margin: 1.5rem 0 0;
+  color: #667085;
+  font-size: 0.9rem;
+}
+
+.nl-status.error {
+  color: #b42318;
+}
+
+.nl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.nl-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.nl-card:hover,
+.nl-card:focus-visible {
+  border-color: #98a2b3;
+  box-shadow: 0 8px 22px rgba(16, 22, 30, 0.12);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.nl-card:focus-visible {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.35), 0 8px 22px rgba(16, 22, 30, 0.12);
+}
+
+/*
+ * Page one of the template as a stack of its snippet thumbnails, cropped to a
+ * fixed ratio so it reads like the top of a browser window. Hover pans the
+ * stack (transform set from the component) to show the rest of the page.
+ */
+.nl-preview {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #f2f4f7;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.page-stack img {
+  display: block;
+  width: 100%;
+}
+
+.nl-chips {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 1.5rem 0.6rem 0.6rem;
+  background: linear-gradient(to top, rgba(16, 22, 30, 0.7), rgba(16, 22, 30, 0));
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.nl-card:hover .nl-chips,
+.nl-card:focus-within .nl-chips {
+  opacity: 1;
+  transform: none;
+}
+
+.nl-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nl-chip.active {
+  background: #1f2937;
+  color: #fff;
+}
+
+.nl-chip-more {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.nl-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.9rem 0.9rem;
+}
+
+.nl-card-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.nl-card-meta {
+  color: #667085;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.nl-badge {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #3538cd;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Blank is a compact strip above the grid, so templates stay above the fold. */
+.nl-blank {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  border: 2px dashed #d0d5dd;
+  border-radius: 10px;
+  background: #fafbfc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.nl-blank:hover,
+.nl-blank:focus-visible {
+  border-color: #98a2b3;
+  background: #f2f4f7;
+  outline: none;
+}
+
+.nl-blank:focus-visible {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.35);
+}
+
+.nl-blank-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.nl-blank .nl-plus {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  font-size: 1.5rem;
+}
+
+.nl-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: #eef0f3;
+  color: #475467;
+  font-size: 2rem;
+  font-weight: 300;
+}
+
+/* ----- step two ----- */
+
+.nl-configure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.nl-preview-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #f2f4f7;
+  border-right: 1px solid #e6e8ec;
+}
+
+.nl-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e6e8ec;
+  background: #fff;
+}
+
+.nl-tab {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #344054;
+  cursor: pointer;
+}
+
+.nl-tab:hover {
+  border-color: #98a2b3;
+}
+
+.nl-tab.active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
+.nl-page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem;
+  outline: none;
+}
+
+.nl-page-scroll .page-stack {
+  max-width: 640px;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(16, 22, 30, 0.12);
+}
+
+.nl-blank-pane {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 340px;
+  padding: 2rem;
+  text-align: center;
+  color: #475467;
+  line-height: 1.5;
+}
+
+.nl-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.nl-form label {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #344054;
+}
+
+.nl-form label:first-child {
+  margin-top: 0;
+}
+
+.nl-optional {
+  margin-left: 0.25rem;
+  font-weight: 400;
+  color: #98a2b3;
+}
+
+.nl-form input,
+.nl-form textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.nl-form input:focus,
+.nl-form textarea:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.18);
+}
+
+.nl-template-note {
+  margin: 0.75rem 0 0;
+  color: #667085;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.nl-error {
+  margin: 0.5rem 0 0;
+  color: #b42318;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.nl-primary {
+  margin-top: 1.25rem;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nl-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.nl-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nl-delete {
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+
+.nl-link-danger {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #c0392b;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.nl-link-danger:hover {
+  text-decoration: underline;
+}
+
+.nl-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #344054;
+}
+
+.nl-confirm span {
+  flex-basis: 100%;
+}
+
+.nl-danger,
+.nl-secondary {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.nl-danger {
+  border: none;
+  background: #c0392b;
+  color: #fff;
+}
+
+.nl-secondary {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #344054;
+}
+
+/* ----- small screens: full-screen sheet, preview above the form ----- */
+
+@media (max-width: 760px) {
+  .nl-overlay {
+    padding: 0;
+  }
+
+  .nl-dialog {
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .nl-configure {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .nl-preview-pane {
+    min-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid #e6e8ec;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nl-dialog,
+  .nl-card,
+  .nl-chips {
+    animation: none;
+    transition: none;
+  }
+}
