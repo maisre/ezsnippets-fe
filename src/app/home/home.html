@@ -15,6 +15,7 @@
       things and will be open for sign-ups very soon — check back shortly.
     </p>
   </div>
+  <ng-container *ngTemplateOutlet="heroLoop" />
 </section>
 } @else {
 <section class="hero">
@@ -29,6 +30,47 @@
       <a routerLink="/pricing" class="btn btn-secondary">View Pricing</a>
     </div>
   </div>
+  <ng-container *ngTemplateOutlet="heroLoop" />
+</section>
+}
+
+<!-- Short silent loop under the hero copy. Started from home.ts, not `autoplay`. -->
+<ng-template #heroLoop>
+  @if (heroAvailable()) {
+  <div class="hero-media">
+    <video
+      #heroVideo
+      class="video-frame"
+      [src]="heroLoopUrl"
+      [poster]="heroPosterUrl"
+      [controls]="reducedMotion"
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label="EZ Snippet editor: dragging snippets into a page"
+      (error)="heroAvailable.set(false)"
+    ></video>
+  </div>
+  }
+</ng-template>
+
+@if (demoAvailable()) {
+<section class="demo">
+  <h2>See it in action</h2>
+  <p class="demo-sub">
+    A full walkthrough: start a layout, build pages from snippets, customize
+    with AI, and export the finished site.
+  </p>
+  <video
+    class="video-frame"
+    [src]="demoUrl"
+    [poster]="demoPosterUrl"
+    controls
+    playsinline
+    preload="metadata"
+    (error)="demoAvailable.set(false)"
+  ></video>
 </section>
 }
 
