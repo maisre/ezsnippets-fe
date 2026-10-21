@@ -7,7 +7,7 @@ import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { LayoutsService } from '../layouts.service';
 import { PlansService, PlanUsage } from '../plans.service';
 import { Layout } from '../models';
-import { NewLayoutDialog } from '../new-layout-dialog/new-layout-dialog';
+import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-template-dialog';
 import { CreatorLabelsService } from '../creator-labels.service';
 
 @Component({
@@ -19,7 +19,7 @@ import { CreatorLabelsService } from '../creator-labels.service';
     OverflowMenu,
     CdkMenu,
     CdkMenuItem,
-    NewLayoutDialog,
+    NewFromTemplateDialog,
   ],
   templateUrl: './layouts.html',
   styleUrl: './layouts.css',

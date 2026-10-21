@@ -18,7 +18,7 @@ import { runtimeConfig } from '../runtime-config';
 import { Page, Layout } from '../models';
 import { ShareLinkService } from '../share-link.service';
 import { CreatorLabelsService } from '../creator-labels.service';
-import { NewLayoutDialog } from '../new-layout-dialog/new-layout-dialog';
+import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-template-dialog';
 
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
@@ -71,7 +71,7 @@ interface DeleteModal {
     CdkMenuItem,
     CdkMenuItemRadio,
     CdkMenuTrigger,
-    NewLayoutDialog,
+    NewFromTemplateDialog,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -95,17 +95,10 @@ export class Dashboard implements OnInit {
   // drives the "upgrade" modal. Null when hidden.
   limitModal: LimitModal | null = null;
 
-  // Set when the create modal is open; null when hidden. Backing fields for its
-  // form live below.
-  createModal: { kind: ResourceKind } | null = null;
-  // Layouts are created through the shared "New layout" chooser (blank or a
-  // template), same as the Layouts page. The name-only modal is for pages.
-  showNewLayout = false;
-  newName = '';
-  newSiteName = '';
-  newDescription = '';
-  creating = false;
-  createError = '';
+  // Which "New page" / "New layout" chooser is open (the same dialog the Pages
+  // and Layouts lists use); null when hidden. It creates the item and opens
+  // the editor itself.
+  newKind: ResourceKind | null = null;
 
   // Set when the user picks Delete from an overflow menu; null when hidden.
   deleteModal: DeleteModal | null = null;
@@ -273,7 +266,7 @@ export class Dashboard implements OnInit {
     if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (this.createModal || this.showNewLayout || this.limitModal || this.deleteModal) return;
+    if (this.newKind || this.limitModal || this.deleteModal) return;
     const input = document.querySelector<HTMLInputElement>('#page-search');
     if (!input) return;
     event.preventDefault();
@@ -354,76 +347,14 @@ export class Dashboard implements OnInit {
 
   // Both the header "+ New" button and the create tile call this. If the user
   // is at their limit we divert to the upgrade modal instead of opening the
-  // create form (consistent with duplicate).
+  // chooser (consistent with duplicate). The dialog's own 403 handling is the
+  // backstop if usage was stale.
   openCreate(kind: ResourceKind) {
     if (this.atLimit(kind)) {
       this.showLimitModal(kind);
       return;
     }
-    if (kind === 'layout') {
-      this.showNewLayout = true;
-      return;
-    }
-    this.newName = '';
-    this.newSiteName = '';
-    this.newDescription = '';
-    this.createError = '';
-    this.createModal = { kind };
-  }
-
-  closeCreateModal() {
-    this.createModal = null;
-  }
-
-  submitCreate() {
-    if (!this.createModal || !this.newName.trim() || this.creating) return;
-    const kind = this.createModal.kind;
-    this.creating = true;
-    this.createError = '';
-
-    const base = {
-      name: this.newName.trim(),
-      siteName: this.newSiteName.trim() || undefined,
-      description: this.newDescription.trim() || undefined,
-    };
-
-    if (kind === 'page') {
-      this.pagesService.createPage({ ...base, snippets: [] }).subscribe({
-        next: (created) => {
-          this.pages.push(created);
-          this.afterCreate();
-        },
-        error: (error) => this.onCreateError(error, 'page'),
-      });
-    } else {
-      this.layoutsService.createLayout(base).subscribe({
-        next: (created) => {
-          this.layouts.push(created);
-          this.afterCreate();
-        },
-        error: (error) => this.onCreateError(error, 'layout'),
-      });
-    }
-  }
-
-  private afterCreate() {
-    this.creating = false;
-    this.createModal = null;
-    this.loadUsage();
-  }
-
-  // A 403 means the server rejected on the plan limit (client usage was stale);
-  // swap the create modal for the upgrade modal. Anything else is a transient
-  // error shown inline so the user can retry.
-  private onCreateError(error: any, kind: ResourceKind) {
-    this.creating = false;
-    if (error?.status === 403) {
-      this.createModal = null;
-      this.showLimitModal(kind);
-    } else {
-      this.createError = 'Something went wrong. Please try again.';
-      console.error('Error creating:', error);
-    }
+    this.newKind = kind;
   }
 
   // Falls back to the placeholder if a thumbnail URL is set but fails to load

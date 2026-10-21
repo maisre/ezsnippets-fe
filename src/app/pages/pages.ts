@@ -8,9 +8,8 @@ import { PagesService } from '../pages.service';
 import { PlansService, PlanUsage } from '../plans.service';
 import { AuthService } from '../auth.service';
 import { runtimeConfig } from '../runtime-config';
-import { Page, Template } from '../models';
-import { TemplatePicker } from '../template-picker/template-picker';
-import { TemplatesService } from '../templates.service';
+import { Page } from '../models';
+import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-template-dialog';
 import { ShareLinkService } from '../share-link.service';
 import { CreatorLabelsService } from '../creator-labels.service';
 
@@ -23,7 +22,7 @@ import { CreatorLabelsService } from '../creator-labels.service';
     OverflowMenu,
     CdkMenu,
     CdkMenuItem,
-    TemplatePicker,
+    NewFromTemplateDialog,
   ],
   templateUrl: './pages.html',
   styleUrl: './pages.css',
@@ -33,64 +32,21 @@ export class Pages implements OnInit {
   private shareLinks = inject(ShareLinkService);
   private plansService = inject(PlansService);
   private authService = inject(AuthService);
-  private templatesService = inject(TemplatesService);
   private router = inject(Router);
   readonly creators = inject(CreatorLabelsService);
   pages: Page[] = [];
   usage: PlanUsage | null = null;
 
-  newPage = {
-    name: '',
-    siteName: '',
-    description: '',
-  };
+  // "New page" opens the shared chooser (blank, the org's page templates, the
+  // built-in ones) that creates the page and drops the user into the editor.
+  showNewPage = false;
 
-  // Start-from-template drawer. Closed by default so the blank-page form stays
-  // the thing you land on — picking a template is a deliberate act.
-  showTemplates = false;
-  templateError: string | null = null;
-
-  toggleTemplates() {
-    this.showTemplates = !this.showTemplates;
-    this.templateError = null;
-  }
-
-  /**
-   * Create a page from a template. The name typed into the blank-page form is
-   * reused if there is one, so filling the form and then noticing the template
-   * gallery doesn't throw the name away.
-   */
-  useTemplate(template: Template) {
+  openNewPage() {
     if (!this.canCreate) {
       this.showLimitModal = true;
       return;
     }
-
-    this.templatesService
-      .createPageFrom(template.id, {
-        name: this.newPage.name.trim() || undefined,
-        siteName: this.newPage.siteName.trim() || undefined,
-        description: this.newPage.description.trim() || undefined,
-      })
-      .subscribe({
-        next: (page) => {
-          this.newPage = { name: '', siteName: '', description: '' };
-          this.showTemplates = false;
-          this.loadUsage();
-          this.router.navigate(['/p/edit', page.id]);
-        },
-        error: (err) => {
-          this.templateError =
-            err?.error?.message ?? 'Could not create a page from that template.';
-        },
-      });
-  }
-
-  deleteTemplate(template: Template, picker: TemplatePicker) {
-    this.templatesService.deleteTemplate(template.id).subscribe({
-      next: () => picker.load(),
-      error: () => (this.templateError = 'Could not delete that template.'),
-    });
+    this.showNewPage = true;
   }
 
   ngOnInit() {
@@ -139,29 +95,7 @@ export class Pages implements OnInit {
     return `${used} / ${this.usage.limits.maxPages} pages used`;
   }
 
-  createPage() {
-    if (!this.newPage.name.trim()) {
-      return;
-    }
-
-    const pageData = {
-      name: this.newPage.name.trim(),
-      siteName: this.newPage.siteName.trim() || undefined,
-      description: this.newPage.description.trim() || undefined,
-      snippets: [],
-    };
-
-    this.pagesService.createPage(pageData).subscribe({
-      next: (createdPage) => {
-        this.pages.push(createdPage);
-        this.newPage = { name: '', siteName: '', description: '' };
-        this.loadUsage();
-      },
-      error: (error) => console.error('Error creating page:', error),
-    });
-  }
-
-  // Shown when the user tries to duplicate while at their plan limit.
+  // Shown when the user tries to create or duplicate while at their plan limit.
   showLimitModal = false;
 
   // Duplicate is always clickable; if the user is at their limit we surface the

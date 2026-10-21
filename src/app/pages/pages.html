@@ -10,63 +10,10 @@
     <a *ngIf="!canCreate" routerLink="/pricing" class="upgrade-link">Upgrade</a>
   </div>
 
-  <div class="template-start">
-    <button type="button" class="template-toggle" (click)="toggleTemplates()">
-      {{ showTemplates ? 'Hide templates' : 'Start from a template' }}
-    </button>
-    <span class="template-hint" *ngIf="!showTemplates">
-      Pick a ready-made page shape instead of starting blank.
-    </span>
+  <div class="pages-heading">
+    <h2>Pages</h2>
+    <button type="button" class="new-page-btn" (click)="openNewPage()">+ New page</button>
   </div>
-
-  <div class="template-panel" *ngIf="showTemplates">
-    <p class="template-error" *ngIf="templateError">{{ templateError }}</p>
-    <app-template-picker
-      #pagePicker
-      kind="page"
-      actionLabel="Use this"
-      (picked)="useTemplate($event)"
-      (deleted)="deleteTemplate($event, pagePicker)"
-    ></app-template-picker>
-  </div>
-
-  <h2>Create New Page</h2>
-  <form (ngSubmit)="createPage()" *ngIf="canCreate">
-    <div>
-      <label for="pageName">Page Name:</label>
-      <input
-        id="pageName"
-        type="text"
-        [(ngModel)]="newPage.name"
-        name="pageName"
-        required
-        placeholder="Enter page name"
-      />
-    </div>
-    <div>
-      <label for="siteName">Site Name (optional):</label>
-      <input
-        id="siteName"
-        type="text"
-        [(ngModel)]="newPage.siteName"
-        name="siteName"
-        placeholder="Enter site name"
-      />
-    </div>
-    <div>
-      <label for="description">Description (optional):</label>
-      <input
-        id="description"
-        type="text"
-        [(ngModel)]="newPage.description"
-        name="description"
-        placeholder="Enter description"
-      />
-    </div>
-    <button type="submit" [disabled]="!newPage.name.trim()">Create Page</button>
-  </form>
-
-  <h2>Pages</h2>
   <ul>
     <li *ngFor="let page of activePages">
       <span>{{ page.name || page.id }}<small class="created-by" *ngIf="creators.labelFor(page.createdBy) as by"> · by {{ by }}</small></span>
@@ -114,7 +61,7 @@
 <div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>{{ usage?.hasPlan ? "You've reached your page limit" : 'A plan is required' }}</h3>
-    <p>{{ limitMessage }}. Upgrade your plan to duplicate more pages.</p>
+    <p>{{ limitMessage }}. Upgrade your plan or archive a page to add more.</p>
     <div class="modal-actions">
       <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
       <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
@@ -138,3 +85,5 @@
     </div>
   </div>
 </div>
+
+<app-new-from-template-dialog *ngIf="showNewPage" kind="page" (closed)="showNewPage = false" />

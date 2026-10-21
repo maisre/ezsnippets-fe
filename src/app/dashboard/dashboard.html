@@ -344,33 +344,6 @@
   </div>
 </section>
 
-<div class="modal-overlay" *ngIf="createModal" (click)="closeCreateModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>New {{ createModal.kind === 'page' ? 'Page' : 'Layout' }}</h3>
-    <form (ngSubmit)="submitCreate()">
-      <div class="field">
-        <label for="newName">Name</label>
-        <input id="newName" type="text" [(ngModel)]="newName" name="newName" required placeholder="Enter a name" />
-      </div>
-      <div class="field">
-        <label for="newSiteName">Site Name (optional)</label>
-        <input id="newSiteName" type="text" [(ngModel)]="newSiteName" name="newSiteName" placeholder="Enter site name" />
-      </div>
-      <div class="field">
-        <label for="newDescription">Description (optional)</label>
-        <input id="newDescription" type="text" [(ngModel)]="newDescription" name="newDescription" placeholder="Enter description" />
-      </div>
-      <p class="form-error" *ngIf="createError">{{ createError }}</p>
-      <div class="modal-actions">
-        <button type="button" class="modal-secondary" (click)="closeCreateModal()">Cancel</button>
-        <button type="submit" class="modal-primary" [disabled]="!newName.trim() || creating">
-          {{ creating ? 'Creating…' : 'Create' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <div class="modal-overlay" *ngIf="limitModal" (click)="closeLimitModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>You've reached your {{ limitModal.kind === 'page' ? 'page' : 'layout' }} limit</h3>
@@ -403,4 +376,4 @@
   </div>
 </div>
 
-<app-new-layout-dialog *ngIf="showNewLayout" (closed)="showNewLayout = false" />
+<app-new-from-template-dialog *ngIf="newKind" [kind]="newKind" (closed)="newKind = null" />

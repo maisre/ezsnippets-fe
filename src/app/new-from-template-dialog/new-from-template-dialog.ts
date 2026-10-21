@@ -3,6 +3,7 @@ import {
   ElementRef,
   EventEmitter,
   HostListener,
+  Input,
   OnDestroy,
   OnInit,
   Output,
@@ -14,11 +15,54 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { LayoutsService } from '../layouts.service';
+import { PagesService } from '../pages.service';
 import { TemplatesService } from '../templates.service';
 import { snippetThumbUrl } from '../runtime-config';
-import { Layout, Template } from '../models';
+import { Layout, Page, Template, TemplateKind } from '../models';
 
 type Choice = Template | 'blank';
+
+export type NewKind = Extract<TemplateKind, 'page' | 'layout'>;
+
+/** Everything that reads differently between a new page and a new layout. */
+const COPY: Record<NewKind, {
+  title: string;
+  lede: string;
+  blankName: string;
+  blankMeta: string;
+  blankPane: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  createLabel: string;
+  noun: string;
+  editRoute: string;
+}> = {
+  page: {
+    title: 'New page',
+    lede: 'Start from a ready-made page or a blank one. You can change everything later.',
+    blankName: 'Blank page',
+    blankMeta: 'An empty page. Add sections from the snippet drawer in the editor.',
+    blankPane: 'Your page starts empty. Add sections from the snippet drawer in the editor.',
+    nameLabel: 'Page name',
+    namePlaceholder: 'e.g. Acme Bakery landing page',
+    createLabel: 'Create page',
+    noun: 'page',
+    editRoute: '/p/edit',
+  },
+  layout: {
+    title: 'New layout',
+    lede: 'Start from a ready-made site or a blank one. You can change everything later.',
+    blankName: 'Blank site',
+    blankMeta: 'One empty page. Add a navbar, footer and sections in the editor.',
+    blankPane:
+      'Your site starts with one empty Home page. Add a navbar, a footer and sections from the snippet drawer in the editor.',
+    nameLabel: 'Layout name',
+    namePlaceholder: 'e.g. Acme Bakery site',
+    createLabel: 'Create layout',
+    noun: 'layout',
+    editRoute: '/l/edit',
+  },
+};
 
 // Page chips shown on a card while it's hovered. Past this many, a "+N" chip
 // stands in for the rest; the full list is one click away in the preview.
@@ -30,11 +74,13 @@ const PAN_MIN_SEC = 2;
 const PAN_MAX_SEC = 9;
 
 /**
- * "New layout": choose a starting point, then name the site.
+ * "New page" / "New layout": choose a starting point, then name it. The only
+ * way pages and layouts are created, from the dashboard and their own lists.
  *
- * Step one is a grid of a blank site, the org's own layout templates, and the
- * built-in ones. Every card previews page one as a stack of the snippet
- * thumbnails already on the assets CDN (nav, that page's sections, footer), so
+ * Step one is a grid of a blank start, the org's own templates of that kind,
+ * and the built-in ones. Every card previews page one as a stack of the snippet
+ * thumbnails already on the assets CDN (a layout's nav, that page's sections,
+ * and footer; a page template's sections), so
  * templates need no screenshot pipeline and a freshly saved template previews
  * at once. Hovering a card pans down that page and shows its page chips;
  * hovering a chip switches the card to that page.
@@ -44,17 +90,19 @@ const PAN_MAX_SEC = 9;
  * on a pointer.
  */
 @Component({
-  selector: 'app-new-layout-dialog',
+  selector: 'app-new-from-template-dialog',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './new-layout-dialog.html',
-  styleUrl: './new-layout-dialog.css',
+  templateUrl: './new-from-template-dialog.html',
+  styleUrl: './new-from-template-dialog.css',
 })
-export class NewLayoutDialog implements OnInit, OnDestroy {
+export class NewFromTemplateDialog implements OnInit, OnDestroy {
   private templatesService = inject(TemplatesService);
   private layoutsService = inject(LayoutsService);
+  private pagesService = inject(PagesService);
   private router = inject(Router);
 
+  @Input({ required: true }) kind!: NewKind;
   @Output() closed = new EventEmitter<void>();
 
   @ViewChild('dialog', { static: true }) dialogRef!: ElementRef<HTMLElement>;
@@ -89,7 +137,7 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
     document.body.style.overflow = 'hidden';
     this.dialogRef.nativeElement.focus();
 
-    this.templatesService.getTemplates('layout').subscribe({
+    this.templatesService.getTemplates(this.kind).subscribe({
       next: (templates) => {
         this.templates = templates;
         this.loading = false;
@@ -122,6 +170,10 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
 
   get libraryTemplates(): Template[] {
     return this.templates.filter((t) => !t.org);
+  }
+
+  get copy() {
+    return COPY[this.kind];
   }
 
   get selectedTemplate(): Template | null {
@@ -157,6 +209,7 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
 
   /** Snippet ids that make up one page of a template, top to bottom. */
   pageIds(template: Template, index: number): string[] {
+    if (this.kind === 'page') return template.snippetIds ?? [];
     const page = template.subPages?.[index];
     return [
       ...(template.nav ? [template.nav] : []),
@@ -170,6 +223,7 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
   }
 
   pageCount(template: Template): number {
+    if (this.kind === 'page') return 1;
     return Math.max(template.subPages?.length ?? 0, 1);
   }
 
@@ -180,6 +234,13 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
   /** Card chips: the first few pages, then a count of the rest. */
   cardChips(template: Template): number[] {
     return Array.from({ length: Math.min(this.pageCount(template), MAX_CARD_PAGES) }, (_, i) => i);
+  }
+
+  /** Card subtitle and step-two note: "3 pages" for a layout, "5 sections" for a page. */
+  sizeLabel(template: Template): string {
+    const n = this.kind === 'page' ? template.snippetIds?.length ?? 0 : template.subPages?.length ?? 0;
+    const unit = this.kind === 'page' ? 'section' : 'page';
+    return `${n} ${unit}${n === 1 ? '' : 's'}`;
   }
 
   hiddenPageCount(template: Template): number {
@@ -239,22 +300,29 @@ export class NewLayoutDialog implements OnInit, OnDestroy {
       siteName: this.form.siteName.trim() || undefined,
       description: this.form.description.trim() || undefined,
     };
-    const request: Observable<Layout> =
-      this.selected === 'blank'
-        ? this.layoutsService.createLayout(details)
-        : this.templatesService.createLayoutFrom(this.selected.id, details);
+    const templateId = this.selected === 'blank' ? null : this.selected.id;
+    let request: Observable<Page | Layout>;
+    if (this.kind === 'page') {
+      request = templateId
+        ? this.templatesService.createPageFrom(templateId, details)
+        : this.pagesService.createPage({ ...details, snippets: [] });
+    } else {
+      request = templateId
+        ? this.templatesService.createLayoutFrom(templateId, details)
+        : this.layoutsService.createLayout(details);
+    }
 
     request.subscribe({
-      next: (layout) => {
+      next: (created) => {
         this.creating = false;
-        this.router.navigate(['/l/edit', layout.id]);
+        this.router.navigate([this.copy.editRoute, created.id]);
       },
       error: (err) => {
         this.creating = false;
         if (err?.status === 403) {
           this.limitReached = true;
         } else {
-          this.createError = err?.error?.message ?? 'Could not create the layout. Please try again.';
+          this.createError = err?.error?.message ?? `Could not create the ${this.copy.noun}. Please try again.`;
         }
       },
     });

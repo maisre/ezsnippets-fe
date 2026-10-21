@@ -20,20 +20,20 @@
         ← Back
       </button>
       <h2 id="nl-title">
-        {{ !selected ? 'New layout' : selected === 'blank' ? 'Blank site' : selectedTemplate!.name }}
+        {{ !selected ? copy.title : selected === 'blank' ? copy.blankName : selectedTemplate!.name }}
       </h2>
       <button type="button" class="nl-close" (click)="close()" aria-label="Close">×</button>
     </header>
 
     <!-- Step one: pick a starting point -->
     <div class="nl-body nl-choose" *ngIf="!selected">
-      <p class="nl-lede">Start from a ready-made site or a blank one. You can change everything later.</p>
+      <p class="nl-lede">{{ copy.lede }}</p>
 
       <button type="button" class="nl-blank" (click)="choose('blank')">
         <span class="nl-plus" aria-hidden="true">+</span>
         <span class="nl-blank-text">
-          <span class="nl-card-name">Blank site</span>
-          <span class="nl-card-meta">One empty page. Add a navbar, footer and sections in the editor.</span>
+          <span class="nl-card-name">{{ copy.blankName }}</span>
+          <span class="nl-card-meta">{{ copy.blankMeta }}</span>
         </span>
       </button>
 
@@ -63,7 +63,7 @@
     <div class="nl-body nl-configure" *ngIf="selected">
       <div class="nl-preview-pane">
         <ng-container *ngIf="selectedTemplate as t; else blankPane">
-          <div class="nl-tabs" role="tablist" aria-label="Pages in this template">
+          <div class="nl-tabs" role="tablist" aria-label="Pages in this template" *ngIf="kind === 'layout'">
             <button
               *ngFor="let sp of t.subPages; let i = index"
               type="button"
@@ -90,20 +90,20 @@
         <ng-template #blankPane>
           <div class="nl-blank-pane">
             <span class="nl-plus" aria-hidden="true">+</span>
-            <p>Your site starts with one empty Home page. Add a navbar, a footer and sections from the snippet drawer in the editor.</p>
+            <p>{{ copy.blankPane }}</p>
           </div>
         </ng-template>
       </div>
 
       <form class="nl-form" (ngSubmit)="create()">
-        <label for="nl-name">Layout name</label>
+        <label for="nl-name">{{ copy.nameLabel }}</label>
         <input
           id="nl-name"
           name="name"
           type="text"
           [(ngModel)]="form.name"
           required
-          placeholder="e.g. Acme Bakery site"
+          [placeholder]="copy.namePlaceholder"
           autocomplete="off"
         />
 
@@ -127,18 +127,18 @@
         ></textarea>
 
         <p class="nl-template-note" *ngIf="selectedTemplate as t">
-          {{ t.subPages.length }} page{{ t.subPages.length === 1 ? '' : 's' }}, with a navbar and footer.
+          {{ sizeLabel(t) }}<ng-container *ngIf="kind === 'layout'">, with a navbar and footer</ng-container>.
           Everything starts with placeholder text you can replace.
         </p>
 
         <p class="nl-error" *ngIf="createError">{{ createError }}</p>
         <p class="nl-error" *ngIf="limitReached">
-          You've reached your plan's layout limit.
-          <a routerLink="/pricing" (click)="close()">Upgrade</a> or archive a layout to free a slot.
+          You've reached your plan's {{ copy.noun }} limit.
+          <a routerLink="/pricing" (click)="close()">Upgrade</a> or archive a {{ copy.noun }} to free a slot.
         </p>
 
         <button type="submit" class="nl-primary" [disabled]="!form.name.trim() || creating">
-          {{ creating ? 'Creating…' : 'Create layout' }}
+          {{ creating ? 'Creating…' : copy.createLabel }}
         </button>
 
         <div class="nl-delete" *ngIf="selectedTemplate?.org">
@@ -208,7 +208,7 @@
         <span class="nl-badge" *ngIf="t.org">Yours</span>
       </span>
       <span class="nl-card-meta">
-        {{ t.subPages.length }} page{{ t.subPages.length === 1 ? '' : 's' }}<ng-container *ngIf="t.description"> · {{ t.description }}</ng-container>
+        {{ sizeLabel(t) }}<ng-container *ngIf="t.description"> · {{ t.description }}</ng-container>
       </span>
     </div>
   </div>
