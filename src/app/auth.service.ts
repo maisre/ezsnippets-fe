@@ -2,6 +2,13 @@ import { inject, Injectable } from '@angular/core';
 import { runtimeConfig } from './runtime-config';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { Attribution } from './analytics';
+
+
+export interface SignupAcquisition extends Attribution {
+  heardAbout?: string;
+  heardAboutDetail?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -56,10 +63,11 @@ export class AuthService {
     );
   }
 
-  signup(email: string, password: string) {
+  /** `acquisition` = where they came from; ez-api stores it on the user for attribution reports. */
+  signup(email: string, password: string, acquisition?: SignupAcquisition) {
     return this.http.post<{ access_token: string }>(
       `${runtimeConfig.apiUrl}/auth/signup`,
-      { email, password },
+      { email, password, ...(acquisition && { acquisition }) },
       { withCredentials: true },
     );
   }

@@ -3,6 +3,11 @@ import * as Sentry from '@sentry/angular';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { loadRuntimeConfig, runtimeConfig } from './app/runtime-config';
+import { captureAttribution, initAnalytics } from './app/analytics';
+
+// Before anything async: the router may rewrite the URL once it boots, and the
+// landing query string (utm_*, ref) is what we're after.
+captureAttribution();
 
 loadRuntimeConfig()
   .then(() => {
@@ -22,6 +27,7 @@ loadRuntimeConfig()
         sendDefaultPii: false,
       });
     }
+    initAnalytics();
     return bootstrapApplication(App, appConfig);
   })
   .catch((err) => console.error(err));

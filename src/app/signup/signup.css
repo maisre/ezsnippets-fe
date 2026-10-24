@@ -24,6 +24,11 @@
   color: #555;
 }
 
+.form-group label .optional {
+  font-weight: 400;
+  color: #888;
+}
+
 .form-control {
   width: 100%;
   padding: 0.75rem;

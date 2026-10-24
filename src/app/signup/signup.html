@@ -54,6 +54,31 @@
       }
     </div>
 
+    @if (!isInvite) {
+    <div class="form-group">
+      <label for="heardAbout">How did you hear about us? <span class="optional">(optional)</span></label>
+      <select id="heardAbout" name="heardAbout" [(ngModel)]="heardAbout" class="form-control">
+        <option value="">Choose one…</option>
+        @for (option of heardAboutOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+    @if (heardAboutDetailPrompt) {
+    <div class="form-group">
+      <label for="heardAboutDetail">{{ heardAboutDetailPrompt }}</label>
+      <input
+        type="text"
+        id="heardAboutDetail"
+        name="heardAboutDetail"
+        [(ngModel)]="heardAboutDetail"
+        maxlength="100"
+        class="form-control"
+      />
+    </div>
+    }
+    }
+
     <button type="submit" [disabled]="signupForm.invalid || isLoading || !passwordsMatch" class="btn btn-primary">
       {{ isLoading ? 'Signing up...' : 'Sign Up' }}
     </button>

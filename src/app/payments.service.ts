@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { runtimeConfig } from './runtime-config';
 import { Observable } from 'rxjs';
+import { markCheckoutStarted } from './analytics';
 
 declare global {
   interface Window {
@@ -93,6 +94,7 @@ export class PaymentsService {
    */
   async openCheckout(transactionId: string, orgId?: string): Promise<void> {
     await this.loadPaddle();
+    markCheckoutStarted(transactionId);
     const query = orgId ? `?org=${encodeURIComponent(orgId)}` : '';
     window.Paddle!.Checkout.open({
       transactionId,

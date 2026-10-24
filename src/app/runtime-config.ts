@@ -14,6 +14,14 @@ export interface RuntimeConfig {
    * navigated to directly. Togglable by editing config.json in S3 (no rebuild).
    */
   comingSoon: boolean;
+  /** Site domain as registered in Plausible. Empty = analytics off (dev). */
+  plausibleDomain: string;
+  /**
+   * Where events are sent. Empty = plausible.io directly. In prod this is
+   * `/api/event` on our own domain, proxied to Plausible by CloudFront
+   * (FrontendStack), so ad blockers miss far fewer visits.
+   */
+  plausibleEndpoint: string;
 }
 
 export const runtimeConfig: RuntimeConfig = {
@@ -26,6 +34,8 @@ export const runtimeConfig: RuntimeConfig = {
   sentryRelease: '',
   sentryEnableDev: false,
   comingSoon: false,
+  plausibleDomain: '',
+  plausibleEndpoint: '',
 };
 
 export async function loadRuntimeConfig(): Promise<void> {

@@ -48,6 +48,12 @@ jobs:
           # flipped instantly by editing config.json in S3 + a CloudFront
           # invalidation, no rebuild needed.)
           COMING_SOON: ${{ vars.COMING_SOON || 'true' }}
+          # Plausible analytics. Domain must match the site added in Plausible.
+          # Endpoint: blank sends straight to plausible.io; set the
+          # PLAUSIBLE_ENDPOINT repo variable to "/api/event" once FrontendStack's
+          # CloudFront proxy behavior is deployed (fewer visits lost to blockers).
+          PLAUSIBLE_DOMAIN: ${{ vars.PLAUSIBLE_DOMAIN || 'ez-snippets.com' }}
+          PLAUSIBLE_ENDPOINT: ${{ vars.PLAUSIBLE_ENDPOINT || '' }}
         run: |
           cat > dist/ez-frontend/browser/config.json <<EOF
           {
@@ -58,7 +64,9 @@ jobs:
             "sentryDsn": "${SENTRY_DSN}",
             "sentryEnvironment": "production",
             "sentryRelease": "${SENTRY_RELEASE}",
-            "comingSoon": ${COMING_SOON}
+            "comingSoon": ${COMING_SOON},
+            "plausibleDomain": "${PLAUSIBLE_DOMAIN}",
+            "plausibleEndpoint": "${PLAUSIBLE_ENDPOINT}"
           }
           EOF
 

@@ -2,6 +2,7 @@ import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { OrgsService } from '../orgs.service';
+import { trackPurchaseOnce } from '../analytics';
 
 @Component({
   selector: 'app-checkout-success',
@@ -99,6 +100,7 @@ export class CheckoutSuccess implements OnInit, OnDestroy {
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit() {
+    trackPurchaseOnce();
     if (this.orgId && this.authService.isAuthenticated()) {
       this.teamState = 'waiting';
       this.poll(0);
