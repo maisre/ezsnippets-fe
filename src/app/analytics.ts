@@ -14,6 +14,24 @@ import { runtimeConfig } from './runtime-config';
 
 let enabled = false;
 
+/**
+ * Only the marketing pages are tracked as page views. Everything behind login
+ * (dashboard, page lists, editors) would just be noise in a traffic report and
+ * eats into Plausible's pageview-based billing. Goals are the exception: they
+ * always send, because Checkout Started and Purchase happen on logged-in pages.
+ */
+const TRACKED_PATHS = new Set(['/', '/home', '/pricing', '/signup']);
+const GOALS = new Set<string>(['Signup', 'Checkout Started', 'Purchase']);
+
+function isTrackedPath(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.replace(/\/+$/, '') || '/';
+    return TRACKED_PATHS.has(path);
+  } catch {
+    return false;
+  }
+}
+
 /** Off unless config.json names a Plausible domain (prod only). Localhost is ignored by the tracker. */
 export function initAnalytics(): void {
   if (!runtimeConfig.plausibleDomain) return;
@@ -23,11 +41,12 @@ export function initAnalytics(): void {
       endpoint: runtimeConfig.plausibleEndpoint || undefined,
       outboundLinks: true,
       logging: false,
-      // Invite links carry a secret token in the path; don't ship it to a third party.
-      transformRequest: (payload) => ({
-        ...payload,
-        u: payload.u.replace(/\/invite\/[^/?#]+/, '/invite/:token'),
-      }),
+      transformRequest: (payload) => {
+        // Page views, engagement and outbound clicks: marketing pages only.
+        if (!GOALS.has(payload.n) && !isTrackedPath(payload.u)) return null;
+        // Invite links carry a secret token in the path; don't ship it to a third party.
+        return { ...payload, u: payload.u.replace(/\/invite\/[^/?#]+/, '/invite/:token') };
+      },
     });
     enabled = true;
   } catch (err) {
