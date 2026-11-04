@@ -346,15 +346,24 @@
 
 <div class="modal-overlay" *ngIf="limitModal" (click)="closeLimitModal()">
   <div class="modal" (click)="$event.stopPropagation()">
-    <h3>You've reached your {{ limitModal.kind === 'page' ? 'page' : 'layout' }} limit</h3>
-    <p>
-      You're using {{ limitModal.used }} of {{ limitModal.max }}
-      {{ limitModal.kind === 'page' ? 'pages' : 'layouts' }} on your current plan.
-      Upgrade to add more.
-    </p>
+    <ng-container *ngIf="limitModal.noPlan; else overLimit">
+      <h3>Choose a plan to start building</h3>
+      <p>
+        You need an active plan to create {{ limitModal.kind === 'page' ? 'pages' : 'layouts' }}.
+        Pick one to get started.
+      </p>
+    </ng-container>
+    <ng-template #overLimit>
+      <h3>You've reached your {{ limitModal.kind === 'page' ? 'page' : 'layout' }} limit</h3>
+      <p>
+        You're using {{ limitModal.used }} of {{ limitModal.max }}
+        {{ limitModal.kind === 'page' ? 'pages' : 'layouts' }} on your current plan.
+        Archive one you're not working on to free a slot, or upgrade to add more.
+      </p>
+    </ng-template>
     <div class="modal-actions">
       <button class="modal-secondary" (click)="closeLimitModal()">Not now</button>
-      <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">Upgrade</a>
+      <a routerLink="/pricing" class="modal-primary" (click)="closeLimitModal()">{{ limitModal.noPlan ? 'View plans' : 'Upgrade' }}</a>
     </div>
   </div>
 </div>

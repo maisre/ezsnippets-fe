@@ -5,7 +5,6 @@ import { Signup } from './signup/signup';
 import { ForgotPassword } from './forgot-password/forgot-password';
 import { ResetPassword } from './reset-password/reset-password';
 import { Pricing } from './pricing/pricing';
-import { Snippets } from './snippets/snippets';
 import { Pages } from './pages/pages';
 import { Layouts } from './layouts/layouts';
 import { Account } from './account/account';
@@ -21,9 +20,9 @@ import { Invite } from './invite/invite';
 import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: Home },
-  { path: 'home', component: Home },
-  { path: 'pricing', component: Pricing },
+  { path: '', title: 'EZ Snippet — Build websites faster with reusable snippets', component: Home },
+  { path: 'home', title: 'EZ Snippet — Build websites faster with reusable snippets', component: Home },
+  { path: 'pricing', title: 'Pricing · EZ Snippet', component: Pricing },
   { path: 'checkout/success', component: CheckoutSuccess },
   // Paddle's default payment link target. Public and unguarded on purpose:
   // Paddle sends customers here from dunning and update-payment-method emails,
@@ -31,26 +30,26 @@ export const routes: Routes = [
   { path: 'pay', component: Pay },
   // Public and deliberately outside the comingSoon gate — Paddle checks these
   // URLs during website approval, before we open sign-ups.
-  { path: 'terms', component: Terms },
-  { path: 'privacy', component: Privacy },
-  { path: 'refunds', component: Refunds },
-  { path: 'login', component: Login },
-  { path: 'signup', component: Signup },
-  { path: 'forgot-password', component: ForgotPassword },
-  { path: 'reset-password', component: ResetPassword },
-  { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
-  { path: 'snippets', component: Snippets, canActivate: [authGuard] },
+  { path: 'terms', title: 'Terms of Service · EZ Snippet', component: Terms },
+  { path: 'privacy', title: 'Privacy Policy · EZ Snippet', component: Privacy },
+  { path: 'refunds', title: 'Refund Policy · EZ Snippet', component: Refunds },
+  { path: 'login', title: 'Log in · EZ Snippet', component: Login },
+  { path: 'signup', title: 'Sign up · EZ Snippet', component: Signup },
+  { path: 'forgot-password', title: 'Forgot password · EZ Snippet', component: ForgotPassword },
+  { path: 'reset-password', title: 'Reset password · EZ Snippet', component: ResetPassword },
+  { path: 'dashboard', title: 'Dashboard · EZ Snippet', component: Dashboard, canActivate: [authGuard] },
+  { path: 'snippets', redirectTo: 'dashboard' },
   // hideFooter: the builders are full-viewport (100vh) editors with live
   // previews — a site footer underneath breaks the layout.
   // The editors are the heaviest screens (drag and drop, preview, snippet
   // library) and only signed-in users reach them, so they load on demand.
-  { path: 'p/edit/:id', loadComponent: () => import('./page-edit/page-edit').then((m) => m.PageEdit), canActivate: [authGuard], data: { hideFooter: true } },
-  { path: 'pages', component: Pages, canActivate: [authGuard] },
-  { path: 'l/edit/:id', loadComponent: () => import('./layout-edit/layout-edit').then((m) => m.LayoutEdit), canActivate: [authGuard], data: { hideFooter: true } },
-  { path: 'layouts', component: Layouts, canActivate: [authGuard] },
-  { path: 'account', component: Account, canActivate: [authGuard] },
-  { path: 'team', component: Team, canActivate: [authGuard] },
+  { path: 'p/edit/:id', title: 'Edit page · EZ Snippet', loadComponent: () => import('./page-edit/page-edit').then((m) => m.PageEdit), canActivate: [authGuard], data: { hideFooter: true } },
+  { path: 'pages', title: 'Pages · EZ Snippet', component: Pages, canActivate: [authGuard] },
+  { path: 'l/edit/:id', title: 'Edit layout · EZ Snippet', loadComponent: () => import('./layout-edit/layout-edit').then((m) => m.LayoutEdit), canActivate: [authGuard], data: { hideFooter: true } },
+  { path: 'layouts', title: 'Layouts · EZ Snippet', component: Layouts, canActivate: [authGuard] },
+  { path: 'account', title: 'Account · EZ Snippet', component: Account, canActivate: [authGuard] },
+  { path: 'team', title: 'Team · EZ Snippet', component: Team, canActivate: [authGuard] },
   // Public — invitees usually don't have an account yet. See invite.ts.
   { path: 'invite/:token', component: Invite },
-  { path: '**', component: NotFound },
+  { path: '**', title: 'Page not found · EZ Snippet', component: NotFound },
 ];

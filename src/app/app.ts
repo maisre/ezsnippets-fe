@@ -8,10 +8,12 @@ import { OrgsService } from './orgs.service';
 import { Org } from './models';
 import { runtimeConfig } from './runtime-config';
 import { formatDate, isTeamClosed, teamClosesAt } from './workspace-status';
+import { FeedbackDialog } from './feedback/feedback-dialog';
+import { FeedbackService } from './feedback/feedback.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, AsyncPipe],
+  imports: [RouterOutlet, RouterLink, AsyncPipe, FeedbackDialog],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -21,6 +23,7 @@ export class App {
   private route = inject(ActivatedRoute);
 
   private orgsService = inject(OrgsService);
+  private feedback = inject(FeedbackService);
 
   isAuthenticated$ = this.authService.isAuthenticated$;
 
@@ -92,6 +95,10 @@ export class App {
   /** Pre-launch gate — hides public Sign Up CTAs. See runtime-config. */
   get comingSoon(): boolean {
     return runtimeConfig.comingSoon;
+  }
+
+  openFeedback() {
+    this.feedback.open();
   }
 
   logout() {

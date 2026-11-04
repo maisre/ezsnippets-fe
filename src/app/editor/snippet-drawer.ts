@@ -112,7 +112,9 @@ export class SnippetDrawer implements OnInit, OnChanges, OnDestroy {
     } catch {
       // Storage blocked — start unpinned.
     }
-    if (this.pinned) this.pinnedChange.emit(true);
+    // Deferred: emitting during the parent's change detection flips a binding
+    // it has already checked (NG0100) and the pinned layout lags a tick.
+    if (this.pinned) queueMicrotask(() => this.pinnedChange.emit(true));
     this.loadFavorites();
   }
 

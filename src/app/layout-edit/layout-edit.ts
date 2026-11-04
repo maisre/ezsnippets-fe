@@ -1,6 +1,7 @@
 import {
   afterNextRender,
   Component,
+  DestroyRef,
   HostListener,
   inject,
   Injector,
@@ -23,10 +24,12 @@ import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { SnippetDrawer, PALETTE_LIST_ID } from '../editor/snippet-drawer';
 import { EditorPreview } from '../editor/editor-preview';
+import { hasCustomText, hasImageSlots, imageTokensOf, imagesDone } from '../editor/readiness';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
 import { CreatorLabelsService } from '../creator-labels.service';
+import { FeedbackService } from '../feedback/feedback.service';
 import {
   Layout,
   SnippetOverride,
@@ -119,6 +122,27 @@ export class LayoutEdit implements OnInit {
 
   private snippetsService = inject(SnippetsService);
   private injector = inject(Injector);
+  private feedback = inject(FeedbackService);
+
+  constructor() {
+    // Feedback sent while this editor is open carries the layout, the open
+    // sub-page, and what's on screen: navbar, that page's snippets, footer.
+    const unregister = this.feedback.registerContext(() => ({
+      layout: this.layoutId ?? undefined,
+      subPage: this.activeSubPage?.name,
+      snippets: [
+        ...this.navbarSnippets,
+        ...this.getActiveSubPageSnippets(),
+        ...this.footerSnippets,
+      ].map((s) => ({ id: s.id, type: s.type })),
+    }));
+    inject(DestroyRef).onDestroy(unregister);
+  }
+
+  /** Open feedback already pointed at this snippet. */
+  flagSnippet(snippet: SnippetOverride) {
+    this.feedback.open({ id: snippet.id, type: snippet.type });
+  }
 
   layout: Layout | null = null;
   layoutId: string | null = null;
@@ -127,6 +151,8 @@ export class LayoutEdit implements OnInit {
   navbarSnippets: SnippetOverride[] = [];
   footerSnippets: SnippetOverride[] = [];
   availableSnippets: SnippetOverride[] = [];
+  // Library summary by id; the readiness checks read image slots from it.
+  private library = new Map<string, SnippetOverride>();
   activeSubPageIndex = 0;
   viewUrl = runtimeConfig.viewUrl;
   // Bound in the template for every snippet thumbnail.
@@ -148,6 +174,9 @@ export class LayoutEdit implements OnInit {
   // actions can't be mistaken for one, and so re-running text never re-runs
   // images (each is its own OpenAI call server-side).
   findingImages = false;
+  customizeError = '';
+  // Phone-width notice (CSS hides it on larger screens); per visit.
+  smallScreenNoticeDismissed = false;
   imagesError = '';
   imageDirection = '';
   showImageDirection = false;
@@ -214,6 +243,28 @@ export class LayoutEdit implements OnInit {
     this.previewVersion += 1;
   }
 
+  /** ez-view content & image editor (gated by the session cookie). */
+  openEditContent() {
+    if (this.layoutId) window.open(`${this.viewUrl}/edit/layout/${this.layoutId}`, '_blank');
+  }
+
+  /**
+   * Coming back from the content editor tab: re-read the layout. The rows hold
+   * each snippet's text/image overrides and send them back on the next
+   * structure change, so stale copies would overwrite what was just edited.
+   */
+  @HostListener('window:focus')
+  onWindowFocus() {
+    // Skipped after a failed save: the screen is ahead of the server.
+    if (!this.layoutId || !this.layout || this.subPageError) return;
+    this.layoutsService.getLayoutById(this.layoutId).subscribe({
+      next: (data) => this.applyServerLayout(data),
+      error: () => {
+        // Keep what's on screen; the next edit reports its own failure.
+      },
+    });
+  }
+
   // --- Action bar: preview link ---
   /** Public rendered layout in ez-view (no auth needed). */
   openPreview() {
@@ -225,8 +276,14 @@ export class LayoutEdit implements OnInit {
   }
 
   // --- Readiness (over subpage snippets) ---
+  needsText(s: SnippetOverride): boolean {
+    return !hasCustomText(s);
+  }
+  needsImages(s: SnippetOverride): boolean {
+    return !imagesDone(s, imageTokensOf(s, this.library));
+  }
   snippetReady(s: SnippetOverride): boolean {
-    return s.aiCustomized === true && s.aiImagesPopulated === true;
+    return !this.needsText(s) && !this.needsImages(s);
   }
   needsWorkCount(): number {
     return this.layoutSnippets().filter((s) => !this.snippetReady(s)).length;
@@ -446,6 +503,7 @@ export class LayoutEdit implements OnInit {
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
+        this.library = new Map(data.map((s) => [s.id, s]));
         this.loadLayoutSnippets();
       },
       error: (error) => {
@@ -935,7 +993,7 @@ export class LayoutEdit implements OnInit {
     return this.layoutSnippets().length;
   }
   textCustomizedCount(): number {
-    return this.layoutSnippets().filter((s) => s.aiCustomized === true).length;
+    return this.layoutSnippets().filter((s) => hasCustomText(s)).length;
   }
   textMissingCount(): number {
     return this.snippetCount() - this.textCustomizedCount();
@@ -952,14 +1010,20 @@ export class LayoutEdit implements OnInit {
   customize(onlyMissing = false) {
     if (!this.layoutId || this.customizing) return;
     this.customizing = true;
+    this.customizeError = '';
     this.layoutsService.customizeLayout(this.layoutId, onlyMissing).subscribe({
       next: (data) => {
-        this.layout = data;
+        // Re-hydrate like every other server response, so the rows keep their
+        // display fields and pick up the new flags.
+        this.applyServerLayout(data);
         this.customizing = false;
       },
       error: (error) => {
         console.error('Error customizing layout:', error);
         this.customizing = false;
+        // Daily AI limit and similar rejections carry a message worth showing.
+        this.customizeError =
+          error?.error?.message ?? 'Could not customize the text. Please try again.';
       },
     });
   }
@@ -972,17 +1036,24 @@ export class LayoutEdit implements OnInit {
     return index;
   }
 
-  // Image population status, over the same subpage snippets as the text counts.
+  // Image status, over the subpage snippets that have image slots at all.
+  private imageSnippets(): SnippetOverride[] {
+    return this.layoutSnippets().filter((s) =>
+      hasImageSlots(imageTokensOf(s, this.library)),
+    );
+  }
+  imageSnippetCount(): number {
+    return this.imageSnippets().length;
+  }
   imagesPopulatedCount(): number {
-    return this.layoutSnippets().filter((s) => s.aiImagesPopulated === true)
-      .length;
+    return this.imageSnippets().filter((s) => !this.needsImages(s)).length;
   }
   imagesMissingCount(): number {
-    return this.snippetCount() - this.imagesPopulatedCount();
+    return this.imageSnippetCount() - this.imagesPopulatedCount();
   }
-  /** True once every subpage snippet has been through image population. */
+  /** True once every subpage snippet with image slots has its images. */
   hasAiImages(): boolean {
-    return this.snippetCount() > 0 && this.imagesMissingCount() === 0;
+    return this.imageSnippetCount() > 0 && this.imagesMissingCount() === 0;
   }
 
   /**
@@ -1004,7 +1075,7 @@ export class LayoutEdit implements OnInit {
       })
       .subscribe({
         next: (data) => {
-          this.layout = data;
+          this.applyServerLayout(data);
           this.findingImages = false;
         },
         error: (error) => {

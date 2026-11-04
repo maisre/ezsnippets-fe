@@ -101,7 +101,8 @@ export class EditorPreview implements OnInit, OnChanges, AfterViewInit, OnDestro
     } catch {
       // Storage blocked — start inline.
     }
-    if (this.poppedOut) this.poppedOutChange.emit(true);
+    // Deferred for the same reason as the drawer's restored pin (NG0100).
+    if (this.poppedOut) queueMicrotask(() => this.poppedOutChange.emit(true));
   }
 
   ngOnChanges() {

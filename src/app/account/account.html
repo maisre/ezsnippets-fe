@@ -193,6 +193,28 @@
           </div>
         }
 
+        @if (scheduledSwitch && isOwner) {
+          <div class="subscription-actions">
+            <p class="billing-hint">
+              Switching to {{ scheduledSwitch.toPlan }} on <strong>{{ scheduledSwitchDate }}</strong>.
+              You keep {{ planName }} until then.
+            </p>
+            <button class="btn btn-outline" (click)="keepCurrentPlan()" [disabled]="switchBusy">
+              {{ switchBusy ? 'Working...' : 'Keep ' + planName }}
+            </button>
+            @if (switchError) {
+              <p class="billing-error">{{ switchError }}</p>
+            }
+          </div>
+        } @else if (canChangePlan) {
+          <div class="subscription-actions">
+            <a routerLink="/pricing" class="btn btn-outline">Change plan</a>
+            <p class="billing-hint">
+              Upgrades apply straight away; moving to a cheaper plan happens at renewal.
+            </p>
+          </div>
+        }
+
         @if (canManageBilling()) {
           <div class="subscription-actions">
             @if (org.billedToSomeoneElse) {

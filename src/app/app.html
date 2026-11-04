@@ -24,6 +24,7 @@
         <a routerLink="/team" class="nav-link">Team</a>
       }
       <a routerLink="/account" class="nav-link">Account</a>
+      <button type="button" class="nav-link nav-button" (click)="openFeedback()">Feedback</button>
       <button class="nav-link nav-button" (click)="logout()">Logout</button>
     } @else {
       <!-- Pricing is deliberately outside the comingSoon gate: it has to be
@@ -52,6 +53,10 @@
 <main class="main-content">
   <router-outlet />
 </main>
+
+@if (isAuthenticated$ | async) {
+  <app-feedback-dialog />
+}
 
 @if (showFooter()) {
   <footer class="site-footer">

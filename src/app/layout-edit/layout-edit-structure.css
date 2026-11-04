@@ -167,4 +167,5 @@
   max-height: 220px;
   margin-top: 8px;
 }
-.edit-body.wide .slot .snip-remove { opacity: 1; }
+.edit-body.wide .slot .snip-remove,
+.edit-body.wide .slot .snip-flag { opacity: 1; }

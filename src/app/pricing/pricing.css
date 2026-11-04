@@ -345,3 +345,11 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+.plan-change-notice {
+  max-width: 640px;
+  margin: 1.5rem auto 0;
+  text-align: center;
+  color: #1e7e46;
+  font-weight: 600;
+}

@@ -418,7 +418,8 @@
 .edit-body.wide .structure .snip-row .badges { display: inline-flex; margin: 0 0 0 10px; }
 .edit-body.wide .structure .snip-row .snip-meta { display: flex; align-items: center; flex-wrap: wrap; }
 .edit-body.wide .structure .snip-row .snip-remove,
-.edit-body.wide .structure .snip-row .snip-park { opacity: 1; }
+.edit-body.wide .structure .snip-row .snip-park,
+.edit-body.wide .structure .snip-row .snip-flag { opacity: 1; }
 
 /* ===== Responsive ===== */
 @media (max-width: 900px) {

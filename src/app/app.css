@@ -15,6 +15,7 @@
 
 .brand-link {
   color: white;
+  white-space: nowrap;
   text-decoration: none;
   transition: color 0.3s ease;
 }
@@ -31,6 +32,7 @@
 
 .nav-link {
   color: white;
+  white-space: nowrap;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -71,6 +73,30 @@
 .nav-cta:hover {
   background-color: #2980b9;
   color: white;
+}
+
+/* Phones: the signed-in nav has up to 8 items; let it wrap instead of
+   pushing the page wider than the screen. */
+@media (max-width: 760px) {
+  .navbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .workspace-switcher select {
+    max-width: 100%;
+  }
 }
 
 .main-content {

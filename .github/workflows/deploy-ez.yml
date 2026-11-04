@@ -12,6 +12,14 @@ env:
   SENTRY_ORG: ez-snippets
   SENTRY_PROJECT: ez-frontend
 
+# One run at a time: two overlapping runs would interleave their S3 uploads and
+# could leave index.html from one build pointing at the other. Queued runs wait
+# rather than cancel a deploy midway. (This workflow never touches the box; the
+# group name just matches the other deploy-ez.yml files.)
+concurrency:
+  group: ez-box
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -92,8 +100,37 @@ jobs:
           role-to-assume: ${{ secrets.EZ_AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Three passes, in this order, so a browser never gets an index.html that
+      # points at a chunk not uploaded yet:
+      #   1. Hashed bundles (main-/chunk-/polyfills-/styles-<hash>, media/):
+      #      the name changes whenever the content does, so cache them forever.
+      #   2. Everything else from public/ (favicon, svg): short cache.
+      #   3. index.html + config.json last, no-cache: browsers revalidate on
+      #      every load, so a deploy or a config.json flip is seen immediately
+      #      instead of after the browser's own heuristic cache expires.
+      # No --delete: a tab still running the previous build lazy-loads its old
+      # chunks (e.g. the editor) after this deploy, and deleting them made
+      # CloudFront answer with index.html, breaking the editor until a hard
+      # reload. Old chunks are small; prune ones older than a few releases by
+      # hand if the bucket ever needs it.
       - name: Deploy to S3
-        run: aws s3 sync dist/ez-frontend/browser/ s3://${{ vars.EZ_FRONTEND_BUCKET }} --delete
+        env:
+          BUCKET: s3://${{ vars.EZ_FRONTEND_BUCKET }}
+          SRC: dist/ez-frontend/browser
+        run: |
+          aws s3 sync "$SRC/" "$BUCKET" --exclude "*" \
+            --include "main-*.js" --include "chunk-*.js" --include "polyfills-*.js" \
+            --include "styles-*.css" --include "media/*" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync "$SRC/" "$BUCKET" \
+            --exclude "main-*.js" --exclude "chunk-*.js" --exclude "polyfills-*.js" \
+            --exclude "styles-*.css" --exclude "media/*" \
+            --exclude "index.html" --exclude "config.json" \
+            --cache-control "public, max-age=3600"
+          aws s3 cp "$SRC/config.json" "$BUCKET/config.json" \
+            --cache-control "no-cache" --content-type "application/json"
+          aws s3 cp "$SRC/index.html" "$BUCKET/index.html" \
+            --cache-control "no-cache" --content-type "text/html"
 
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.EZ_PROD_CLOUDFRONT_ID }} --paths "/*"

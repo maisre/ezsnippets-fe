@@ -4,6 +4,9 @@ import { AuthService } from '../auth.service';
 import { OrgsService } from '../orgs.service';
 import { trackPurchaseOnce } from '../analytics';
 
+// Mirrors ez-api's subscription-status.ts.
+const ENTITLED = new Set(['active', 'trialing', 'past_due']);
+
 @Component({
   selector: 'app-checkout-success',
   imports: [RouterLink],
@@ -14,6 +17,13 @@ import { trackPurchaseOnce } from '../analytics';
         @if (teamState === 'waiting') {
           <h1>Setting up your team workspace</h1>
           <p>Your payment went through. This usually takes a few seconds.</p>
+        } @else if (teamState === 'activating') {
+          <h1>Activating your plan</h1>
+          <p>Your payment went through. This usually takes a few seconds.</p>
+        } @else if (teamState === 'slow') {
+          <h1>Payment received</h1>
+          <p>Your plan is still being activated. It should appear within a minute — refresh your dashboard if it hasn't. Please don't pay again.</p>
+          <a routerLink="/pages" class="btn btn-primary">Go to Dashboard</a>
         } @else if (teamState === 'ready') {
           <h1>Your team workspace is ready</h1>
           <p>Invite your teammates to start working together.</p>
@@ -92,17 +102,18 @@ export class CheckoutSuccess implements OnInit, OnDestroy {
    * A team plan bills a brand-new workspace (`?org=` from openCheckout). The
    * subscription reaches it by webhook, so wait for that before switching the
    * customer in — switching sooner lands them in a workspace with no plan.
-   * `none` = a personal purchase, or we gave up waiting: the generic message
-   * is still true, and the workspace switcher will offer the team later.
+   * A personal purchase waits the same way (`activating`), so "You're all
+   * set" is never shown before the plan exists — otherwise the dashboard says
+   * "no plan" right after paying, which invites a second purchase.
+   * `slow` = we gave up waiting; `none` = done, or nothing to wait for.
    */
-  teamState: 'none' | 'waiting' | 'ready' = 'none';
+  teamState: 'none' | 'waiting' | 'activating' | 'slow' | 'ready' = 'none';
   private orgId = this.route.snapshot.queryParamMap.get('org');
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit() {
     trackPurchaseOnce();
     if (this.orgId && this.authService.isAuthenticated()) {
-      this.teamState = 'waiting';
       this.poll(0);
     }
   }
@@ -115,14 +126,17 @@ export class CheckoutSuccess implements OnInit, OnDestroy {
     this.orgsService.getMyOrgs().subscribe({
       next: (orgs) => {
         const org = orgs.find((o) => o.id === this.orgId);
-        if (!org || org.personal) {
+        if (!org) {
           this.teamState = 'none';
-        } else if (org.subscriptionStatus) {
-          this.teamState = 'ready';
+        } else if (ENTITLED.has(org.subscriptionStatus ?? '')) {
+          // A reused team org can carry a `canceled` status from an earlier
+          // plan, so only a live status counts as landed.
+          this.teamState = org.personal ? 'none' : 'ready';
         } else if (attempt < 20) {
+          this.teamState = org.personal ? 'activating' : 'waiting';
           this.timer = setTimeout(() => this.poll(attempt + 1), 1500);
         } else {
-          this.teamState = 'none';
+          this.teamState = 'slow';
         }
       },
       error: () => (this.teamState = 'none'),
@@ -133,6 +147,8 @@ export class CheckoutSuccess implements OnInit, OnDestroy {
     if (!this.orgId) return;
     this.authService.switchOrg(this.orgId).subscribe({
       next: (res) => this.authService.enterWorkspace(res.access_token, '/team'),
+      // The workspace switcher reaches the team too; don't leave a dead button.
+      error: () => (this.teamState = 'none'),
     });
   }
 }

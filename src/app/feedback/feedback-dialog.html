@@ -1,0 +1,103 @@
+@if (isOpen()) {
+  <div class="fb-backdrop" (click)="close()">
+    <div class="fb-dialog" role="dialog" aria-labelledby="fb-title" (click)="$event.stopPropagation()">
+      @if (sent()) {
+        <h3 id="fb-title">Thanks — got it</h3>
+        <p class="fb-sub">
+          We read every one. We won’t reply unless you asked us to, so if you
+          want to hear back, say so and we’ll email you.
+        </p>
+        <div class="fb-actions">
+          <button type="button" class="fb-primary" (click)="close()">Close</button>
+        </div>
+      } @else {
+        <h3 id="fb-title">Send feedback</h3>
+        <p class="fb-sub">Tell us what’s working, what isn’t, or what you wish it did.</p>
+
+        <div class="fb-chips" role="radiogroup" aria-label="Kind of feedback">
+          @for (k of kinds; track k.value) {
+            <button
+              type="button"
+              class="fb-chip"
+              role="radio"
+              [attr.aria-checked]="kind === k.value"
+              [class.on]="kind === k.value"
+              (click)="kind = k.value"
+            >{{ k.label }}</button>
+          }
+        </div>
+
+        @if (kind === 'snippet') {
+          <div class="fb-section">
+            <div class="fb-label">Which snippet?</div>
+            @if (choices.length) {
+              <div class="fb-snips">
+                @for (s of choices; track s.key) {
+                  <button
+                    type="button"
+                    class="fb-snip"
+                    [class.on]="snippetId === s.id"
+                    [attr.aria-pressed]="snippetId === s.id"
+                    (click)="pickSnippet(s.id)"
+                    [title]="s.label"
+                  >
+                    <img [src]="thumb(s.id)" alt="" loading="lazy" decoding="async" />
+                    <span>{{ s.label }}</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="fb-hint">
+                Open the page in the editor to pick a snippet from it, or
+                describe the snippet below.
+              </p>
+            }
+          </div>
+
+          <div class="fb-section">
+            <div class="fb-label">What’s up with it? <span class="fb-opt">(optional)</span></div>
+            <div class="fb-chips small">
+              @for (r of reasons; track r.value) {
+                <button
+                  type="button"
+                  class="fb-chip"
+                  [class.on]="reason === r.value"
+                  [attr.aria-pressed]="reason === r.value"
+                  (click)="reason = reason === r.value ? null : r.value"
+                >{{ r.label }}</button>
+              }
+            </div>
+          </div>
+        }
+
+        <label class="fb-section">
+          <span class="fb-label">Message</span>
+          <textarea
+            [(ngModel)]="message"
+            rows="5"
+            maxlength="5000"
+            placeholder="What happened, or what would make this better?"
+          ></textarea>
+        </label>
+
+        @if (context && kind !== 'snippet') {
+          <p class="fb-hint">
+            We’ll include which {{ context.layout ? 'layout' : 'page' }} you’re
+            editing and the snippets on it, so we can see what you saw.
+          </p>
+        }
+
+        @if (error(); as err) {
+          <p class="fb-error">{{ err }}</p>
+        }
+
+        <div class="fb-actions">
+          <button type="button" class="fb-secondary" (click)="close()">Cancel</button>
+          <button type="button" class="fb-primary" [disabled]="!canSend" (click)="send()">
+            {{ sending() ? 'Sending…' : 'Send feedback' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -10,6 +10,10 @@ import { Layout } from '../models';
 import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-template-dialog';
 import { CreatorLabelsService } from '../creator-labels.service';
 
+// Archiving takes the public link offline with no other warning, so ask first.
+const ARCHIVE_LAYOUT_CONFIRM =
+  'Archive this layout? Its public link will stop working until you restore it. Archiving frees a plan slot.';
+
 @Component({
   selector: 'app-layouts',
   imports: [
@@ -130,6 +134,7 @@ export class Layouts implements OnInit {
 
   // Archiving frees a plan slot; the layout stays listed under Archived.
   archiveLayout(layoutId: string) {
+    if (!confirm(ARCHIVE_LAYOUT_CONFIRM)) return;
     this.layoutsService.archiveLayout(layoutId).subscribe({
       next: (updated) => this.replaceLayout(updated),
       error: (error) => console.error('Error archiving layout:', error),

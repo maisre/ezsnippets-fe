@@ -13,6 +13,10 @@ import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-temp
 import { ShareLinkService } from '../share-link.service';
 import { CreatorLabelsService } from '../creator-labels.service';
 
+// Archiving takes the public link offline with no other warning, so ask first.
+const ARCHIVE_PAGE_CONFIRM =
+  'Archive this page? Its public link will stop working until you restore it. Archiving frees a plan slot.';
+
 @Component({
   selector: 'app-pages',
   imports: [
@@ -158,6 +162,7 @@ export class Pages implements OnInit {
 
   // Archiving frees a plan slot and takes the page offline in ez-view.
   archivePage(pageId: string) {
+    if (!confirm(ARCHIVE_PAGE_CONFIRM)) return;
     this.pagesService.archivePage(pageId).subscribe({
       next: (updated) => this.replacePage(updated),
       error: (error) => console.error('Error archiving page:', error),

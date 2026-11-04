@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /pages
+Disallow: /layouts
+Disallow: /account
+Disallow: /team
+Disallow: /p/
+Disallow: /l/
+Disallow: /invite/
+Disallow: /checkout/
+Disallow: /pay
+Disallow: /reset-password
+
+Sitemap: https://ez-snippets.com/sitemap.xml

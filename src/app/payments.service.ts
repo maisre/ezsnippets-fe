@@ -32,6 +32,34 @@ export interface TeamDowngradePreview {
   effectiveAt?: string;
 }
 
+/** GET /payments/billing-state — the caller's own single-seat subscription. */
+export interface BillingState {
+  /** False once they've had any subscription: checkout then has no trial. */
+  trialEligible: boolean;
+  /** Their personal plan comes with a team they own (Agency's included Pro). */
+  includedWithTeam: boolean;
+  current: {
+    plan: string;
+    interval: 'month' | 'year' | null;
+    status: string;
+    cancelAtPeriodEnd: boolean;
+    scheduledSwitch: { toPlan: string; effectiveAt: string } | null;
+  } | null;
+}
+
+/** POST /payments/plan-change/preview */
+export interface PlanChangePreview {
+  kind: 'upgrade' | 'downgrade' | 'trial' | 'undo';
+  plan: string;
+  interval: 'month' | 'year';
+  currentPlan: string;
+  amountDueToday: string;
+  nextAmount: string | null;
+  nextBilledAt: string | null;
+  currency: string;
+  effectiveAt: string | null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -74,8 +102,8 @@ export class PaymentsService {
   /** `orgId` is the workspace the purchase will bill — a new team org for a team plan. */
   createCheckoutSession(
     priceId: string,
-  ): Observable<{ transactionId: string; orgId: string }> {
-    return this.http.post<{ transactionId: string; orgId: string }>(
+  ): Observable<{ transactionId: string; orgId: string; customerEmail?: string }> {
+    return this.http.post<{ transactionId: string; orgId: string; customerEmail?: string }>(
       `${runtimeConfig.apiUrl}/payments/checkout`,
       { priceId },
     );
@@ -92,12 +120,19 @@ export class PaymentsService {
    * The success page gets the billed org's id so it can move the customer into
    * a newly bought team workspace once the webhook has landed.
    */
-  async openCheckout(transactionId: string, orgId?: string): Promise<void> {
+  async openCheckout(
+    transactionId: string,
+    orgId?: string,
+    customerEmail?: string,
+  ): Promise<void> {
     await this.loadPaddle();
     markCheckoutStarted(transactionId);
     const query = orgId ? `?org=${encodeURIComponent(orgId)}` : '';
     window.Paddle!.Checkout.open({
       transactionId,
+      // Only sent for a first purchase (the transaction has no customer yet),
+      // so receipts go to the account's email rather than whatever is typed.
+      ...(customerEmail ? { customer: { email: customerEmail } } : {}),
       settings: {
         displayMode: 'overlay',
         successUrl: `${window.location.origin}/checkout/success${query}`,
@@ -118,6 +153,30 @@ export class PaymentsService {
     return this.http.post<{ orgId: string }>(`${runtimeConfig.apiUrl}/payments/upgrade`, {
       priceId,
     });
+  }
+
+  billingState() {
+    return this.http.get<BillingState>(`${runtimeConfig.apiUrl}/payments/billing-state`);
+  }
+
+  /** What switching the caller's single-seat plan to this price would do. */
+  previewPlanChange(priceId: string) {
+    return this.http.post<PlanChangePreview>(
+      `${runtimeConfig.apiUrl}/payments/plan-change/preview`,
+      { priceId },
+    );
+  }
+
+  changePlan(priceId: string) {
+    return this.http.post<{ kind: PlanChangePreview['kind']; plan: string; effectiveAt: string | null }>(
+      `${runtimeConfig.apiUrl}/payments/plan-change`,
+      { priceId },
+    );
+  }
+
+  /** Keep the current plan instead of a scheduled switch to a cheaper one. */
+  cancelPlanSwitch() {
+    return this.http.delete<{ plan: string }>(`${runtimeConfig.apiUrl}/payments/plan-change`);
   }
 
   /** What moving a team down to Pro would do (owner-only). */

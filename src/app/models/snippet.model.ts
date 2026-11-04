@@ -29,6 +29,8 @@ export interface SnippetOverride {
   aiImagesPopulated?: boolean;
   type?: string;
   tags?: string[];
+  /** The library snippet's image slots (from the summary); [] when it has none. */
+  imageReplacement?: Array<{ token: string }>;
 }
 
 export interface SnippetFilters {

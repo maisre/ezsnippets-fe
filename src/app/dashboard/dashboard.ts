@@ -20,6 +20,12 @@ import { ShareLinkService } from '../share-link.service';
 import { CreatorLabelsService } from '../creator-labels.service';
 import { NewFromTemplateDialog } from '../new-from-template-dialog/new-from-template-dialog';
 
+// Archiving takes the public link offline with no other warning, so ask first.
+const ARCHIVE_PAGE_CONFIRM =
+  'Archive this page? Its public link will stop working until you restore it. Archiving frees a plan slot.';
+const ARCHIVE_LAYOUT_CONFIRM =
+  'Archive this layout? Its public link will stop working until you restore it. Archiving frees a plan slot.';
+
 const PLACEHOLDER_THUMBNAIL = '/card-placeholder.svg';
 
 type ResourceKind = 'page' | 'layout';
@@ -51,6 +57,9 @@ interface LimitModal {
   kind: ResourceKind;
   used: number;
   max: number;
+  // No plan at all (a fresh signup): "0 of 0 pages" would read as a bug, so
+  // the modal asks them to pick a plan instead.
+  noPlan: boolean;
 }
 
 interface DeleteModal {
@@ -338,7 +347,7 @@ export class Dashboard implements OnInit {
     const max = (kind === 'page' ? this.pageLimit : this.layoutLimit) ?? 0;
     const used =
       kind === 'page' ? this.activePages.length : this.activeLayouts.length;
-    this.limitModal = { kind, used, max };
+    this.limitModal = { kind, used, max, noPlan: !this.usage?.hasPlan };
   }
 
   closeLimitModal() {
@@ -436,6 +445,7 @@ export class Dashboard implements OnInit {
   // Archiving frees a plan slot and takes the page offline in ez-view; the
   // item stays in `pages` and moves to the Archived section via its status.
   archivePage(pageId: string) {
+    if (!confirm(ARCHIVE_PAGE_CONFIRM)) return;
     this.pagesService.archivePage(pageId).subscribe({
       next: (updated) => this.replacePage(updated),
       error: (error) => console.error('Error archiving page:', error),
@@ -455,6 +465,7 @@ export class Dashboard implements OnInit {
   }
 
   archiveLayout(layoutId: string) {
+    if (!confirm(ARCHIVE_LAYOUT_CONFIRM)) return;
     this.layoutsService.archiveLayout(layoutId).subscribe({
       next: (updated) => this.replaceLayout(updated),
       error: (error) => console.error('Error archiving layout:', error),

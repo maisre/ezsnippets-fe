@@ -70,6 +70,36 @@
   color: var(--danger);
   font-size: 12.5px;
 }
+.structure .scratch-error.inset { margin: 10px 12px 0; }
+
+/* ===== Small-screen notice ===== */
+.small-screen-notice { display: none; }
+@media (max-width: 767px) {
+  .small-screen-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .small-screen-notice span { flex: 1; }
+  .small-screen-notice button {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .small-screen-notice svg { width: 16px; height: 16px; display: block; }
+}
 
 /* ===== Palette drawer ===== */
 .scrim {

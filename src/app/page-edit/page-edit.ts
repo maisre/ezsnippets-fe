@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, HostListener, ViewChild } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -27,6 +27,8 @@ import { OrgsService } from '../orgs.service';
 import { CreatorLabelsService } from '../creator-labels.service';
 import { SnippetDrawer, PALETTE_LIST_ID } from '../editor/snippet-drawer';
 import { EditorPreview } from '../editor/editor-preview';
+import { hasCustomText, hasImageSlots, imageTokensOf, imagesDone } from '../editor/readiness';
+import { FeedbackService } from '../feedback/feedback.service';
 
 @Component({
   selector: 'app-page-edit',
@@ -53,6 +55,22 @@ export class PageEdit implements OnInit {
   private orgsService = inject(OrgsService);
   // Public: the template reads it to gate the slug field and preview the URL.
   readonly shareLinks = inject(ShareLinkService);
+  private feedback = inject(FeedbackService);
+
+  constructor() {
+    // Feedback sent while this editor is open carries the page and its
+    // snippets, in order, so a report can be reproduced.
+    const unregister = this.feedback.registerContext(() => ({
+      page: this.pageId ?? undefined,
+      snippets: this.pageSnippets.map((s) => ({ id: s.id, type: s.type })),
+    }));
+    inject(DestroyRef).onDestroy(unregister);
+  }
+
+  /** Open feedback already pointed at this snippet. */
+  flagSnippet(snippet: SnippetOverride) {
+    this.feedback.open({ id: snippet.id, type: snippet.type });
+  }
 
   /**
    * The URL the customer will actually get. Mirrors the server's normalisation
@@ -68,6 +86,7 @@ export class PageEdit implements OnInit {
 
   page: Page | null = null;
   pageId: string | null = null;
+  loadError: string | null = null;
   pageSnippets: SnippetOverride[] = [];
   /**
    * Snippets parked off the page while deciding on look and feel. Hydrated the
@@ -78,6 +97,8 @@ export class PageEdit implements OnInit {
   scratchError: string | null = null;
   readonly scratchPadLimit = SCRATCH_PAD_LIMIT;
   availableSnippets: SnippetOverride[] = [];
+  // Library summary by id; the readiness checks read image slots from it.
+  private library = new Map<string, SnippetOverride>();
   viewUrl = runtimeConfig.viewUrl;
   // Bound in the template for every snippet thumbnail.
   snippetThumbUrl = snippetThumbUrl;
@@ -102,6 +123,9 @@ export class PageEdit implements OnInit {
   // actions can't be mistaken for one, and so re-running text never re-runs
   // images (each is its own OpenAI call server-side).
   findingImages = false;
+  customizeError = '';
+  // Phone-width notice (CSS hides it on larger screens); per visit.
+  smallScreenNoticeDismissed = false;
   imagesError = '';
   imageDirection = '';
   showImageDirection = false;
@@ -208,6 +232,29 @@ export class PageEdit implements OnInit {
     this.drawer?.open({ tab: 'snippets' });
   }
 
+  /**
+   * Coming back from the content editor tab: re-read the page. The rows hold
+   * each snippet's text/image overrides and send them back on the next list
+   * change, so stale copies would overwrite what was just edited. Skipped
+   * while a list save is in flight — its response is the fresher copy.
+   */
+  @HostListener('window:focus')
+  onWindowFocus() {
+    // Also skipped after a failed save: the screen is ahead of the server.
+    if (!this.pageId || !this.page || this.savingSnippets || this.saveError) return;
+    this.pagesService.getPageById(this.pageId).subscribe({
+      next: (data) => {
+        if (this.savingSnippets) return;
+        this.page = data;
+        this.loadPageSnippets();
+        this.refreshPreview();
+      },
+      error: () => {
+        // Keep what's on screen; the next edit reports its own failure.
+      },
+    });
+  }
+
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.showFinalize) this.closeFinalize();
@@ -237,8 +284,13 @@ export class PageEdit implements OnInit {
       error: (error) => {
         console.error('Error loading page:', error);
         console.error('Error details:', error.status, error.message);
-        // Don't redirect immediately, let's see what the error is
-        // this.router.navigate(['/pages']);
+        // Only matters before the first load; a failed reload keeps the editor.
+        if (!this.page) {
+          this.loadError =
+            error?.status === 404 || error?.status === 403
+              ? 'This page doesn\'t exist or you don\'t have access to it.'
+              : 'Could not load this page. Check your connection and try again.';
+        }
       },
     });
   }
@@ -247,6 +299,7 @@ export class PageEdit implements OnInit {
     this.snippetsService.getAllSnippetSummary().subscribe({
       next: (data) => {
         this.availableSnippets = data;
+        this.library = new Map(data.map((s) => [s.id, s]));
         this.loadPageSnippets();
       },
       error: (error) => {
@@ -399,8 +452,20 @@ export class PageEdit implements OnInit {
     this.updatePageSnippets();
   }
 
+  // Snippet-list saves go out one at a time. Each PUT sends the whole list, so
+  // two in flight can land out of order and the older list wins — a removed
+  // snippet comes back. Edits made mid-save are folded into one follow-up.
+  private savingSnippets = false;
+  private snippetSaveQueued = false;
+  saveError: string | null = null;
+
   updatePageSnippets() {
     if (!this.pageId) return;
+    if (this.savingSnippets) {
+      this.snippetSaveQueued = true;
+      return;
+    }
+    this.savingSnippets = true;
 
     // Carry the page-scoped customizations through on every list edit. The
     // server also preserves these defensively, but sending them keeps the
@@ -417,23 +482,33 @@ export class PageEdit implements OnInit {
     }));
     this.pagesService.updatePageSnippets(this.pageId, snippets).subscribe({
       next: (data) => {
+        this.savingSnippets = false;
+        this.saveError = null;
+        if (this.snippetSaveQueued) {
+          this.snippetSaveQueued = false;
+          this.updatePageSnippets();
+          return;
+        }
         this.page = data;
         this.refreshPreview();
       },
       error: (error) => {
         console.error('Error updating page snippets:', error);
-        // Optionally revert the UI changes if the server update fails
+        this.savingSnippets = false;
+        this.snippetSaveQueued = false;
+        // The list on screen is now ahead of the server. Say so, and let Retry
+        // resend it — reloading would throw the change away.
+        this.saveError = 'Your last change wasn\'t saved.';
       },
     });
   }
 
-  // --- Text customization status (per snippet, via the aiCustomized flag) ---
+  // --- Text status (per snippet: AI-customized or edited by hand) ---
   snippetCount(): number {
     return this.page?.snippets?.length ?? 0;
   }
   textCustomizedCount(): number {
-    return (this.page?.snippets ?? []).filter((s) => s.aiCustomized === true)
-      .length;
+    return (this.page?.snippets ?? []).filter((s) => hasCustomText(s)).length;
   }
   textMissingCount(): number {
     return this.snippetCount() - this.textCustomizedCount();
@@ -453,8 +528,14 @@ export class PageEdit implements OnInit {
   }
 
   // --- Readiness: a snippet is "ready" once its text and images are both done ---
+  needsText(s: SnippetOverride): boolean {
+    return !hasCustomText(s);
+  }
+  needsImages(s: SnippetOverride): boolean {
+    return !imagesDone(s, imageTokensOf(s, this.library));
+  }
   snippetReady(s: SnippetOverride): boolean {
-    return s.aiCustomized === true && s.aiImagesPopulated === true;
+    return !this.needsText(s) && !this.needsImages(s);
   }
   needsWorkCount(): number {
     return (this.page?.snippets ?? []).filter((s) => !this.snippetReady(s)).length;
@@ -583,15 +664,20 @@ export class PageEdit implements OnInit {
   customize(onlyMissing = false) {
     if (!this.pageId || this.customizing) return;
     this.customizing = true;
+    this.customizeError = '';
     this.pagesService.customizePage(this.pageId, onlyMissing).subscribe({
       next: (data) => {
         this.page = data;
+        this.loadPageSnippets();
         this.customizing = false;
         this.refreshPreview();
       },
       error: (error) => {
         console.error('Error customizing page:', error);
         this.customizing = false;
+        // Daily AI limit and similar rejections carry a message worth showing.
+        this.customizeError =
+          error?.error?.message ?? 'Could not customize the text. Please try again.';
       },
     });
   }
@@ -600,18 +686,24 @@ export class PageEdit implements OnInit {
     return snippet.id || index.toString();
   }
 
-  // --- Image population status (per snippet, via the aiImagesPopulated flag) ---
+  // --- Image status, over snippets that have image slots at all ---
+  private imageSnippets(): SnippetOverride[] {
+    return (this.page?.snippets ?? []).filter((s) =>
+      hasImageSlots(imageTokensOf(s, this.library)),
+    );
+  }
+  imageSnippetCount(): number {
+    return this.imageSnippets().length;
+  }
   imagesPopulatedCount(): number {
-    return (this.page?.snippets ?? []).filter(
-      (s) => s.aiImagesPopulated === true,
-    ).length;
+    return this.imageSnippets().filter((s) => !this.needsImages(s)).length;
   }
   imagesMissingCount(): number {
-    return this.snippetCount() - this.imagesPopulatedCount();
+    return this.imageSnippetCount() - this.imagesPopulatedCount();
   }
-  /** True once every snippet on the page has been through image population. */
+  /** True once every snippet with image slots has its images. */
   hasAiImages(): boolean {
-    return this.snippetCount() > 0 && this.imagesMissingCount() === 0;
+    return this.imageSnippetCount() > 0 && this.imagesMissingCount() === 0;
   }
 
   /**
@@ -634,6 +726,7 @@ export class PageEdit implements OnInit {
       .subscribe({
         next: (data) => {
           this.page = data;
+          this.loadPageSnippets();
           this.findingImages = false;
           this.refreshPreview();
         },

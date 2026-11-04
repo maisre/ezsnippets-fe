@@ -117,6 +117,28 @@
 .snip-park:disabled { cursor: not-allowed; opacity: 0.35; }
 .snip-row:hover .snip-park:disabled { opacity: 0.35; }
 
+/* Flag: send feedback about this snippet. Same quiet reveal as Park. */
+.snip-flag {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.snip-flag svg { width: 14px; height: 14px; }
+.snip-row:hover .snip-flag,
+.snip-row:focus-within .snip-flag,
+.slot:hover .snip-flag,
+.slot:focus-within .snip-flag { opacity: 1; }
+.snip-flag:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft); }
+
 /* ===== Scratch pad tab ===== */
 .palette-scratchpad { padding: 12px 14px 20px; }
 

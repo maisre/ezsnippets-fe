@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { runtimeConfig } from '../runtime-config';
 import { OrgsService } from '../orgs.service';
-import { PaymentsService, TeamDowngradePreview } from '../payments.service';
+import { BillingState, PaymentsService, TeamDowngradePreview } from '../payments.service';
 import { formatDate, teamClosesAt } from '../workspace-status';
 import { Org } from '../models';
 import { CustomDomain, DomainsService } from '../domains.service';
@@ -245,6 +245,43 @@ export class Account implements OnInit {
     });
   }
 
+  // --- single-seat plan switch (personal workspace owner) ---
+  // Only the scheduled switch is read here; picking a plan happens on /pricing.
+  billing: BillingState | null = null;
+  switchBusy = false;
+  switchError = '';
+
+  get scheduledSwitch(): { toPlan: string; effectiveAt: string } | null {
+    return this.billing?.current?.scheduledSwitch ?? null;
+  }
+
+  get scheduledSwitchDate(): string {
+    const at = this.scheduledSwitch?.effectiveAt;
+    return at ? formatDate(new Date(at)) : '';
+  }
+
+  /** A personal plan this owner can change on /pricing. */
+  get canChangePlan(): boolean {
+    return !!this.org?.personal && this.isOwner && !!this.billing?.current;
+  }
+
+  keepCurrentPlan() {
+    if (this.switchBusy) return;
+    this.switchBusy = true;
+    this.switchError = '';
+    this.paymentsService.cancelPlanSwitch().subscribe({
+      next: () => {
+        this.switchBusy = false;
+        this.loadOrg();
+        this.loadUsage();
+      },
+      error: (err) => {
+        this.switchBusy = false;
+        this.switchError = err?.error?.message ?? 'Could not keep your plan. Please try again.';
+      },
+    });
+  }
+
   undoDowngrade() {
     if (!this.org || this.downgradeBusy) return;
     this.downgradeBusy = true;
@@ -355,6 +392,14 @@ export class Account implements OnInit {
   private loadOrg() {
     this.orgsService.getMyOrgs().subscribe((orgs) => {
       this.org = orgs.find((o) => o.active) || orgs[0] || null;
+      this.billing = null;
+      // Single-seat plans live on the personal workspace.
+      if (this.org?.personal && this.org.role === 'owner' && this.org.subscriptionId) {
+        this.paymentsService.billingState().subscribe({
+          next: (state) => (this.billing = state),
+          error: () => (this.billing = null),
+        });
+      }
     });
   }
 }

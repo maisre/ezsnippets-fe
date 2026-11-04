@@ -1,4 +1,11 @@
 <div *ngIf="page" class="page-edit-container" [class.drawer-pinned]="drawerPinned">
+  <!-- Phones: the editors need room. Shown below ~768px (see editor-tokens.css). -->
+  <div class="small-screen-notice" *ngIf="!smallScreenNoticeDismissed" role="status">
+    <span>The editor works best on a larger screen. You can browse and manage pages here, but editing needs a tablet or desktop.</span>
+    <button type="button" (click)="smallScreenNoticeDismissed = true" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
   <!-- ===== Action bar ===== -->
   <header class="edit-topbar">
     <div class="crumb">
@@ -34,7 +41,7 @@
         Edit content
         <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
       </button>
-      <button type="button" class="btn primary" (click)="finalize()" title="Download &amp; image licensing — coming soon">
+      <button type="button" class="btn primary" (click)="finalize()" title="Readiness checklist, image licensing and download">
         Finalize
       </button>
     </div>
@@ -126,13 +133,14 @@
             </div>
           </div>
 
-          <!-- Image population. Same per-snippet model via the aiImagesPopulated
-               flag; "missing" fills the not-yet-populated snippets only. -->
+          <!-- Image population, over snippets that have image slots. A snippet
+               counts once AI filled it or every slot was set by hand; "missing"
+               fills the rest (the server keeps slots that are already set). -->
           <div class="ai-group">
             <span class="ai-status">
               <strong>Images set:</strong>
-              {{ imagesPopulatedCount() }} / {{ snippetCount() }}
-              <span class="ai-missing" *ngIf="snippetCount() > 0 && imagesMissingCount() > 0">
+              {{ imagesPopulatedCount() }} / {{ imageSnippetCount() }}
+              <span class="ai-missing" *ngIf="imagesMissingCount() > 0">
                 · {{ imagesMissingCount() }} missing
               </span>
             </span>
@@ -141,7 +149,7 @@
                 *ngIf="imagesPopulatedCount() === 0"
                 type="button"
                 class="customize-button images"
-                [disabled]="customizing || findingImages || snippetCount() === 0"
+                [disabled]="customizing || findingImages || imageSnippetCount() === 0"
                 (click)="findImages()"
               >
                 {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
@@ -192,6 +200,7 @@
           </div>
         </div>
 
+        <p class="form-error inset" *ngIf="customizeError">{{ customizeError }}</p>
         <p class="form-error inset" *ngIf="imagesError">{{ imagesError }}</p>
       </section>
 
@@ -201,6 +210,10 @@
           <h3>Page structure</h3>
           <span class="card-count">{{ snippetCount() }} snippet{{ snippetCount() === 1 ? '' : 's' }}</span>
         </div>
+        <p class="scratch-error inset" *ngIf="saveError">
+          {{ saveError }}
+          <button type="button" class="btn ghost sm" (click)="updatePageSnippets()">Retry</button>
+        </p>
         <div
           cdkDropList
           id="page-snippets"
@@ -228,11 +241,20 @@
               <div class="badges">
                 <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
                 <ng-container *ngIf="!snippetReady(snippet)">
-                  <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
-                  <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                  <span class="badge need" *ngIf="needsText(snippet)"><span class="d"></span>Needs text</span>
+                  <span class="badge need" *ngIf="needsImages(snippet)"><span class="d"></span>Needs images</span>
                 </ng-container>
               </div>
             </div>
+            <button
+              type="button"
+              class="snip-flag"
+              (click)="flagSnippet(snippet)"
+              title="Send feedback about this snippet"
+              aria-label="Send feedback about this snippet"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4m0 0h12l-2 4 2 4H4"/></svg>
+            </button>
             <button
               type="button"
               class="snip-park"
@@ -360,8 +382,8 @@
               <div class="badges">
                 <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
                 <ng-container *ngIf="!snippetReady(snippet)">
-                  <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
-                  <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                  <span class="badge need" *ngIf="needsText(snippet)"><span class="d"></span>Needs text</span>
+                  <span class="badge need" *ngIf="needsImages(snippet)"><span class="d"></span>Needs images</span>
                 </ng-container>
               </div>
             </div>
@@ -520,8 +542,13 @@
   </div>
 </aside>
 
-<div *ngIf="!page && pageId" class="edit-loading">
+<div *ngIf="!page && pageId && !loadError" class="edit-loading">
   <p>Loading page…</p>
+</div>
+
+<div *ngIf="!page && loadError" class="edit-loading">
+  <p class="form-error">{{ loadError }}</p>
+  <button type="button" class="btn" (click)="router.navigate(['/pages'])">Back to Pages</button>
 </div>
 
 <div *ngIf="!pageId" class="edit-loading">

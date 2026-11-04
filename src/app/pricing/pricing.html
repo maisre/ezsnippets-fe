@@ -1,7 +1,13 @@
 <div class="pricing-page">
   <div class="pricing-header">
     <h1>Simple, transparent pricing</h1>
-    <p>Start for free, upgrade when you're ready.</p>
+    @if (showTrial) {
+      <p>Every plan starts with a 7-day free trial. Cancel before it ends and you won't be charged.</p>
+    } @else if (billing?.current) {
+      <p>Change plans whenever you like — upgrades apply straight away, downgrades at your next renewal.</p>
+    } @else {
+      <p>Pick the plan that fits. Billing starts when you subscribe, and you can cancel any time.</p>
+    }
 
     @if (!loading && !unavailable) {
       <div class="billing-toggle">
@@ -55,8 +61,8 @@
               <li>{{ feature }}</li>
             }
           </ul>
-          <button (click)="selectPlan(plan)" class="{{ ctaClass(plan) }}" [disabled]="opening === plan.name">
-            {{ opening === plan.name ? 'Opening...' : plan.cta }}
+          <button (click)="selectPlan(plan)" class="{{ ctaClass(plan) }}" [disabled]="opening === plan.name || isCurrentPlan(plan)">
+            {{ ctaLabel(plan) }}
           </button>
         </div>
       }
@@ -80,6 +86,57 @@
         </div>
       </div>
     }
+    @if (planChangeOffer; as offer) {
+      <div class="upgrade-offer" role="region" aria-label="Change your plan">
+        @switch (offer.kind) {
+          @case ('upgrade') {
+            <h2>Upgrade to {{ offer.plan }}</h2>
+            <p>
+              You'll pay <strong>{{ offer.amountDueToday }} {{ offer.currency }}</strong> today for the
+              rest of this billing period, and {{ offer.plan }} starts straight away.
+              @if (offer.nextAmount) {
+                After that it's {{ offer.nextAmount }} {{ offer.currency }} per {{ offer.interval }}.
+              }
+            </p>
+          }
+          @case ('downgrade') {
+            <h2>Switch to {{ offer.plan }}</h2>
+            <p>
+              Nothing to pay today. You keep {{ offer.currentPlan }} until
+              <strong>{{ formatDate(offer.effectiveAt) }}</strong>, then {{ offer.plan }} is
+              {{ offer.nextAmount }} {{ offer.currency }} per {{ offer.interval }}.
+            </p>
+            <p>
+              Nothing is deleted. If you're over {{ offer.plan }}'s limits by then, everything stays —
+              you just can't add more until you archive some.
+            </p>
+          }
+          @case ('trial') {
+            <h2>Switch to {{ offer.plan }}</h2>
+            <p>
+              Your free trial carries on with nothing to pay now. When it ends on
+              <strong>{{ formatDate(offer.nextBilledAt) }}</strong> you'll be billed
+              {{ offer.nextAmount }} {{ offer.currency }} for {{ offer.plan }}, unless you cancel first.
+            </p>
+          }
+          @case ('undo') {
+            <h2>Keep {{ offer.plan }}</h2>
+            <p>This cancels your scheduled switch. Nothing to pay today; you renew on {{ offer.plan }}.</p>
+          }
+        }
+        <div class="upgrade-actions">
+          <button class="btn btn-primary" (click)="confirmPlanChange()" [disabled]="changingPlan">
+            {{ changingPlan ? 'Working...' : offer.kind === 'upgrade' ? 'Upgrade now' : 'Confirm' }}
+          </button>
+          <button class="btn btn-outline" (click)="planChangeOffer = null" [disabled]="changingPlan">
+            Not now
+          </button>
+        </div>
+      </div>
+    }
+    @if (planChangeNotice) {
+      <p class="plan-change-notice" role="status">{{ planChangeNotice }}</p>
+    }
     @if (checkoutError) {
       <p class="checkout-error">{{ checkoutError }}</p>
     }
@@ -98,11 +155,17 @@
     <div class="faq-grid">
       <div class="faq-item">
         <h3>Can I switch plans later?</h3>
-        <p>Yes, you can upgrade or downgrade at any time. Changes take effect on your next billing cycle.</p>
+        <p>
+          Yes. Moving up — Starter to Pro, or monthly to yearly — happens straight away and you pay
+          only the difference for the rest of the period. Moving down to Starter takes effect at your
+          next renewal, and you keep your current plan until then. Agency adds a team workspace when
+          you upgrade, and can move back to Pro at the end of a billing period. During a free trial
+          you can switch freely; the trial carries on.
+        </p>
       </div>
       <div class="faq-item">
         <h3>Is there a free trial?</h3>
-        <p>Where a plan includes one, the trial length is shown on its card above.</p>
+        <p>Yes. Your first plan starts with a 7-day free trial. You add a card at checkout, and you won&#39;t be charged if you cancel before the trial ends. The trial is once per customer, so a later subscription starts billing straight away.</p>
       </div>
       <div class="faq-item">
         <h3>What payment methods do you accept?</h3>

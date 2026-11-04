@@ -1,4 +1,11 @@
 <div *ngIf="layout" class="layout-edit-container" [class.drawer-pinned]="drawerPinned">
+  <!-- Phones: the editors need room. Shown below ~768px (see editor-tokens.css). -->
+  <div class="small-screen-notice" *ngIf="!smallScreenNoticeDismissed" role="status">
+    <span>The editor works best on a larger screen. You can browse and manage pages here, but editing needs a tablet or desktop.</span>
+    <button type="button" (click)="smallScreenNoticeDismissed = true" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
   <!-- ===== Action bar ===== -->
   <header class="edit-topbar">
     <div class="crumb">
@@ -30,6 +37,10 @@
 
     <div class="topbar-actions">
       <button type="button" class="btn" (click)="openPreview()">Preview</button>
+      <button type="button" class="btn" (click)="openEditContent()">
+        Edit content
+        <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+      </button>
       <button type="button" class="btn" (click)="openSaveTemplate()">Save as template</button>
       <button type="button" class="btn primary" (click)="finalize()">Finalize</button>
     </div>
@@ -100,11 +111,11 @@
           <div class="ai-group">
             <span class="ai-status">
               <strong>Images set:</strong>
-              {{ imagesPopulatedCount() }} / {{ snippetCount() }}
-              <span class="ai-missing" *ngIf="snippetCount() > 0 && imagesMissingCount() > 0">· {{ imagesMissingCount() }} missing</span>
+              {{ imagesPopulatedCount() }} / {{ imageSnippetCount() }}
+              <span class="ai-missing" *ngIf="imagesMissingCount() > 0">· {{ imagesMissingCount() }} missing</span>
             </span>
             <div class="ai-actions">
-              <button *ngIf="imagesPopulatedCount() === 0" type="button" class="customize-button images" [disabled]="customizing || findingImages || snippetCount() === 0" (click)="findImages()">
+              <button *ngIf="imagesPopulatedCount() === 0" type="button" class="customize-button images" [disabled]="customizing || findingImages || imageSnippetCount() === 0" (click)="findImages()">
                 {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
               </button>
               <button *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0" type="button" class="customize-button images" [disabled]="customizing || findingImages" (click)="findImages({ onlyMissing: true })">
@@ -127,6 +138,7 @@
           </div>
         </div>
 
+        <p class="form-error inset" *ngIf="customizeError">{{ customizeError }}</p>
         <p class="form-error inset" *ngIf="imagesError">{{ imagesError }}</p>
       </section>
 
@@ -154,6 +166,9 @@
             <img [src]="snippetThumbUrl(nav.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <span class="slot-name">{{ nav.type || 'Navbar' }}</span>
             <button type="button" class="btn ghost sm" (click)="openPalette('nav')" data-drawer-trigger>Change</button>
+            <button type="button" class="snip-flag" (click)="flagSnippet(nav)" title="Send feedback about this snippet" aria-label="Send feedback about this snippet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4m0 0h12l-2 4 2 4H4"/></svg>
+            </button>
             <button type="button" class="snip-remove" (click)="removeNav()" title="Remove navbar" aria-label="Remove navbar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
@@ -243,11 +258,14 @@
                     <div class="badges">
                       <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
                       <ng-container *ngIf="!snippetReady(snippet)">
-                        <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
-                        <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                        <span class="badge need" *ngIf="needsText(snippet)"><span class="d"></span>Needs text</span>
+                        <span class="badge need" *ngIf="needsImages(snippet)"><span class="d"></span>Needs images</span>
                       </ng-container>
                     </div>
                   </div>
+                  <button type="button" class="snip-flag" (click)="flagSnippet(snippet)" title="Send feedback about this snippet" aria-label="Send feedback about this snippet">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4m0 0h12l-2 4 2 4H4"/></svg>
+                  </button>
                   <button
                     type="button"
                     class="snip-park"
@@ -296,6 +314,9 @@
             <img [src]="snippetThumbUrl(footer.id)" alt="" class="snip-thumb" loading="lazy" decoding="async" />
             <span class="slot-name">{{ footer.type || 'Footer' }}</span>
             <button type="button" class="btn ghost sm" (click)="openPalette('footer')" data-drawer-trigger>Change</button>
+            <button type="button" class="snip-flag" (click)="flagSnippet(footer)" title="Send feedback about this snippet" aria-label="Send feedback about this snippet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4m0 0h12l-2 4 2 4H4"/></svg>
+            </button>
             <button type="button" class="snip-remove" (click)="removeFooter()" title="Remove footer" aria-label="Remove footer">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
@@ -394,8 +415,8 @@
               <div class="badges">
                 <span class="badge ok" *ngIf="snippetReady(snippet)"><span class="d"></span>Ready</span>
                 <ng-container *ngIf="!snippetReady(snippet)">
-                  <span class="badge need" *ngIf="snippet.aiCustomized !== true"><span class="d"></span>Needs text</span>
-                  <span class="badge need" *ngIf="snippet.aiImagesPopulated !== true"><span class="d"></span>Needs images</span>
+                  <span class="badge need" *ngIf="needsText(snippet)"><span class="d"></span>Needs text</span>
+                  <span class="badge need" *ngIf="needsImages(snippet)"><span class="d"></span>Needs images</span>
                 </ng-container>
               </div>
             </div>
