@@ -8,6 +8,8 @@ import {
   SnippetOverride,
   LicensingResponse,
   GenerateCollectionResponse,
+  ImageFillMode,
+  ImageFillSummary,
 } from './models';
 
 @Injectable({
@@ -70,14 +72,24 @@ export class PagesService {
   customizePageImages(
     pageId: string,
     options: {
+      mode?: ImageFillMode;
+      keywords?: string;
       direction?: string;
       replaceExisting?: boolean;
       onlyMissing?: boolean;
     } = {},
-  ): Observable<Page> {
-    return this.http.post<Page>(
+  ): Observable<Page & { imageFill?: ImageFillSummary }> {
+    return this.http.post<Page & { imageFill?: ImageFillSummary }>(
       `${runtimeConfig.apiUrl}/pages/${pageId}/customize-images`,
       options,
+    );
+  }
+
+  /** AI-suggested keyword sets for image Quick fill (one small AI call). */
+  suggestImageKeywords(pageId: string): Observable<{ keywords: string[] }> {
+    return this.http.post<{ keywords: string[] }>(
+      `${runtimeConfig.apiUrl}/pages/${pageId}/image-keywords`,
+      {},
     );
   }
 

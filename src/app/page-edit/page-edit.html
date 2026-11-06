@@ -152,7 +152,7 @@
                 [disabled]="customizing || findingImages || imageSnippetCount() === 0"
                 (click)="findImages()"
               >
-                {{ findingImages ? 'Finding images…' : 'Find images with AI' }}
+                {{ findingImages ? 'Finding images…' : imageMode === 'quick' ? 'Fill images' : 'Find images with AI' }}
               </button>
               <button
                 *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0"
@@ -161,7 +161,7 @@
                 [disabled]="customizing || findingImages"
                 (click)="findImages({ onlyMissing: true })"
               >
-                {{ findingImages ? 'Finding images…' : 'Find images for ' + imagesMissingCount() + ' missing' }}
+                {{ findingImages ? 'Finding images…' : (imageMode === 'quick' ? 'Fill ' : 'Find images for ') + imagesMissingCount() + ' missing' }}
               </button>
               <button
                 *ngIf="imagesPopulatedCount() > 0"
@@ -176,32 +176,70 @@
           </div>
         </div>
 
-        <div class="image-direction">
-          <button
-            type="button"
-            class="direction-toggle"
-            [attr.aria-expanded]="showImageDirection"
-            (click)="showImageDirection = !showImageDirection"
-          >
-            {{ showImageDirection ? '▾' : '▸' }} Art direction (optional)
-          </button>
-          <div class="direction-field" *ngIf="showImageDirection">
-            <input
-              id="imageDirection"
-              name="imageDirection"
-              type="text"
-              [(ngModel)]="imageDirection"
-              placeholder="e.g. warm natural light, no people"
-            />
-            <p class="direction-hint">
-              Guides the style of the images we search for. Queries are written from your
-              description, so leave this blank unless you want a specific look.
-            </p>
+        <div class="image-fill">
+          <div class="fill-mode" role="radiogroup" aria-label="How to find images">
+            <button type="button" role="radio" class="fill-mode-btn" [class.on]="imageMode === 'quick'" [attr.aria-checked]="imageMode === 'quick'" (click)="imageMode = 'quick'">
+              Quick fill
+            </button>
+            <button type="button" role="radio" class="fill-mode-btn" [class.on]="imageMode === 'smart'" [attr.aria-checked]="imageMode === 'smart'" (click)="imageMode = 'smart'">
+              Smart fill (AI)
+            </button>
           </div>
+
+          <ng-container *ngIf="imageMode === 'quick'">
+            <div class="keywords-row">
+              <input
+                id="pageImageKeywords"
+                name="pageImageKeywords"
+                type="text"
+                maxlength="100"
+                aria-label="Image keywords"
+                [(ngModel)]="imageKeywords"
+                (keydown.enter)="$event.preventDefault()"
+                placeholder="e.g. craft brewery taproom"
+              />
+              <button type="button" class="suggest-btn" [disabled]="suggestingKeywords" (click)="suggestKeywords()">
+                {{ suggestingKeywords ? 'Thinking…' : 'Suggest with AI' }}
+              </button>
+            </div>
+            <div class="keyword-chips" *ngIf="keywordSuggestions.length">
+              <button
+                type="button"
+                class="keyword-chip"
+                *ngFor="let k of keywordSuggestions"
+                [class.on]="imageKeywords.trim() === k"
+                (click)="imageKeywords = k"
+              >
+                {{ k }}
+              </button>
+            </div>
+            <p class="direction-hint">
+              One stock search fills every image slot, matched by shape. Uses no AI credits.
+              <ng-container *ngIf="keywordsFallback">Leave blank to search for "{{ keywordsFallback }}".</ng-container>
+            </p>
+            <p class="direction-hint error" *ngIf="keywordsError">{{ keywordsError }}</p>
+          </ng-container>
+
+          <ng-container *ngIf="imageMode === 'smart'">
+            <div class="direction-field">
+              <input
+                id="pageImageDirection"
+                name="pageImageDirection"
+                type="text"
+                aria-label="Art direction (optional)"
+                [(ngModel)]="imageDirection"
+                placeholder="Art direction (optional), e.g. warm natural light, no people"
+              />
+            </div>
+            <p class="direction-hint">
+              AI writes a search for each image slot from your description. Uses AI credits.
+            </p>
+          </ng-container>
         </div>
 
         <p class="form-error inset" *ngIf="customizeError">{{ customizeError }}</p>
         <p class="form-error inset" *ngIf="imagesError">{{ imagesError }}</p>
+        <p class="form-notice inset" *ngIf="imagesNotice">{{ imagesNotice }}</p>
       </section>
 
       <!-- Page structure -->

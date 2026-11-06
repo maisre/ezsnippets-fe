@@ -36,6 +36,8 @@ import {
   SnippetFilters,
   LicensingImage,
   Template,
+  ImageFillMode,
+  ImageFillSummary,
 } from '../models';
 
 /**
@@ -178,8 +180,16 @@ export class LayoutEdit implements OnInit {
   // Phone-width notice (CSS hides it on larger screens); per visit.
   smallScreenNoticeDismissed = false;
   imagesError = '';
+  imagesNotice = '';
   imageDirection = '';
-  showImageDirection = false;
+  // Quick fill (default): one stock search for the keywords, no AI.
+  // Smart fill: AI writes a search per slot; the server falls back to quick
+  // fill if AI is unavailable.
+  imageMode: ImageFillMode = 'quick';
+  imageKeywords = '';
+  keywordSuggestions: string[] = [];
+  suggestingKeywords = false;
+  keywordsError = '';
 
   // Layout settings live in a collapsible card opened from the action bar.
   showDetails = false;
@@ -1066,10 +1076,14 @@ export class LayoutEdit implements OnInit {
 
     this.findingImages = true;
     this.imagesError = '';
+    this.imagesNotice = '';
+    const quick = this.imageMode === 'quick';
 
     this.layoutsService
       .customizeLayoutImages(this.layoutId, {
-        direction: this.imageDirection.trim() || undefined,
+        mode: this.imageMode,
+        keywords: quick ? this.imageKeywords.trim() || undefined : undefined,
+        direction: quick ? undefined : this.imageDirection.trim() || undefined,
         onlyMissing: opts.onlyMissing,
         replaceExisting: opts.replaceExisting,
       })
@@ -1077,18 +1091,61 @@ export class LayoutEdit implements OnInit {
         next: (data) => {
           this.applyServerLayout(data);
           this.findingImages = false;
+          this.imagesNotice = this.imageFillNotice(data.imageFill);
         },
         error: (error) => {
           this.findingImages = false;
-          // 401 here means the Shutterstock token is missing server-side, which
-          // is a config problem rather than anything the user can fix.
-          this.imagesError =
-            error?.status === 401
-              ? 'Image search is not configured. Check the server settings.'
-              : 'Could not find images. Please try again.';
+          this.imagesError = this.imageFillError(error);
           console.error('Error finding images:', error);
         },
       });
+  }
+
+  /** Blank keywords search for the site name (else the layout name). */
+  get keywordsFallback(): string {
+    return (this.layout?.siteName || this.layout?.name || '').trim();
+  }
+
+  private imageFillNotice(summary?: ImageFillSummary): string {
+    if (!summary) return '';
+    if (summary.fellBack) {
+      return `AI image search is unavailable right now, so we filled images from "${summary.keywords}". Try Smart fill again later.`;
+    }
+    if (summary.mode === 'quick' && summary.filled < summary.requested) {
+      return `Filled ${summary.filled} of ${summary.requested} image slots. Broader keywords will find more.`;
+    }
+    return '';
+  }
+
+  private imageFillError(error: any): string {
+    // 401 means the Shutterstock token is missing server-side, which is a
+    // config problem rather than anything the user can fix.
+    if (error?.status === 401) return 'Image search is not configured. Check the server settings.';
+    // 422: the keyword search found nothing; the server's message says so.
+    if (error?.status === 422 && error?.error?.message) return error.error.message;
+    return 'Could not find images. Please try again.';
+  }
+
+  /** One small AI call for keyword ideas. Typing keywords still works if it fails. */
+  suggestKeywords() {
+    if (!this.layoutId || this.suggestingKeywords) return;
+    this.suggestingKeywords = true;
+    this.keywordsError = '';
+    this.layoutsService.suggestImageKeywords(this.layoutId).subscribe({
+      next: ({ keywords }) => {
+        this.suggestingKeywords = false;
+        this.keywordSuggestions = keywords;
+        if (!keywords.length) this.keywordsError = 'No suggestions this time. Type your own keywords.';
+      },
+      error: (error) => {
+        this.suggestingKeywords = false;
+        this.keywordsError =
+          error?.status === 429
+            ? 'Daily AI limit reached. Type your own keywords.'
+            : "Couldn't get suggestions right now. Type your own keywords.";
+        console.error('Error suggesting keywords:', error);
+      },
+    });
   }
 
   private seedDetails() {

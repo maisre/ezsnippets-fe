@@ -8,6 +8,8 @@ import {
   SnippetOverride,
   LicensingResponse,
   GenerateCollectionResponse,
+  ImageFillMode,
+  ImageFillSummary,
 } from './models';
 
 @Injectable({
@@ -74,14 +76,24 @@ export class LayoutsService {
   customizeLayoutImages(
     layoutId: string,
     options: {
+      mode?: ImageFillMode;
+      keywords?: string;
       direction?: string;
       replaceExisting?: boolean;
       onlyMissing?: boolean;
     } = {},
-  ): Observable<Layout> {
-    return this.http.post<Layout>(
+  ): Observable<Layout & { imageFill?: ImageFillSummary }> {
+    return this.http.post<Layout & { imageFill?: ImageFillSummary }>(
       `${runtimeConfig.apiUrl}/layouts/${layoutId}/customize-images`,
       options,
+    );
+  }
+
+  /** AI-suggested keyword sets for image Quick fill (one small AI call). */
+  suggestImageKeywords(layoutId: string): Observable<{ keywords: string[] }> {
+    return this.http.post<{ keywords: string[] }>(
+      `${runtimeConfig.apiUrl}/layouts/${layoutId}/image-keywords`,
+      {},
     );
   }
 

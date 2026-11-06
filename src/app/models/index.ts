@@ -5,3 +5,4 @@ export * from './org.model';
 export * from './licensing.model';
 
 export * from './template.model';
+export * from './image-fill.model';
