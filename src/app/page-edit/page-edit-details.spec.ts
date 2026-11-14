@@ -178,4 +178,152 @@ describe('PageEdit details form', () => {
     component.details.slug = 'stans-hvac';
     expect(component.detailsDirty).toBe(true);
   });
+
+  describe('site brief', () => {
+    it('saves only the brief fields, leaving a half-edited name alone', () => {
+      component.details.description = '  Family-run HVAC in Boise  ';
+      component.details.name = '';
+      expect(component.briefDirty).toBe(true);
+      expect(component.settingsDirty).toBe(true);
+
+      component.saveBrief();
+
+      const req = httpMock.expectOne(
+        (r) => r.method === 'PUT' && r.url.endsWith('/pages/p1'),
+      );
+      // No name or slug: an invalid one in the settings card can't block this.
+      expect(req.request.body).toEqual({
+        siteName: 'Acme',
+        description: 'Family-run HVAC in Boise',
+      });
+      req.flush({ ...PAGE, description: 'Family-run HVAC in Boise' });
+
+      expect(component.briefDirty).toBe(false);
+      expect(component.page!.description).toBe('Family-run HVAC in Boise');
+      // The unsaved name edit survives.
+      expect(component.details.name).toBe('');
+      expect(component.settingsDirty).toBe(true);
+    });
+
+    it('cancels only its own half', () => {
+      component.details.description = 'Changed';
+      component.details.name = 'Landing v2';
+
+      component.resetBrief();
+
+      expect(component.details.description).toBe('Marketing site');
+      expect(component.details.name).toBe('Landing v2');
+    });
+
+    it('saves a dirty brief before writing copy', () => {
+      component.details.description = 'Family-run HVAC in Boise';
+      component.customize(false);
+
+      // Nothing is sent to the AI until the brief it reads is stored.
+      httpMock.expectNone((r) => r.url.endsWith('/pages/p1/customize'));
+      expect(component.customizing).toBe(true);
+      httpMock
+        .expectOne((r) => r.method === 'PUT' && r.url.endsWith('/pages/p1'))
+        .flush({ ...PAGE, description: 'Family-run HVAC in Boise' });
+
+      const run = httpMock.expectOne((r) => r.url.endsWith('/pages/p1/customize'));
+      expect(run.request.body).toEqual({ onlyMissing: false });
+      run.flush({
+        ...PAGE,
+        snippets: [
+          { id: 's1', aiCustomized: true, textReplacementOverride: [{ token: 't', replacement: 'x' }] },
+          // No editable text: marked done, but no copy was written for it.
+          { id: 's2', aiCustomized: true },
+        ],
+      });
+
+      expect(component.customizing).toBe(false);
+      expect(component.copyNotice).toBe('Copy written for 1 section.');
+    });
+
+    it('does not run the AI when the brief cannot be saved', () => {
+      component.details.description = 'Family-run HVAC in Boise';
+      component.customize(false);
+
+      httpMock
+        .expectOne((r) => r.method === 'PUT' && r.url.endsWith('/pages/p1'))
+        .flush({}, { status: 500, statusText: 'Server Error' });
+
+      httpMock.expectNone((r) => r.url.endsWith('/pages/p1/customize'));
+      expect(component.customizing).toBe(false);
+      expect(component.customizeError).toContain('could not be saved');
+      // The typing is kept for a retry.
+      expect(component.details.description).toBe('Family-run HVAC in Boise');
+    });
+
+    it('runs straight away when the brief is already saved', () => {
+      component.findImages({ replaceExisting: true });
+
+      httpMock.expectNone((r) => r.method === 'PUT');
+      const run = httpMock.expectOne((r) => r.url.endsWith('/pages/p1/customize-images'));
+      expect(run.request.body.replaceExisting).toBe(true);
+      run.flush({
+        ...PAGE,
+        imageFill: { mode: 'quick', fellBack: false, requested: 3, filled: 3 },
+      });
+
+      expect(component.imagesNotice).toBe('Filled 3 image slots.');
+    });
+
+    it('closes an open confirm when its action runs', () => {
+      component.confirming = 'copy';
+      component.customize(false);
+      expect(component.confirming).toBeNull();
+      httpMock.expectOne((r) => r.url.endsWith('/pages/p1/customize')).flush(PAGE);
+    });
+  });
+
+  describe('theme', () => {
+    it('shows the template default palette when no colours are saved', () => {
+      expect(component.activeTheme).toBe('Slate');
+    });
+
+    it('applies a palette, adopts the saved colours and reloads the preview', () => {
+      const coral = component.themePresets.find((p) => p.name === 'Coral')!;
+      const before = component.previewVersion;
+
+      component.applyTheme(coral);
+
+      const req = httpMock.expectOne(
+        (r) => r.method === 'PUT' && r.url.endsWith('/pages/p1/colors'),
+      );
+      expect(req.request.body.colorVariables.length).toBe(8);
+      expect(req.request.body.colorVariables).toContain({
+        variable: '--accent-color1',
+        value: '#a33a2b',
+      });
+      req.flush({
+        ...PAGE,
+        colorVariables: req.request.body.colorVariables.map((cv: any) => ({
+          ...cv,
+          original: '#000000',
+        })),
+      });
+
+      expect(component.activeTheme).toBe('Coral');
+      expect(component.applyingTheme).toBeNull();
+      expect(component.previewVersion).toBe(before + 1);
+    });
+
+    it('does nothing when the palette is already active', () => {
+      component.applyTheme(component.themePresets[0]);
+      httpMock.expectNone((r) => r.url.endsWith('/colors'));
+      expect(component.applyingTheme).toBeNull();
+    });
+
+    it('reports a failed apply and keeps the old palette', () => {
+      component.applyTheme(component.themePresets[4]);
+      httpMock
+        .expectOne((r) => r.url.endsWith('/pages/p1/colors'))
+        .flush({}, { status: 500, statusText: 'Server Error' });
+
+      expect(component.themeError).toContain('Could not apply');
+      expect(component.activeTheme).toBe('Slate');
+    });
+  });
 });

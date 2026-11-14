@@ -58,14 +58,6 @@
             <label for="pageName">Name</label>
             <input id="pageName" name="pageName" type="text" [(ngModel)]="details.name" placeholder="Page name" required />
           </div>
-          <div class="detail-field">
-            <label for="pageSiteName">Site name</label>
-            <input id="pageSiteName" name="pageSiteName" type="text" [(ngModel)]="details.siteName" placeholder="Optional" />
-          </div>
-          <div class="detail-field">
-            <label for="pageDescription">Description</label>
-            <input id="pageDescription" name="pageDescription" type="text" [(ngModel)]="details.description" placeholder="Optional" />
-          </div>
           <div class="detail-field" *ngIf="shareLinks.hasCustomDomain">
             <label for="pageSlug">Custom link</label>
             <input id="pageSlug" name="pageSlug" type="text" [(ngModel)]="details.slug" placeholder="stans-hvac" />
@@ -74,8 +66,8 @@
             </p>
           </div>
           <p class="form-error" *ngIf="detailsError">{{ detailsError }}</p>
-          <div class="detail-actions" *ngIf="detailsDirty">
-            <button type="button" class="btn ghost sm" (click)="resetDetails()" [disabled]="savingDetails">Cancel</button>
+          <div class="detail-actions" *ngIf="settingsDirty">
+            <button type="button" class="btn ghost sm" (click)="resetSettings()" [disabled]="savingDetails">Cancel</button>
             <button type="submit" class="btn primary sm" [disabled]="savingDetails || !details.name.trim()">
               {{ savingDetails ? 'Saving…' : 'Save changes' }}
             </button>
@@ -83,100 +75,112 @@
         </div>
       </form>
 
-      <!-- AI content -->
-      <section class="card">
+      <!-- Site brief: the two inputs every AI action reads, then the actions
+           themselves. Options sit above the button they configure. -->
+      <section class="card brief">
         <div class="card-head">
-          <h3>AI content</h3>
+          <h3>Site brief</h3>
           <span class="card-tag">Powered by AI</span>
         </div>
 
-        <div class="detail-meta">
-          <!-- Text customization. Counts are per snippet, so adding a snippet
-               after customizing shows as "N missing" and can be filled without
-               redoing the rest. -->
-          <div class="ai-group">
-            <span class="ai-status">
-              <strong>Text customized:</strong>
-              {{ textCustomizedCount() }} / {{ snippetCount() }}
-              <span class="ai-missing" *ngIf="snippetCount() > 0 && textMissingCount() > 0">
-                · {{ textMissingCount() }} missing
-              </span>
-            </span>
-            <div class="ai-actions">
-              <button
-                *ngIf="textCustomizedCount() === 0"
-                type="button"
-                class="customize-button"
-                [disabled]="customizing || findingImages || snippetCount() === 0"
-                (click)="customize(false)"
-              >
-                {{ customizing ? 'Customizing…' : 'Customize text with AI' }}
-              </button>
-              <button
-                *ngIf="textCustomizedCount() > 0 && textMissingCount() > 0"
-                type="button"
-                class="customize-button"
-                [disabled]="customizing || findingImages"
-                (click)="customize(true)"
-              >
-                {{ customizing ? 'Customizing…' : 'Customize ' + textMissingCount() + ' missing' }}
-              </button>
-              <button
-                *ngIf="textCustomizedCount() > 0"
-                type="button"
-                class="customize-button secondary"
-                [disabled]="customizing || findingImages"
-                (click)="customize(false)"
-              >
-                {{ customizing ? 'Customizing…' : 'Re-customize all' }}
-              </button>
-            </div>
+        <form class="brief-form" (ngSubmit)="saveBrief()">
+          <div class="detail-field">
+            <label for="pageSiteName">Site name</label>
+            <input id="pageSiteName" name="pageSiteName" type="text" [(ngModel)]="details.siteName" placeholder="e.g. Stan's Heating &amp; Air" />
           </div>
+          <div class="detail-field">
+            <label for="pageDescription">What is this site about?</label>
+            <textarea
+              id="pageDescription"
+              name="pageDescription"
+              rows="3"
+              [(ngModel)]="details.description"
+              placeholder="e.g. Family-run HVAC company in Boise. Repairs, installs and 24/7 emergency call-outs. Friendly, no-nonsense tone."
+            ></textarea>
+          </div>
+          <p class="brief-hint">
+            AI uses this to write copy, pick images and suggest keywords.
+            <span class="brief-nudge" *ngIf="!details.description.trim()">A sentence or two here gives much better results.</span>
+          </p>
+          <p class="form-error" *ngIf="detailsError && !showDetails">{{ detailsError }}</p>
+          <div class="detail-actions" *ngIf="briefDirty">
+            <button type="button" class="btn ghost sm" (click)="resetBrief()" [disabled]="savingDetails">Cancel</button>
+            <button type="submit" class="btn primary sm" [disabled]="savingDetails">
+              {{ savingDetails ? 'Saving…' : 'Save brief' }}
+            </button>
+          </div>
+        </form>
 
-          <!-- Image population, over snippets that have image slots. A snippet
-               counts once AI filled it or every slot was set by hand; "missing"
-               fills the rest (the server keeps slots that are already set). -->
-          <div class="ai-group">
-            <span class="ai-status">
-              <strong>Images set:</strong>
-              {{ imagesPopulatedCount() }} / {{ imageSnippetCount() }}
-              <span class="ai-missing" *ngIf="imagesMissingCount() > 0">
-                · {{ imagesMissingCount() }} missing
-              </span>
+        <!-- Copy. Counts are per snippet, so one added after a run shows as
+             "N missing" and can be written without redoing the rest. -->
+        <div class="brief-row">
+          <span class="ai-status">
+            <strong>Copy:</strong>
+            {{ textCustomizedCount() }} / {{ snippetCount() }} sections
+            <span class="ai-missing" *ngIf="snippetCount() > 0 && textMissingCount() > 0">
+              · {{ textMissingCount() }} missing
             </span>
-            <div class="ai-actions">
-              <button
-                *ngIf="imagesPopulatedCount() === 0"
-                type="button"
-                class="customize-button images"
-                [disabled]="customizing || findingImages || imageSnippetCount() === 0"
-                (click)="findImages()"
-              >
-                {{ findingImages ? 'Finding images…' : imageMode === 'quick' ? 'Fill images' : 'Find images with AI' }}
-              </button>
-              <button
-                *ngIf="imagesPopulatedCount() > 0 && imagesMissingCount() > 0"
-                type="button"
-                class="customize-button images"
-                [disabled]="customizing || findingImages"
-                (click)="findImages({ onlyMissing: true })"
-              >
-                {{ findingImages ? 'Finding images…' : (imageMode === 'quick' ? 'Fill ' : 'Find images for ') + imagesMissingCount() + ' missing' }}
-              </button>
-              <button
-                *ngIf="imagesPopulatedCount() > 0"
-                type="button"
-                class="customize-button images secondary"
-                [disabled]="customizing || findingImages"
-                (click)="findImages({ replaceExisting: true })"
-              >
-                {{ findingImages ? 'Finding images…' : 'Redo all images' }}
-              </button>
+          </span>
+          <div class="ai-actions" *ngIf="confirming !== 'copy'">
+            <button
+              *ngIf="textCustomizedCount() === 0"
+              type="button"
+              class="customize-button"
+              [disabled]="aiBusy || snippetCount() === 0"
+              (click)="customize(false)"
+            >
+              {{ customizing ? 'Writing…' : 'Write copy with AI' }}
+            </button>
+            <button
+              *ngIf="textCustomizedCount() > 0 && textMissingCount() > 0"
+              type="button"
+              class="customize-button"
+              [disabled]="aiBusy"
+              (click)="customize(true)"
+            >
+              {{ customizing ? 'Writing…' : 'Write ' + textMissingCount() + ' missing' }}
+            </button>
+            <button
+              *ngIf="textCustomizedCount() > 0"
+              type="button"
+              class="customize-button secondary"
+              [disabled]="aiBusy"
+              (click)="confirming = 'copy'"
+            >
+              {{ customizing ? 'Writing…' : 'Rewrite all' }}
+            </button>
+          </div>
+          <!-- Rewrite all replaces every text override, hand edits included. -->
+          <div class="inline-confirm" *ngIf="confirming === 'copy'" role="group" aria-label="Confirm rewriting all copy">
+            <p>
+              Rewrite the copy in all {{ snippetCount() }} sections? New AI text replaces
+              what's there now, <strong>including anything you edited by hand</strong> in the
+              content editor. Images aren't touched. This can't be undone.
+            </p>
+            <div class="inline-confirm-actions">
+              <button type="button" class="btn ghost sm" (click)="confirming = null">Cancel</button>
+              <button type="button" class="btn primary sm" (click)="customize(false)">Rewrite all</button>
             </div>
           </div>
+          <p class="form-error" *ngIf="customizeError">{{ customizeError }}</p>
+          <p class="run-result" *ngIf="copyNotice" role="status">
+            {{ copyNotice }}
+            <button type="button" class="link-btn" (click)="openEditContent()">Review in content editor</button>
+          </p>
         </div>
 
-        <div class="image-fill">
+        <!-- Images, over snippets that have image slots. Counted per slot, the way
+             the content editor counts them; "empty" fills the rest
+             (the server keeps slots that are already set). -->
+        <div class="brief-row">
+          <span class="ai-status">
+            <strong>Images:</strong>
+            {{ imageSlotsFilled() }} / {{ imageSlotCount() }} slots
+            <span class="ai-missing" *ngIf="imageSlotsEmpty() > 0">
+              · {{ imageSlotsEmpty() }} empty
+            </span>
+          </span>
+
           <div class="fill-mode" role="radiogroup" aria-label="How to find images">
             <button type="button" role="radio" class="fill-mode-btn" [class.on]="imageMode === 'quick'" [attr.aria-checked]="imageMode === 'quick'" (click)="imageMode = 'quick'">
               Quick fill
@@ -198,7 +202,7 @@
                 (keydown.enter)="$event.preventDefault()"
                 placeholder="e.g. craft brewery taproom"
               />
-              <button type="button" class="suggest-btn" [disabled]="suggestingKeywords" (click)="suggestKeywords()">
+              <button type="button" class="suggest-btn" [disabled]="suggestingKeywords || savingDetails" (click)="suggestKeywords()">
                 {{ suggestingKeywords ? 'Thinking…' : 'Suggest with AI' }}
               </button>
             </div>
@@ -232,14 +236,94 @@
               />
             </div>
             <p class="direction-hint">
-              AI writes a search for each image slot from your description. Uses AI credits.
+              AI writes a search for each image slot from your site brief. Uses AI credits.
             </p>
           </ng-container>
-        </div>
 
-        <p class="form-error inset" *ngIf="customizeError">{{ customizeError }}</p>
-        <p class="form-error inset" *ngIf="imagesError">{{ imagesError }}</p>
-        <p class="form-notice inset" *ngIf="imagesNotice">{{ imagesNotice }}</p>
+          <div class="ai-actions" *ngIf="confirming !== 'images'">
+            <button
+              *ngIf="imageSlotsFilled() === 0"
+              type="button"
+              class="customize-button images"
+              [disabled]="aiBusy || imageSlotCount() === 0"
+              (click)="findImages()"
+            >
+              {{ findingImages ? 'Finding images…' : imageMode === 'quick' ? 'Fill images' : 'Find images with AI' }}
+            </button>
+            <button
+              *ngIf="imageSlotsFilled() > 0 && imageSlotsEmpty() > 0"
+              type="button"
+              class="customize-button images"
+              [disabled]="aiBusy"
+              (click)="findImages({ onlyMissing: true })"
+            >
+              {{ findingImages ? 'Finding images…' : (imageMode === 'quick' ? 'Fill ' : 'Find images for ') + imageSlotsEmpty() + ' empty' }}
+            </button>
+            <button
+              *ngIf="imageSlotsFilled() > 0"
+              type="button"
+              class="customize-button images secondary"
+              [disabled]="aiBusy"
+              (click)="confirming = 'images'"
+            >
+              {{ findingImages ? 'Finding images…' : 'Redo all images' }}
+            </button>
+          </div>
+          <!-- Redo all replaces every image override: stock picks and uploads alike. -->
+          <div class="inline-confirm" *ngIf="confirming === 'images'" role="group" aria-label="Confirm replacing all images">
+            <p>
+              Replace every image on this page? Each image slot gets a new stock photo from
+              {{ imageMode === 'quick' ? 'Quick fill' : 'Smart fill' }},
+              <strong>including images you picked or uploaded yourself</strong>.
+              Text isn't touched. This can't be undone.
+            </p>
+            <div class="inline-confirm-actions">
+              <button type="button" class="btn ghost sm" (click)="confirming = null">Cancel</button>
+              <button type="button" class="btn primary sm" (click)="findImages({ replaceExisting: true })">Redo all images</button>
+            </div>
+          </div>
+          <p class="form-error" *ngIf="imagesError">{{ imagesError }}</p>
+          <p class="run-result" *ngIf="imagesNotice" role="status">
+            {{ imagesNotice }}
+            <button type="button" class="link-btn" (click)="openEditContent()">Review in content editor</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- Theme: one-click palettes. Fine-tuning individual colours stays in
+           the content editor. -->
+      <section class="card theme">
+        <div class="card-head">
+          <h3>Theme</h3>
+          <span class="card-hint">{{ activeTheme ?? 'Custom' }}</span>
+        </div>
+        <div class="theme-grid" role="radiogroup" aria-label="Color palette">
+          <button
+            *ngFor="let preset of themePresets"
+            type="button"
+            role="radio"
+            class="theme-swatch"
+            [class.on]="activeTheme === preset.name"
+            [class.busy]="applyingTheme === preset.name"
+            [attr.aria-checked]="activeTheme === preset.name"
+            [disabled]="!!applyingTheme"
+            [title]="'Apply the ' + preset.name + ' palette'"
+            (click)="applyTheme(preset)"
+          >
+            <span class="theme-chips">
+              <span *ngFor="let color of preset.preview" [style.background]="color"></span>
+            </span>
+            <span class="theme-name">{{ preset.name }}</span>
+          </button>
+        </div>
+        <p class="form-error inset" *ngIf="themeError">{{ themeError }}</p>
+        <div class="theme-foot">
+          <span class="direction-hint" *ngIf="!activeTheme">Custom colors — picking a palette replaces them.</span>
+          <button type="button" class="link-btn" (click)="openThemeEditor()">
+            Fine-tune colors
+            <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </button>
+        </div>
       </section>
 
       <!-- Page structure -->
@@ -284,6 +368,15 @@
                 </ng-container>
               </div>
             </div>
+            <button
+              type="button"
+              class="snip-edit"
+              (click)="editSnippetContent(snippet)"
+              title="Edit this section's text and images"
+              aria-label="Edit this section's text and images"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
             <button
               type="button"
               class="snip-flag"
@@ -493,12 +586,11 @@
       <button *ngIf="textMissingCount() > 0" type="button" class="btn sm" [disabled]="customizing" (click)="customize(true)">Fix</button>
     </div>
     <div class="check">
-      <span class="ck-ic" [class.ok]="imagesMissingCount() === 0" [class.warn]="imagesMissingCount() > 0">{{ imagesMissingCount() === 0 ? '✓' : '!' }}</span>
+      <span class="ck-ic" [class.ok]="imageSlotsEmpty() === 0" [class.warn]="imageSlotsEmpty() > 0">{{ imageSlotsEmpty() === 0 ? '✓' : '!' }}</span>
       <div class="ck-body">
-        <div class="t">{{ imagesMissingCount() === 0 ? 'All snippets have images' : imagesMissingCount() + ' snippet(s) still need images' }}</div>
-        <div class="d" *ngIf="imagesMissingCount() > 0">Some image slots are still empty.</div>
+        <div class="t">{{ imageSlotsEmpty() === 0 ? 'Every image slot is filled' : imageSlotsEmpty() + (imageSlotsEmpty() === 1 ? ' image slot is' : ' image slots are') + ' still empty' }}</div>
       </div>
-      <button *ngIf="imagesMissingCount() > 0" type="button" class="btn sm" [disabled]="findingImages" (click)="findImages({ onlyMissing: true })">Fix</button>
+      <button *ngIf="imageSlotsEmpty() > 0" type="button" class="btn sm" [disabled]="findingImages" (click)="findImages({ onlyMissing: true })">Fix</button>
     </div>
     <div class="check">
       <span class="ck-ic" [class.ok]="page && page.textVariant !== 'lorem'" [class.warn]="page && page.textVariant === 'lorem'">{{ page && page.textVariant !== 'lorem' ? '✓' : '!' }}</span>

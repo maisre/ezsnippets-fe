@@ -42,13 +42,27 @@ export class PagesService {
   updatePageDetails(
     pageId: string,
     details: {
-      name: string;
-      siteName: string;
-      description: string;
+      name?: string;
+      siteName?: string;
+      description?: string;
       slug?: string | null;
     },
   ): Observable<Page> {
     return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}`, details);
+  }
+
+  /**
+   * Set the page's theme palette. The list replaces the stored colours, so
+   * send every variable of the palette. The server validates names and hex
+   * values and returns the updated page.
+   */
+  setPageColors(pageId: string, colors: Record<string, string>): Observable<Page> {
+    return this.http.put<Page>(`${runtimeConfig.apiUrl}/pages/${pageId}/colors`, {
+      colorVariables: Object.entries(colors).map(([variable, value]) => ({
+        variable,
+        value,
+      })),
+    });
   }
 
   /**

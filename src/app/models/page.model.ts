@@ -1,5 +1,15 @@
 import { SnippetOverride } from './snippet.model';
 
+/**
+ * One theme colour override. `original` is the template default; the server
+ * fills it in, so the client only ever sends `variable` and `value`.
+ */
+export interface PageColorVariable {
+  variable: string;
+  value: string;
+  original?: string;
+}
+
 export interface Page {
   id: string;
   name: string;
@@ -31,6 +41,12 @@ export interface Page {
    * server-side; absent on documents created before archiving existed.
    */
   status?: 'active' | 'archived';
+  /**
+   * Theme palette overrides, layered over ez-view's template defaults. Empty
+   * or absent means the defaults. Written by the Theme card here and by the
+   * ez-view content editor's colour panel. See editor/theme-presets.ts.
+   */
+  colorVariables?: PageColorVariable[];
 }
 
 export interface CreatePageDto {

@@ -25,12 +25,30 @@ export function hasImageSlots(tokens: string[] | undefined): boolean {
   return tokens === undefined || tokens.length > 0;
 }
 
-/** Images count as done when AI filled them or every slot has an override. */
-export function imagesDone(s: SnippetOverride, tokens: string[] | undefined): boolean {
-  if (s.aiImagesPopulated === true) return true;
-  if (tokens === undefined) return false;
-  const filled = new Set(
+/**
+ * How many image slots a snippet has and how many hold an image.
+ *
+ * Counted per slot, the same way the content editor counts them, so the two
+ * screens can't disagree. The AI flag is deliberately not consulted when the
+ * slots are known: a fill marks a snippet populated even when it found no photo
+ * for one of its slots, which used to read here as "done" while the editor
+ * showed the slot empty. With no library summary yet, the flag is all there is.
+ */
+export function imageSlotStatus(
+  s: SnippetOverride,
+  tokens: string[] | undefined,
+): { total: number; filled: number } {
+  if (tokens === undefined) {
+    return { total: 1, filled: s.aiImagesPopulated === true ? 1 : 0 };
+  }
+  const set = new Set(
     (s.imageReplacementOverride ?? []).filter((o) => !!o.replacement).map((o) => o.token),
   );
-  return tokens.every((t) => filled.has(t));
+  return { total: tokens.length, filled: tokens.filter((t) => set.has(t)).length };
+}
+
+/** Images count as done when every slot has an image. */
+export function imagesDone(s: SnippetOverride, tokens: string[] | undefined): boolean {
+  const { total, filled } = imageSlotStatus(s, tokens);
+  return filled === total;
 }

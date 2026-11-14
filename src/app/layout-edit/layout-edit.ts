@@ -24,7 +24,13 @@ import { OverflowMenu } from '../overflow-menu/overflow-menu';
 import { CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { SnippetDrawer, PALETTE_LIST_ID } from '../editor/snippet-drawer';
 import { EditorPreview } from '../editor/editor-preview';
-import { hasCustomText, hasImageSlots, imageTokensOf, imagesDone } from '../editor/readiness';
+import {
+  hasCustomText,
+  hasImageSlots,
+  imageSlotStatus,
+  imageTokensOf,
+  imagesDone,
+} from '../editor/readiness';
 import { SaveTemplateDialog } from '../save-template-dialog/save-template-dialog';
 import { SnippetsService } from '../snippets.service';
 import { runtimeConfig, snippetThumbUrl } from '../runtime-config';
@@ -77,6 +83,10 @@ function snippetAbstract(snippet: SnippetOverride) {
   };
 }
 
+// Shown beside an AI action that was not run because the brief it reads could
+// not be saved first.
+const BRIEF_SAVE_FAILED = 'Your site brief could not be saved, so nothing was run. Try again.';
+
 @Component({
   selector: 'app-layout-edit',
   imports: [
@@ -98,6 +108,7 @@ function snippetAbstract(snippet: SnippetOverride) {
     '../editor/editor-tokens.css',
     '../editor/editor-base.css',
     '../editor/editor-layout.css',
+    '../editor/editor-brief.css',
     './layout-edit-structure.css',
   ],
 })
@@ -181,6 +192,11 @@ export class LayoutEdit implements OnInit {
   smallScreenNoticeDismissed = false;
   imagesError = '';
   imagesNotice = '';
+  // What the last copy run did, shown with a link to go and read it.
+  copyNotice = '';
+  // "Rewrite all" and "Redo all images" overwrite hand edits, so each asks
+  // first — inline, in the row, rather than with a native confirm().
+  confirming: 'copy' | 'images' | null = null;
   imageDirection = '';
   // Quick fill (default): one stock search for the keywords, no AI.
   // Smart fill: AI writes a search per slot; the server falls back to quick
@@ -258,6 +274,20 @@ export class LayoutEdit implements OnInit {
     if (this.layoutId) window.open(`${this.viewUrl}/edit/layout/${this.layoutId}`, '_blank');
   }
 
+  /** The content editor, opened with this snippet already selected. */
+  editSnippetContent(snippet: SnippetOverride) {
+    if (!this.layoutId) return;
+    // A layout can use one snippet twice; &n says which copy, counted navbar →
+    // subpages → footer, the order the content editor uses.
+    const all = this.allPlacedSnippets();
+    const at = all.indexOf(snippet);
+    const n = at > 0 ? all.slice(0, at).filter((s) => s.id === snippet.id).length : 0;
+    window.open(
+      `${this.viewUrl}/edit/layout/${this.layoutId}#snippet=${encodeURIComponent(snippet.id)}&n=${n}`,
+      '_blank',
+    );
+  }
+
   /**
    * Coming back from the content editor tab: re-read the layout. The rows hold
    * each snippet's text/image overrides and send them back on the next
@@ -327,6 +357,7 @@ export class LayoutEdit implements OnInit {
   }
   @HostListener('document:keydown.escape')
   onEscape() {
+    this.confirming = null;
     if (this.showFinalize) this.closeFinalize();
   }
 
@@ -1018,15 +1049,36 @@ export class LayoutEdit implements OnInit {
    * others untouched; omit it to re-customize the whole layout.
    */
   customize(onlyMissing = false) {
-    if (!this.layoutId || this.customizing) return;
+    if (!this.layoutId || this.customizing || this.savingDetails) return;
+    this.confirming = null;
     this.customizing = true;
     this.customizeError = '';
+    this.copyNotice = '';
+    // The server writes from the stored brief, so an unsaved one is saved first.
+    this.saveBrief(
+      () => this.runCustomize(onlyMissing),
+      () => {
+        this.customizing = false;
+        this.customizeError = BRIEF_SAVE_FAILED;
+      },
+    );
+  }
+
+  private runCustomize(onlyMissing: boolean) {
+    if (!this.layoutId) {
+      this.customizing = false;
+      return;
+    }
+    // Same rule the server applies: "missing" is every snippet without text.
+    // A full rewrite targets everything.
+    const targeted = onlyMissing ? this.layoutSnippets().map((s) => !hasCustomText(s)) : null;
     this.layoutsService.customizeLayout(this.layoutId, onlyMissing).subscribe({
       next: (data) => {
         // Re-hydrate like every other server response, so the rows keep their
         // display fields and pick up the new flags.
         this.applyServerLayout(data);
         this.customizing = false;
+        this.copyNotice = this.copyResult(targeted, this.layoutSnippets());
       },
       error: (error) => {
         console.error('Error customizing layout:', error);
@@ -1036,6 +1088,20 @@ export class LayoutEdit implements OnInit {
           error?.error?.message ?? 'Could not customize the text. Please try again.';
       },
     });
+  }
+
+  /**
+   * What a copy run wrote, for the result line: of the snippets the run
+   * targeted, how many now carry text. Counted from the response rather than
+   * assumed, because a snippet with no editable text is marked done without
+   * any copy being written for it.
+   */
+  private copyResult(targeted: boolean[] | null, after: SnippetOverride[]): string {
+    const written = after.filter(
+      (s, i) => (!targeted || targeted[i]) && (s.textReplacementOverride?.length ?? 0) > 0,
+    ).length;
+    if (written === 0) return 'No copy was written — these sections have no editable text.';
+    return `Copy written for ${written} section${written === 1 ? '' : 's'}.`;
   }
 
   trackBySnippetId(index: number, snippet: SnippetOverride): string {
@@ -1061,6 +1127,36 @@ export class LayoutEdit implements OnInit {
   imagesMissingCount(): number {
     return this.imageSnippetCount() - this.imagesPopulatedCount();
   }
+  // --- Image slots, counted one by one (the content editor counts the same way) ---
+  private imageSlotTotals(): { total: number; filled: number } {
+    return this.allPlacedSnippets().reduce(
+      (acc, s) => {
+        const st = imageSlotStatus(s, imageTokensOf(s, this.library));
+        return { total: acc.total + st.total, filled: acc.filled + st.filled };
+      },
+      { total: 0, filled: 0 },
+    );
+  }
+  imageSlotCount(): number {
+    return this.imageSlotTotals().total;
+  }
+  imageSlotsFilled(): number {
+    return this.imageSlotTotals().filled;
+  }
+  imageSlotsEmpty(): number {
+    const t = this.imageSlotTotals();
+    return t.total - t.filled;
+  }
+
+  /** Navbar, every subpage's snippets, footer: the order the content editor lays them out. */
+  private allPlacedSnippets(): SnippetOverride[] {
+    return [
+      ...this.navbarSnippets.slice(0, 1),
+      ...this.layoutSnippets(),
+      ...this.footerSnippets.slice(0, 1),
+    ];
+  }
+
   /** True once every subpage snippet with image slots has its images. */
   hasAiImages(): boolean {
     return this.imageSnippetCount() > 0 && this.imagesMissingCount() === 0;
@@ -1072,11 +1168,27 @@ export class LayoutEdit implements OnInit {
    * alone); replaceExisting redoes every slot on the targeted snippets.
    */
   findImages(opts: { onlyMissing?: boolean; replaceExisting?: boolean } = {}) {
-    if (!this.layoutId || this.findingImages) return;
+    if (!this.layoutId || this.findingImages || this.savingDetails) return;
 
+    this.confirming = null;
     this.findingImages = true;
     this.imagesError = '';
     this.imagesNotice = '';
+    // Smart fill and the blank-keywords fallback both read the brief.
+    this.saveBrief(
+      () => this.runFindImages(opts),
+      () => {
+        this.findingImages = false;
+        this.imagesError = BRIEF_SAVE_FAILED;
+      },
+    );
+  }
+
+  private runFindImages(opts: { onlyMissing?: boolean; replaceExisting?: boolean }) {
+    if (!this.layoutId) {
+      this.findingImages = false;
+      return;
+    }
     const quick = this.imageMode === 'quick';
 
     this.layoutsService
@@ -1111,10 +1223,12 @@ export class LayoutEdit implements OnInit {
     if (summary.fellBack) {
       return `AI image search is unavailable right now, so we filled images from "${summary.keywords}". Try Smart fill again later.`;
     }
-    if (summary.mode === 'quick' && summary.filled < summary.requested) {
-      return `Filled ${summary.filled} of ${summary.requested} image slots. Broader keywords will find more.`;
+    if (summary.requested === 0) return 'No image slots needed filling.';
+    if (summary.filled < summary.requested) {
+      const partial = `Filled ${summary.filled} of ${summary.requested} image slots.`;
+      return summary.mode === 'quick' ? `${partial} Broader keywords will find more.` : partial;
     }
-    return '';
+    return `Filled ${summary.filled} image slot${summary.filled === 1 ? '' : 's'}.`;
   }
 
   private imageFillError(error: any): string {
@@ -1128,9 +1242,21 @@ export class LayoutEdit implements OnInit {
 
   /** One small AI call for keyword ideas. Typing keywords still works if it fails. */
   suggestKeywords() {
-    if (!this.layoutId || this.suggestingKeywords) return;
+    if (!this.layoutId || this.suggestingKeywords || this.savingDetails) return;
     this.suggestingKeywords = true;
     this.keywordsError = '';
+    // Suggestions come from the brief, so an unsaved one is saved first.
+    this.saveBrief(
+      () => this.runSuggestKeywords(),
+      () => {
+        this.suggestingKeywords = false;
+        this.keywordsError = BRIEF_SAVE_FAILED;
+      },
+    );
+  }
+
+  private runSuggestKeywords() {
+    if (!this.layoutId) return;
     this.layoutsService.suggestImageKeywords(this.layoutId).subscribe({
       next: ({ keywords }) => {
         this.suggestingKeywords = false;
@@ -1170,6 +1296,95 @@ export class LayoutEdit implements OnInit {
   resetDetails() {
     this.seedDetails();
     this.detailsError = '';
+  }
+
+  // The details model backs two cards: the Site brief (site name and
+  // description, always visible because every AI action reads them) and the
+  // settings card behind the pencil (name and custom link). Each card shows
+  // Save/Cancel for its own half and cancels only its own half.
+  get briefDirty(): boolean {
+    if (!this.layout) return false;
+    return (
+      this.details.siteName.trim() !== (this.layout.siteName ?? '') ||
+      this.details.description.trim() !== (this.layout.description ?? '')
+    );
+  }
+
+  get settingsDirty(): boolean {
+    if (!this.layout) return false;
+    return (
+      this.details.name.trim() !== (this.layout.name ?? '') ||
+      this.details.slug.trim() !== (this.layout.slug ?? '')
+    );
+  }
+
+  resetBrief() {
+    this.details.siteName = this.layout?.siteName ?? '';
+    this.details.description = this.layout?.description ?? '';
+    this.detailsError = '';
+  }
+
+  resetSettings() {
+    this.details.name = this.layout?.name ?? '';
+    this.details.slug = this.layout?.slug ?? '';
+    this.detailsError = '';
+  }
+
+  /** True while anything that reads the brief is saving or running. */
+  get aiBusy(): boolean {
+    return this.customizing || this.findingImages || this.savingDetails;
+  }
+
+  /**
+   * Save the brief on its own — just site name and description, so a half-typed
+   * name or a rejected custom link in the settings card can't block it.
+   *
+   * Every AI action goes through here first: the server reads the brief from
+   * the stored document, so running with unsaved edits would write copy for
+   * the old description. `then` runs once the brief is saved (immediately when
+   * it already is); `failed` runs if the save is rejected, and the action is
+   * not attempted.
+   */
+  saveBrief(then?: () => void, failed?: () => void) {
+    if (!this.layoutId || !this.layout) return;
+    if (!this.briefDirty) {
+      then?.();
+      return;
+    }
+    if (this.savingDetails) return;
+
+    this.savingDetails = true;
+    this.detailsError = '';
+
+    this.layoutsService
+      .updateLayoutDetails(this.layoutId, {
+        siteName: this.details.siteName.trim(),
+        description: this.details.description.trim(),
+      })
+      .subscribe({
+        next: (updated) => {
+          // Take only the two saved fields: the rest of the response can be
+          // older than a structure change that is still in flight.
+          if (this.layout) {
+            this.layout = {
+              ...this.layout,
+              siteName: updated.siteName,
+              description: updated.description,
+            };
+          }
+          this.details.siteName = updated.siteName ?? '';
+          this.details.description = updated.description ?? '';
+          this.savingDetails = false;
+          then?.();
+        },
+        error: (error) => {
+          this.savingDetails = false;
+          this.detailsError =
+            error?.error?.message ?? 'Could not save the site brief. Please try again.';
+          console.error('Error saving site brief:', error);
+          failed?.();
+        },
+      });
   }
 
   saveDetails() {

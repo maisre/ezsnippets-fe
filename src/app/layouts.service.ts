@@ -46,9 +46,9 @@ export class LayoutsService {
   updateLayoutDetails(
     layoutId: string,
     details: {
-      name: string;
-      siteName: string;
-      description: string;
+      name?: string;
+      siteName?: string;
+      description?: string;
       slug?: string | null;
     },
   ): Observable<Layout> {
